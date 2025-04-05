@@ -1,6 +1,6 @@
 #!/bin/bash
 # VaLib - Vast Library
-# Licensed under GNU GPL v2 License. See LICENSE file.
+# Licensed under GNU GPL v3 License. See LICENSE file.
 # (C) 2025 VaLibTeam
 
 cd "$(dirname "$0")" || exit 1

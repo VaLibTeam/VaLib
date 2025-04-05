@@ -1,6 +1,6 @@
 #!/bin/bash
 # VaLib - Vast Library
-# Licensed under GNU GPL v2 License. See LICENSE file.
+# Licensed under GNU GPL v3 License. See LICENSE file.
 # (C) 2025 VaLibTeam
 
 source "scripts/utils.sh" || exit 1
