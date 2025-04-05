@@ -40,5 +40,6 @@
 /.vscode/
 /.idea/
 /.nvim/
+/Include/.nvim/
 
 /docs/
