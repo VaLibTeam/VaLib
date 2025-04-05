@@ -30,25 +30,25 @@ includePath=(
 target=""
 for arg in "$@"; do
     case $arg in
-    	--CXX=*)
-		    CXX="${arg#*=}" ;;
-	    --CXXFLAGS=*)
-		    CXXFLAGS="${arg#*=}" ;;
+    --CXX=*)
+	    CXX="${arg#*=}" ;;
+	--CXXFLAGS=*)
+	    CXXFLAGS="${arg#*=}" ;;
         
-        --AR=*)
-            AR="${arg#*=}" ;;
-        --ARFLAGS=*)
+    --AR=*)
+        AR="${arg#*=}" ;;
+    --ARFLAGS=*)
             ARFLAGS="${arg#*=}" ;;
 
-        --BUILD-DIR=*)
-            BUILD="${arg#*=}" ;;
-        --OUTPUT=*)
-            OUTPUT="${arg#*=}" ;;
-
-        --target=*)
-            target=$(echo "$arg" | sed 's/--target=//') ;;
-        *)
-            ShowError $ArgsErrorExit "Invalid argument: $arg" ;;
+    --BUILD-DIR=*)
+        BUILD="${arg#*=}" ;;
+    --OUTPUT=*)
+        OUTPUT="${arg#*=}" ;;
+    
+    --target=*)
+        target=$(echo "$arg" | sed 's/--target=//') ;;
+    *)
+        ShowError $ArgsErrorExit "Invalid argument: $arg" ;;
     esac
 done
 
