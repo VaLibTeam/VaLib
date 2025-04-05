@@ -1,0 +1,156 @@
+// VaLib - Vast Library
+// Licensed under GNU GPL v3 License. See LICENSE file.
+// (C) 2025 VaLibTeam
+#pragma once
+
+#include <Types/BasicTypedef.hpp>
+#include <VaLib.hpp>
+
+class VaString;
+
+/**
+ * @class VaImmutableString string implementation for VaLib.
+ * @ingroup String.
+ * 
+ * @note VaImmutableString is immutable, meaning it is not a good choice if you perform many string operations.
+ * @note If you need a mutable string, you can use @ref VaString.
+ */
+class VaImmutableString {
+  protected:
+    /**
+     * @brief Variable storing the length of the string.
+     */
+    Size len;
+
+    /**
+     * @brief Raw string data.
+     * 
+     * @note Data is not null-terminated. The length is managed by the @ref len variable.
+     */
+    char* data;
+
+    friend class VaString;
+
+  public:
+    VaImmutableString();
+    VaImmutableString(const std::string& str);
+    VaImmutableString(const char* str);
+    VaImmutableString(const char* str, Size size);
+    VaImmutableString(const VaImmutableString& str);
+    VaImmutableString(const VaString& str);
+    VaImmutableString(VaImmutableString&& str) noexcept;
+
+    ~VaImmutableString();
+
+    VaImmutableString& operator=(const VaImmutableString& other);
+    VaImmutableString& operator=(VaImmutableString&& other) noexcept;
+
+    /**
+     * @brief Concatenates two VaImmutableString objects into a new VaImmutableString.
+     * 
+     * @param str The VaImmutableString to concatenate with this one.
+     * @return A new VaImmutableString containing the concatenated result.
+     */
+    VaImmutableString operator+(const VaImmutableString& str) const;
+
+    /**
+     * @brief Concatenates a VaImmutableString with a null-terminated C-style string.
+     * 
+     * @param str The C-style string to concatenate with this VaImmutableString.
+     * @return A new VaImmutableString containing the concatenated result.
+     */
+    VaImmutableString operator+(const char* str) const;
+
+    /**
+     * @brief Appends a single character to this VaImmutableString.
+     * @param ch The character to append.
+     * @return A new VaImmutableString containing the result of appending the character.
+     */
+    VaImmutableString operator+(char ch) const;
+
+    /**
+     * @brief Appends the content of another VaImmutableString to this string.
+     * 
+     * @param other The VaImmutableString instance to append to this string.
+     * @return VaImmutableString& A reference to the modified VaImmutableString instance.
+     */
+    inline VaImmutableString& operator+=(const VaImmutableString& other) {
+        *this = *this + other;
+        return *this;
+    }
+
+    /**
+     * @brief Checks if two strings are the same.
+     * 
+     * @param other The other string to compare with this one
+     */
+    bool operator==(const VaImmutableString& other) const;
+
+    /**
+     * @brief Checks if two strings are *not* the same.
+     * 
+     * @param other The other string to compare with this one.
+     * 
+     * @note Inverse of @ref operator==.
+     */
+    bool operator!=(const VaImmutableString& other) const;
+
+    /**
+     * @brief Converts VaImmutableString to a std::string from C++ stdlib.
+     * 
+     * @return std::string containing data from VaImmutableString (data is copied)
+     */
+    std::string toStdString() const;
+
+    /**
+     * @brief Converts VaImmutableString to a C-style string (char pointer).
+     * 
+     * @return C-style string, which is a copy of the VaImmutableString's data.
+     * 
+     * @warning This function uses new[] to allocate memory for the new string. You must manually release this memory with delete[] later
+     */
+    char* toCStyleString() const;
+
+    /**
+     * @brief Accessing specific characters in the string.
+     * 
+     * @param index The index of the character to return.
+     * 
+     * @warning The char type in C++ is only 1 byte, so if the string contains non-ANSI characters, this may not work as expected.
+     * @warning Since VaImmutableString is *immutable*, this function returns a copy, not a reference or modifiable value.
+     * 
+     * @throw If the index is out of the string's bounds, the function throws an IndexOutOfRangeError
+     */
+    char operator[](size_t index) const;
+
+    TODO(_maqix_, "Add find functions.");
+    // Size find(const VaImmutableString&) const;
+    // Size find(const char*) const;
+
+    TODO(_maqix_, "Add substr function.");
+    // VaImmutableString substr(Size start, Size len = npos) const;
+
+    /**
+     * @brief Returns whether the string is empty.
+     */
+    bool isEmpty() const;
+
+    /**
+     * @brief Constant representing no position.
+     * 
+     * @note Returned by various search methods (e.g., @ref find) when nothing is found.
+     */
+    static constexpr Size npos = -1;
+
+    /**
+     * @brief Returns the length of the given VaImmutableString.
+     *
+     * @param str The string whose length is returned.
+     * @return The length of the string.
+     *  
+     * @note This is not a method, but a free-standing function.
+     */
+    friend inline Size len(const VaImmutableString& str) { return str.len; }
+};
+
+std::ostream& operator<<(std::ostream& os, VaImmutableString str);

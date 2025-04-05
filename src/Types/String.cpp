@@ -1,0 +1,204 @@
+// VaLib - Vast Library
+// Licensed under GNU GPL v3 License. See LICENSE file.
+// (C) 2025 VaLibTeam
+
+#include <Types/BasicTypedef.hpp>
+#include <Types/ImmutableString.hpp>
+#include <Types/String.hpp>
+
+#include <algorithm>
+#include <cstring>
+#include <stdexcept>
+#include <string>
+
+VaString::VaString() : len(0), cap(0) { data = nullptr; }
+
+VaString::VaString(const std::string& str) : len(str.size()), cap(str.size()) {
+    data = new char[cap];
+    std::memcpy(data, str.data(), len);
+}
+
+VaString::VaString(const VaImmutableString& str) : len(str.len), cap(str.len) {
+    data = new char[cap];
+    std::memcpy(data, str.data, len);
+}
+
+VaString::VaString(const char* str) : len(std::strlen(str)), cap(len) {
+    data = new char[cap];
+    std::memcpy(data, str, len);
+}
+
+VaString::VaString(const char* str, Size size) : len(size), cap(size) {
+    data = new char[cap];
+    std::memcpy(data, str, len);
+}
+
+VaString::VaString(Size count, char c) : len(count), cap(count) {
+    data = new char[cap];
+    std::memset(data, c, len);
+}
+
+VaString::VaString(const VaString& other) : len(other.len), cap(other.cap) {
+    data = new char[cap];
+    std::memcpy(data, other.data, len);
+}
+
+VaString::VaString(VaString&& other) noexcept : len(other.len), cap(other.cap), data(other.data) {
+    other.data = nullptr;
+    other.len = 0;
+    other.cap = 0;
+}
+
+VaString::~VaString() { delete[] data; }
+
+void VaString::resize(Size newCap) {
+    if (newCap <= cap) return;
+
+    char* newData = new char[newCap];
+    if (data) {
+        std::memcpy(newData, data, len);
+        delete[] data;
+    }
+    data = newData;
+    cap = newCap;
+}
+
+VaString& VaString::operator=(const VaString& other) {
+    if (this != &other) {
+        delete[] data;
+        len = other.len;
+        cap = other.cap;
+        data = new char[cap];
+        std::memcpy(data, other.data, len);
+    }
+    return *this;
+}
+
+VaString& VaString::operator=(VaString&& other) noexcept {
+    if (this != &other) {
+        delete[] data;
+        data = other.data;
+        len = other.len;
+        cap = other.cap;
+        other.data = nullptr;
+        other.len = 0;
+        other.cap = 0;
+    }
+    return *this;
+}
+
+VaString VaString::operator+(const VaString& other) const {
+    VaString result(*this);
+    result += other;
+    return result;
+}
+
+VaString VaString::operator+(const char* str) const {
+    VaString result(*this);
+    result += str;
+    return result;
+}
+
+VaString VaString::operator+(char ch) const {
+    VaString result(*this);
+    result += ch;
+    return result;
+}
+
+VaString& VaString::operator+=(const VaString& other) {
+    const Size newLen = len + other.len;
+    if (newLen > cap) {
+        resize(std::max(newLen, cap * 2));
+    }
+    std::memcpy(data + len, other.data, other.len);
+    len = newLen;
+    return *this;
+}
+
+VaString& VaString::append(const char* str, Size strLen) {
+    const Size newLen = len + strLen;
+    if (newLen > cap) {
+        resize(std::max(newLen, cap * 2));
+    }
+    std::memcpy(data + len, str, strLen);
+    len = newLen;
+    return *this;
+}
+
+VaString& VaString::operator+=(char ch) {
+    const Size newLen = len + 1;
+    if (newLen > cap) {
+        resize(std::max(newLen, cap * 2));
+    }
+    data[len] = ch;
+    len = newLen;
+    return *this;
+}
+
+bool VaString::operator==(const VaString& other) const {
+    return len == other.len && std::memcmp(data, other.data, len) == 0;
+}
+
+bool VaString::operator!=(const VaString& other) const { return !(*this == other); }
+
+char& VaString::operator[](Size index) {
+    if (index >= len) throw std::out_of_range("Index out of range");
+    return data[index];
+}
+
+const char& VaString::operator[](Size index) const {
+    if (index >= len) throw std::out_of_range("Index out of range");
+    return data[index];
+}
+
+std::string VaString::toStdString() const { return std::string(data, len); }
+
+char* VaString::toCStyleString() const {
+    char* cstr = new char[len + 1];
+    std::memcpy(cstr, data, len);
+    cstr[len] = '\0';
+    return cstr;
+}
+
+char* VaString::getData() { return data; }
+
+const char* VaString::getData() const { return data; }
+
+bool VaString::isEmpty() const { return len == 0; }
+
+Size VaString::find(const VaString& substr) const {
+    if (substr.len == 0 || len < substr.len) {
+        return npos;
+    }
+
+    for (Size i = 0; i <= len - substr.len; ++i) {
+        bool match = true;
+        for (Size j = 0; j < substr.len; ++j) {
+            if (data[i + j] != substr.data[j]) {
+                match = false;
+                break;
+            }
+        }
+        if (match) {
+            return i;
+        }
+    }
+    return npos;
+}
+
+VaString VaString::substr(Size start, Size length) const {
+    if (start >= len) {
+        return "";
+    }
+
+    if (length == npos || start + length > len) {
+        length = len - start;
+    }
+
+    return VaString(data + start, length);
+}
+
+std::ostream& operator<<(std::ostream& os, const VaString& str) {
+    os << str.toStdString();
+    return os;
+}

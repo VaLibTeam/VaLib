@@ -1,0 +1,23 @@
+BasedOnStyle: LLVM
+
+IndentWidth: 4
+
+# 1. Pozwala na jednolinijkowe if'y i pętle bez klamerek
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
+
+# 2. Umieszcza * i & przy typie
+PointerAlignment: Left
+
+# 3. Template'y w oddzielnej linii od deklaracji
+# BreakBeforeTemplateDeclarations: Always
+
+# 4. Nie dodaje spacji przed `:` w dziedziczeniu
+SpaceBeforeInheritanceColon: False
+
+ColumnLimit: 100
+AlwaysBreakTemplateDeclarations: true
+
+ReflowComments: false
+CommentPragmas: '^'
