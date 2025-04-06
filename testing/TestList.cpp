@@ -2,14 +2,16 @@
 // Licensed under GNU GPL v3 License. See LICENSE file.
 // (C) 2025 VaLibTeam
 
-#include <lib/testing.hpp>
-#include <iostream>
+#define VaLib_USE_CONCEPTS
+
 #include <Types/List.hpp>
+#include <iostream>
+#include <lib/testing.hpp>
 
 bool testList(testing::Test& t) {
     VaList<int> numbers = {1, 2, 3};
     for (int i = 0; i < len(numbers); i++) {
-        if (numbers[i] != i+1) {
+        if (numbers[i] != i + 1) {
             return t.fail("Unexpected result");
         }
     }
@@ -39,6 +41,10 @@ bool testList(testing::Test& t) {
         return t.fail("Append didn't work correctly");
     }
 
+    if (list.sum() != (10 + 20 + 30)) {
+        return t.fail("Sum didn't work correctly");
+    }
+
     VaList<int> list2 = list;
     list2.extend(list);
 
@@ -49,6 +55,4 @@ bool testList(testing::Test& t) {
     return t.success();
 }
 
-int main() {
-    return testing::run(testList);
-}
+int main() { return testing::run(testList); }

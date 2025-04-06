@@ -2,15 +2,15 @@
 // Licensed under GNU GPL v3 License. See LICENSE file.
 // (C) 2025 VaLibTeam
 
-#include <Types/String.hpp>
 #include <Types/ImmutableString.hpp>
+#include <Types/String.hpp>
 #include <toString.hpp>
 
 #include <lib/testing.hpp>
 
+#include <cstring>
 #include <iostream>
 #include <ostream>
-#include <cstring>
 
 bool testString(testing::Test& t) {
     t.setState("testing concatenation of two strings");
@@ -60,6 +60,4 @@ bool testString(testing::Test& t) {
     return t.success();
 }
 
-int main() {
-    return testing::run(testString);
-}
+int main() { return testing::run(testString); }

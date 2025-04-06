@@ -4,6 +4,7 @@
 
 #include <Types/BasicTypedef.hpp>
 #include <Types/ImmutableString.hpp>
+#include <Types/Error.hpp>
 #include <Types/String.hpp>
 
 #include <algorithm>
@@ -11,34 +12,34 @@
 #include <stdexcept>
 #include <string>
 
-VaString::VaString() : len(0), cap(0) { data = nullptr; }
+VaString::VaString() noexcept : len(0), cap(0) { data = nullptr; }
 
-VaString::VaString(const std::string& str) : len(str.size()), cap(str.size()) {
+VaString::VaString(const std::string& str) noexcept : len(str.size()), cap(str.size()) {
     data = new char[cap];
     std::memcpy(data, str.data(), len);
 }
 
-VaString::VaString(const VaImmutableString& str) : len(str.len), cap(str.len) {
+VaString::VaString(const VaImmutableString& str) noexcept : len(str.len), cap(str.len) {
     data = new char[cap];
     std::memcpy(data, str.data, len);
 }
 
-VaString::VaString(const char* str) : len(std::strlen(str)), cap(len) {
+VaString::VaString(const char* str) noexcept : len(std::strlen(str)), cap(len) {
     data = new char[cap];
     std::memcpy(data, str, len);
 }
 
-VaString::VaString(const char* str, Size size) : len(size), cap(size) {
+VaString::VaString(const char* str, Size size) noexcept : len(size), cap(size) {
     data = new char[cap];
     std::memcpy(data, str, len);
 }
 
-VaString::VaString(Size count, char c) : len(count), cap(count) {
+VaString::VaString(Size count, char c) noexcept : len(count), cap(count) {
     data = new char[cap];
     std::memset(data, c, len);
 }
 
-VaString::VaString(const VaString& other) : len(other.len), cap(other.cap) {
+VaString::VaString(const VaString& other) noexcept : len(other.len), cap(other.cap) {
     data = new char[cap];
     std::memcpy(data, other.data, len);
 }
@@ -49,7 +50,7 @@ VaString::VaString(VaString&& other) noexcept : len(other.len), cap(other.cap), 
     other.cap = 0;
 }
 
-VaString::~VaString() { delete[] data; }
+VaString::~VaString() noexcept { delete[] data; }
 
 void VaString::resize(Size newCap) {
     if (newCap <= cap) return;
@@ -105,7 +106,7 @@ VaString VaString::operator+(char ch) const {
     return result;
 }
 
-VaString& VaString::operator+=(const VaString& other) {
+VaString& VaString::operator+=(const VaString& other) noexcept {
     const Size newLen = len + other.len;
     if (newLen > cap) {
         resize(std::max(newLen, cap * 2));
@@ -115,7 +116,7 @@ VaString& VaString::operator+=(const VaString& other) {
     return *this;
 }
 
-VaString& VaString::append(const char* str, Size strLen) {
+VaString& VaString::append(const char* str, Size strLen) noexcept {
     const Size newLen = len + strLen;
     if (newLen > cap) {
         resize(std::max(newLen, cap * 2));
@@ -125,7 +126,7 @@ VaString& VaString::append(const char* str, Size strLen) {
     return *this;
 }
 
-VaString& VaString::operator+=(char ch) {
+VaString& VaString::operator+=(char ch) noexcept {
     const Size newLen = len + 1;
     if (newLen > cap) {
         resize(std::max(newLen, cap * 2));
@@ -135,19 +136,27 @@ VaString& VaString::operator+=(char ch) {
     return *this;
 }
 
-bool VaString::operator==(const VaString& other) const {
+bool VaString::operator==(const VaString& other) const noexcept {
     return len == other.len && std::memcmp(data, other.data, len) == 0;
 }
 
-bool VaString::operator!=(const VaString& other) const { return !(*this == other); }
+bool VaString::operator!=(const VaString& other) const noexcept { return !(*this == other); }
 
-char& VaString::operator[](Size index) {
-    if (index >= len) throw std::out_of_range("Index out of range");
+char& VaString::operator[](Size index) noexcept {
     return data[index];
 }
 
-const char& VaString::operator[](Size index) const {
-    if (index >= len) throw std::out_of_range("Index out of range");
+const char& VaString::operator[](Size index) const noexcept {
+    return data[index];
+}
+
+char& VaString::at(Size index) {
+    if (index >= len) throw IndexOutOfTheRangeError(len, index);
+    return data[index];
+}
+
+const char& VaString::at(Size index) const {
+    if (index >= len) throw IndexOutOfTheRangeError(len, index);
     return data[index];
 }
 
@@ -160,9 +169,9 @@ char* VaString::toCStyleString() const {
     return cstr;
 }
 
-char* VaString::getData() { return data; }
+char* VaString::getData() noexcept { return data; }
 
-const char* VaString::getData() const { return data; }
+const char* VaString::getData() const noexcept { return data; }
 
 bool VaString::isEmpty() const { return len == 0; }
 

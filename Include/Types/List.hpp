@@ -6,9 +6,13 @@
 #include <cstdlib>
 
 #include <Types/BasicTypedef.hpp>
+#include <Types/Error.hpp>
 
 #include <initializer_list>
 #include <utility>
+
+template <typename T>
+class VaSlice;
 
 template <typename T>
 class VaList {
@@ -19,7 +23,7 @@ class VaList {
     void resize(Size newCap) {
         T* newData = new T[newCap];
         for (Size i = 0; i < len; i++) {
-            newData[i] = std::move(data[i]);
+            newData[i] = data[i];
         }
         delete[] data;
         data = newData;
@@ -31,6 +35,8 @@ class VaList {
     inline void update() {
         if (len >= cap) expand();
     }
+
+    friend class VaSlice<T>;
 
   public:
     VaList() : len(0), cap(0), data(nullptr) {}
@@ -88,6 +94,10 @@ class VaList {
         return *this;
     }
 
+    inline void reserve(Size minCap) {
+        if (minCap > cap) resize(minCap);
+    }
+
     void append(const T& elm) {
         update();
         data[len++] = elm;
@@ -100,14 +110,18 @@ class VaList {
 
     void extend(const VaList& other) { *this += other; }
 
-    T& operator[](Size index) {
-        // if (len < index) {
-        //     throw
-        // }
+    T& operator[](Size index) { return data[index]; }
+    const T& operator[](Size index) const { return data[index]; }
+
+    T& at(Size index) {
+        if (index >= len) throw IndexOutOfTheRangeError(len, index);
         return data[index];
     }
 
-    const T& operator[](Size index) const { return data[index]; }
+    const T& at(Size index) const {
+        if (index >= len) throw IndexOutOfTheRangeError(len, index);
+        return data[index];
+    }
 
     VaList operator+(const VaList& other) const {
         VaList result;
@@ -141,16 +155,35 @@ class VaList {
 
     bool operator!=(const VaList& other) const { return !(*this == other); }
 
-    // #ifdef VaLib_USE_CONCEPTS
-    //     concept Addable = requires(T x, T y) {
-    //         { x + y } -> std::same_as<T>;
-    //     };
+#ifdef VaLib_USE_CONCEPTS
+    template <Addable A = T>
+    A sum() const {
+        if (len <= 0) return A{};
+        A v = at(0);
+        for (Size i = 1; i < len; i++) {
+            v += at(i);
+        }
+        return v;
+    }
+#endif
 
-    //     template <Addable A = T>
-    //     A sum() {
-    //         TODO(_maqix_, "todo")
-    //     }
-    // #endif
+    template <typename U = T>
+    std::enable_if_t<std::is_same_v<U, VaString>, VaString> join(const VaString& sep) const {
+        if (len == 0) return VaString{};
+        VaString result = data[0];
+        for (Size i = 1; i < len; i++) {
+            result += sep + data[i];
+        }
+        return result;
+    }
+
+    inline T* getData() {
+        return data;
+    }
+
+    inline const T* getData() const {
+        return data;
+    }
 
     T* begin() { return data; }
     T* end() { return data + len; }

@@ -4,8 +4,8 @@
 
 #include <lib/benchmark.hpp>
 
-#include <VaLib.hpp>
 #include <Types/ImmutableString.hpp>
+#include <VaLib.hpp>
 
 Time benchmarkImmutableString(benchmarking::Benchmark& b) {
     b.start();
@@ -21,5 +21,9 @@ Time benchmarkImmutableString(benchmarking::Benchmark& b) {
 }
 
 int main() {
-    benchmarking::run(benchmarkImmutableString, 30);
+    std::cout << "sizeof(std::string): " << sizeof(std::string) << ", sizeof(VaString): " << sizeof(VaString) << "\n"; 
+    // return benchmarking::run(benchmarkImmutableString, 30);
+    std::cout << "BenchmarkImmutableString: skipping. ImmutableString is not designed for "
+                 "demanding operations, benchmarking it doesn't make sense.";
+    return 0;
 }

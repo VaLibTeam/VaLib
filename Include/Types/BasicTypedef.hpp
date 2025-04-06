@@ -52,3 +52,19 @@ using WeakPtr = std::weak_ptr<T>;
 // ---
 
 typedef size_t Size;
+
+#ifdef VaLib_USE_CONCEPTS
+#include <concepts>
+
+template <typename T>
+concept Addable = requires(T x, T y) {
+    { x + y } -> std::convertible_to<T>;
+    { x += y } -> std::convertible_to<T&>;
+};
+
+template <typename T>
+concept Ordered = requires(T a, T b) {
+    { a < b } -> std::convertible_to<bool>;
+};
+
+#endif

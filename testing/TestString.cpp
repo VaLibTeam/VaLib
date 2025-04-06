@@ -2,15 +2,15 @@
 // Licensed under GNU GPL v3 License. See LICENSE file.
 // (C) 2025 VaLibTeam
 
-#include <Types/String.hpp>
 #include <Types/ImmutableString.hpp>
+#include <Types/String.hpp>
 #include <toString.hpp>
 
 #include <lib/testing.hpp>
 
+#include <cstring>
 #include <iostream>
 #include <ostream>
-#include <cstring>
 
 bool testString(testing::Test& t) {
     t.setState("testing concatenation of two strings");
@@ -38,7 +38,8 @@ bool testString(testing::Test& t) {
         return t.fail("Conversion from const char* to VaString failed");
     }
 
-    t.setState("testing conversions to other string types (std::string, char*, VaImmutableString, ...)");
+    t.setState(
+        "testing conversions to other string types (std::string, char*, VaImmutableString, ...)");
     test = "Hello, mars?";
     std::string s1 = test.toStdString();
 
@@ -58,14 +59,13 @@ bool testString(testing::Test& t) {
     }
 
     t.setState("testing a string with null terminators");
-    VaString strWithNullTerminator = makeVaString("\0Hello, \0World!\0\0");
-    if (strWithNullTerminator != makeVaString("\0Hello, \0World!\0\0") || strWithNullTerminator[0] != '\0') {
+    VaString strWithNullTerminator = VaString::Make("\0Hello, \0World!\0\0");
+    if (strWithNullTerminator != VaString::Make("\0Hello, \0World!\0\0") ||
+        strWithNullTerminator[0] != '\0') {
         return t.fail("Unexpected result when creating a string with zero bytes");
     }
 
     return t.success();
 }
 
-int main() {
-    return testing::run(testString);
-}
+int main() { return testing::run(testString); }

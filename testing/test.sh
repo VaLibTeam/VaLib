@@ -7,7 +7,7 @@ cd "$(dirname "$0")" || exit 1
 source "../scripts/utils.sh" || exit 1
 
 CXX="${CXX:-g++}"
-CXXFLAGS="${CXXFLAGS:-"-std=c++20 -O2 -fPIC"}"
+CXXFLAGS="${CXXFLAGS:-"-std=c++20 -O3 -fPIC"}"
 
 includePath=(
     "../Include"
@@ -63,23 +63,13 @@ Benchmark() {
     exitCode="$?"
 
     if [[ $exitCode -ne 0 ]]; then
-        echo -e "\033[31;1m" "$testFile: fail." "\033[0m\033[31mExit code: $exitCode" "\033[0m"
+        echo -e "\033[31;1m" "$benchFile: fail." "\033[0m\033[31mExit code: $exitCode" "\033[0m"
         return 1
     else
-        echo -e  "\033[32;1m" "$testFile: success." "\033[0m"
+        echo -e  "\033[32;1m" "$benchFile: success." "\033[0m"
         return 0
     fi
 }
-
-allTests=()
-while IFS= read -r file; do
-    allTests+=("$(basename "$file" .cpp)")
-done < <(find . -iname "Test*.cpp")
-
-allBenchmarks=()
-while IFS= read -r file; do
-    allBenchmarks+=("$(basename "$file" .cpp)")
-done < <(find . -iname "Benchmark*.cpp")
 
 tests=()
 benchmarks=()
@@ -93,58 +83,71 @@ for arg in "$@"; do
     esac
 done
 
-
-if [[ "${#tests[@]}" -le 0 ]]; then
-    tests=("${allTests[@]}")
-fi
-
-if [[ "${#benchmarks[@]}" -le 0 ]]; then
-    benchmarks=("${allBenchmarks[@]}")
-fi
-
-passed=0
-failed=0
-
-ShowInfo "Running tests..."
-for test in "${tests[@]}"; do
-    if Test "$test"; then
-        ((passed++))
-    else
-        ((failed++))
-    fi
-done
-
 totalTests="${#tests[@]}"
 totalBenchmarks="${#benchmarks[@]}"
 
-if [[ $passed -eq $totalTests ]]; then
-    ShowSuccess "All tests have passed!"
-elif [[ $failed -eq $totalTests ]]; then
-    ShowWarn "All tests failed"
-else
-    ShowWarn "Some tests failed (failed $failed/$totalTests)"
+if [[ $totalTests -le 0 && $totalBenchmarks -le 0 ]]; then
+
+    allTests=()
+    while IFS= read -r file; do
+        allTests+=("$(basename "$file" .cpp)")
+    done < <(find . -iname "Test*.cpp")
+
+    allBenchmarks=()
+    while IFS= read -r file; do
+        allBenchmarks+=("$(basename "$file" .cpp)")
+    done < <(find . -iname "Benchmark*.cpp")
+
+    tests=("${allTests[@]}")
+    benchmarks=("${allBenchmarks[@]}")
+    totalTests="${#tests[@]}"
+    totalBenchmarks="${#benchmarks[@]}"
 fi
 
-echo
+if [[ $totalTests -gt 0 ]]; then
+    passed=0
+    failed=0
 
-passed=0
-failed=0
+    ShowInfo "Running tests..."
+    for test in "${tests[@]}"; do
+        if Test "$test"; then
+            ((passed++))
+        else
+            ((failed++))
+        fi
+    done
 
-ShowInfo "Running benchmarks..."
-for bench in "${benchmarks[@]}"; do
-    if Benchmark "$bench"; then
-        ((passed++))
+    if [[ $passed -eq $totalTests ]]; then
+        ShowSuccess "All tests have passed!"
+    elif [[ $failed -eq $totalTests ]]; then
+        ShowWarn "All tests failed"
     else
-        ((failed++))
+        ShowWarn "Some tests failed (failed $failed/$totalTests)"
     fi
-done
 
-if [[ $passed -eq $totalTests ]]; then
-    ShowSuccess "all benchmarks have been run successfully!"
-elif [[ $failed -eq $totalTests ]]; then
-    ShowWarn "All benchmarks failed"
-else
-    ShowWarn "Some benchmarks failed (failed $failed/$totalBenchmarks)"
+    echo
+fi
+
+if [[ $totalBenchmarks -gt 0 ]]; then
+    passed=0
+    failed=0
+
+    ShowInfo "Running benchmarks..."
+    for bench in "${benchmarks[@]}"; do
+        if Benchmark "$bench"; then
+            ((passed++))
+        else
+            ((failed++))
+        fi
+    done
+
+    if [[ $passed -eq $totalBenchmarks ]]; then
+        ShowSuccess "all benchmarks have been run successfully!"
+    elif [[ $failed -eq $totalBenchmarks ]]; then
+        ShowWarn "All benchmarks failed"
+    else
+        ShowWarn "Some benchmarks failed (failed $failed/$totalBenchmarks)"
+    fi
 fi
 
 exit $SuccessExit

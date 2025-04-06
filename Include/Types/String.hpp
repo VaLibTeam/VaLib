@@ -4,6 +4,7 @@
 #pragma once
 
 #include <Types/BasicTypedef.hpp>
+
 #include <cstring>
 
 #if __cplusplus >= 202002L
@@ -49,40 +50,40 @@ class VaString {
     /**
      * @brief Default constructor. Initializes an empty string.
      */
-    VaString();
+    VaString() noexcept;
 
     /**
      * @brief Constructs a VaString from a std::string.
      * @param str The std::string to initialize from.
      */
-    VaString(const std::string& str);
+    VaString(const std::string& str) noexcept;
 
     /**
      * @brief Constructs a VaString from a C-style string.
      * @param str The C-style string to initialize from.
      */
-    VaString(const char* str);
+    VaString(const char* str) noexcept;
 
     /**
      * @brief Constructs a VaString from a C-style string with a specified size
      * @param str The C-style string to initialize from
      * @param size The number of characters to copy
      */
-    VaString(const char* str, Size size);
+    VaString(const char* str, Size size) noexcept;
 
-    VaString(Size count, char c);
+    VaString(Size count, char c) noexcept;
 
     /**
      * @brief Copy constructor. Creates a copy of another VaString
      * @param other The VaString to copy from
      */
-    VaString(const VaString& other);
+    VaString(const VaString& other) noexcept;
 
     /**
      * @brief Constructs a VaString from a VaImmutableString
      * @param other The VaImmutableString to initialize from
      */
-    VaString(const VaImmutableString& other);
+    VaString(const VaImmutableString& other) noexcept;
 
     /**
      * @brief Move constructor. Transfers ownership from another VaString
@@ -93,7 +94,22 @@ class VaString {
     /**
      * @brief Destructor. Releases the allocated memory.
      */
-    ~VaString();
+    ~VaString() noexcept;
+
+
+    /**
+     * @brief Creates a VaString object from a given C-style string.
+     * 
+     * @tparam N The size of the input C-style string.
+     * @param str A reference to a constant C-style string array.
+     * @return VaString An instance of VaString initialized with the input string and its size.
+     * 
+     * @note The input string must be a null-terminated C-style string.
+     */
+    template <Size N>
+    static inline VaString Make(const char (&str)[N]) {
+        return VaString(str, N);
+    }
 
     /**
      * @brief Ensures that the string has at least the specified minimum capacity.
@@ -104,9 +120,7 @@ class VaString {
      * @param minCap The minimum capacity to reserve for the string.
      */
     inline void reserve(Size minCap) {
-        if (minCap > cap) {
-            resize(minCap);
-        }
+        if (minCap > cap) resize(minCap);
     }
 
     /**
@@ -157,7 +171,7 @@ class VaString {
      * 
      * @return A reference to the modified VaString object.
      */
-    VaString& append(const char* str, Size strLen);
+    VaString& append(const char* str, Size strLen) noexcept;
 
     /**
      * @brief Appends a C-style string to the current VaString object.
@@ -170,60 +184,83 @@ class VaString {
      * @return VaString& A reference to the current VaString object after the
      *         string has been appended.
      */
-    inline VaString& append(const char* str) {
-        return append(str, std::strlen(str));
-    }
+    inline VaString& append(const char* str) { return append(str, std::strlen(str)); }
 
     /**
      * @brief Appends another VaString to the current string.
      * @param other The VaString to append.
      * @return Reference to the current object.
      */
-    VaString& operator+=(const VaString& other);
+    VaString& operator+=(const VaString& other) noexcept;
 
     /**
      * @brief Appends a C-style string to the current string.
      * @param str The C-style string to append.
      * @return Reference to the current object.
      */
-    inline VaString& operator+=(const char* str) {
-        return append(str);
-    }
+    inline VaString& operator+=(const char* str) { return append(str); }
 
     /**
      * @brief Appends a single character to the current string.
      * @param ch The character to append.
      * @return Reference to the current object.
      */
-    VaString& operator+=(char ch);
+    VaString& operator+=(char ch) noexcept;
 
     /**
      * @brief Compares two VaStrings for equality.
      * @param other The VaString to compare with.
      * @return True if the strings are equal, false otherwise.
      */
-    bool operator==(const VaString& other) const;
+    bool operator==(const VaString& other) const noexcept;
 
     /**
      * @brief Compares two VaStrings for inequality.
      * @param other The VaString to compare with.
      * @return True if the strings are not equal, false otherwise.
      */
-    bool operator!=(const VaString& other) const;
+    /**
+     * @brief Compares two VaStrings for inequality.
+     * @param other The VaString to compare with.
+     * @return True if the strings are not equal, false otherwise.
+     */
+    bool operator!=(const VaString& other) const noexcept;
 
     /**
      * @brief Provides access to a character at a specific index.
-     * @param index The index of the character.
-     * @return Reference to the character at the specified index.
+     * @param index The index of the character to access.
+     * @return A reference to the character at the specified index.
+     * 
+     * @note No bounds checking is performed. Accessing an out-of-bounds index results in undefined behavior.
      */
-    char& operator[](Size index);
+    char& operator[](Size index) noexcept;
 
     /**
      * @brief Provides read-only access to a character at a specific index.
-     * @param index The index of the character.
-     * @return Const reference to the character at the specified index.
+     * @param index The index of the character to access.
+     * @return A constant reference to the character at the specified index.
+     * 
+     * @note No bounds checking is performed. Accessing an out-of-bounds index results in undefined behavior.
      */
-    const char& operator[](Size index) const;
+    const char& operator[](Size index) const noexcept;
+
+    /**
+     * @brief Provides access to a character at a specific index with bounds checking.
+     * @param index The index of the character to access.
+     * @return A reference to the character at the specified index.
+     * 
+     * @throws IndexOutOfRangeError if the index is greater than or equal to the length of the string.
+     */
+    char& at(Size index);
+
+    /**
+     * @brief Provides read-only access to a character at a specific index with bounds checking.
+     * @param index The index of the character to access.
+     * @return A constant reference to the character at the specified index.
+     * 
+     * @throws IndexOutOfRangeError if the index is greater than or equal to the length of the string.
+     */
+    const char& at(Size index) const;
 
     /**
      * @brief Converts the VaString to a std::string.
@@ -246,7 +283,7 @@ class VaString {
      * @note The returned pointer is not null-terminated and points to the internal data of the string.
      *       Modifying the data through this pointer will affect the VaString object.
      */
-    char* getData();
+    char* getData() noexcept;
 
     /**
      * @brief  Provides access to the internal C-style string representation.
@@ -254,7 +291,7 @@ class VaString {
      * 
      * @note The returned pointer isn't null-terminated and must not be modified.
      */
-    const char* getData() const;
+    const char* getData() const noexcept;
 
 #if __cplusplus >= 202002L
     inline std::span<char> span() noexcept { return std::span<char>(data, len); }
@@ -303,8 +340,3 @@ class VaString {
 };
 
 std::ostream& operator<<(std::ostream& os, const VaString& str);
-
-template <Size N>
-inline VaString makeVaString(const char (&str)[N]) {
-    return VaString(str, N);
-}

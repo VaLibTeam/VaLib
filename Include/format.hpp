@@ -5,6 +5,7 @@
 
 #include <Types/String.hpp>
 #include <cstdio>
+#include <iostream>
 
 namespace va {
 

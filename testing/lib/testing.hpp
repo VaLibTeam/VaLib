@@ -5,8 +5,8 @@
 
 #include <iostream>
 
-#include <VaLib.hpp>
 #include <Types/String.hpp>
+#include <VaLib.hpp>
 
 namespace testing {
 
@@ -16,9 +16,7 @@ class Test {
     VaString state;
 
   public:
-    inline void rename(VaString newName) {
-        name = newName;
-    }
+    inline void rename(VaString newName) { name = newName; }
 
     void setState(VaString st) {
         state = st;
