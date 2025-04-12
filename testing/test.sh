@@ -17,14 +17,85 @@ includePath=(
 SuccessExit=0
 CompilationErrorExit=1
 LinkingErrorExit=2
-ErrorExit=3
+EnvironmentErrorExit=3
+ErrorExit=4
 
 OUTDIR="build"
 if [[ "$OUTDIR" = "" ]]; then
     OUTDIR="build"
 fi
 
+buildMode="-L./"
+
 mkdir -p "$OUTDIR"
+verbose=false
+
+tests=()
+benchmarks=()
+
+for arg in "$@"; do
+    case "$arg" in
+    -Test*)
+        tests+=("${arg##-}") ;;
+    -Benchmark*)
+        benchmarks+=("${arg##-}") ;;
+    
+    --echo | --verbose | -v)
+        verbose=true ;;
+
+    --cxx=*)
+	    CXX="${arg#*=}" ;;
+	--cxxflags=*)
+	    CXXFLAGS="${arg#*=}" ;;
+
+    --outdir=*)
+        OUTDIR="${arg#*=}" ;;
+    esac
+done
+
+totalTests="${#tests[@]}"
+totalBenchmarks="${#benchmarks[@]}"
+
+RunTarget() {
+    target="$1"
+    if [[ $verbose = true ]]; then
+        "$target"
+    else
+        "$target" > /dev/null
+    fi
+    return $?
+}
+
+CheckEnvironment() {
+    if ! command -v "$CXX" >/dev/null 2>&1; then
+        ShowError $EnvironmentErrorExit "The C++ compiler needed to compile the tests was not found. try specifying the correct path in the --cxx=<compiler> flag or in the CXX environment variable"
+    fi
+}
+
+CheckLibraries() {
+    if command -v "ldconfig" > /dev/null 2>&1; then
+        if ldconfig -p | grep -q "libvalib.so"; then
+            buildMode="-lvalib"
+            return
+        fi
+    fi
+
+    if [[ -r "./libvalib.so" || -r "build/libvalib.so" ]]; then
+        buildMode="-L./ -L./build/ -lvalib"
+        export LD_LIBRARY_PATH="./build:$LD_LIBRARY_PATH"
+    elif [[ -r "./libvalib.a" || -r "build/libvalib.a" ]]; then
+        buildMode="-L./ -L./build/ -lvalib"
+    elif [[ -r "./libvalib.o" ]]; then
+        buildMode="./libvalib.o"
+    elif [[ -r "build/libvalib.o" ]]; then
+        buildMode="build/libvalib.o"
+    else
+        ../build.sh --target=shared --output="libvalib" || ShowError $ErrorExit "failed to compile valib."
+        mv ../libvalib.so build/libvalib.so
+        buildMode="-L./ -L./build/ -lvalib"
+        export LD_LIBRARY_PATH="./build:$LD_LIBRARY_PATH"
+    fi
+}
 
 Test() {
     testFile="$1"
@@ -33,10 +104,10 @@ Test() {
 
     echo -e "\033[34;1m" "Testing $testFile..." "\033[0m"
 
-    "$CXX" $CXXFLAGS "$testFile.cpp" "${includePath[@]/#/-I}" -c -o "$obj" || ShowError $CompilationErrorExit "The \"$testFile\" test failed to compile."
-    "$CXX" $CXXFLAGS libva.o "$obj" -o "$out" || ShowError $LinkingErrorExit "The \"$testFile\" test failed to link to executable."
+    "$CXX" $CXXFLAGS "$testFile.cpp" "${includePath[@]/#/-I}" -c -o "$obj" > /dev/null || ShowError $CompilationErrorExit "The \"$testFile\" test failed to compile."
+    "$CXX" $CXXFLAGS $buildMode "$obj" -o "$out" || ShowError $LinkingErrorExit "The \"$testFile\" test failed to link to executable."
 
-    "$out"
+    RunTarget "$out"
     exitCode="$?"
 
     if [[ $exitCode -ne 0 ]]; then
@@ -56,10 +127,11 @@ Benchmark() {
     echo -e "\033[35;1m" "Benchmarking $benchFile..." "\033[0m"
 
     "$CXX" $CXXFLAGS "$benchFile.cpp" "${includePath[@]/#/-I}" -c -o "$obj" || ShowError $CompilationErrorExit "Benchmark \"$benchFile\" failed to compile."
-    "$CXX" $CXXFLAGS libva.o "$obj" -o "$out" || ShowError $LinkingErrorExit "Benchmark \"$benchFile\" failed to link."
+    "$CXX" $CXXFLAGS $buildMode "$obj" -o "$out" || ShowError $LinkingErrorExit "Benchmark \"$benchFile\" failed to link."
 
     ShowInfo "start"
-    "$out"
+
+    RunTarget "$out"    
     exitCode="$?"
 
     if [[ $exitCode -ne 0 ]]; then
@@ -71,23 +143,10 @@ Benchmark() {
     fi
 }
 
-tests=()
-benchmarks=()
-
-for arg in "$@"; do
-    case "$arg" in
-    -Test*)
-        tests+=("${arg##-}");;
-    -Benchmark*)
-        benchmarks+=("${arg##-}");;
-    esac
-done
-
-totalTests="${#tests[@]}"
-totalBenchmarks="${#benchmarks[@]}"
+CheckEnvironment
+CheckLibraries
 
 if [[ $totalTests -le 0 && $totalBenchmarks -le 0 ]]; then
-
     allTests=()
     while IFS= read -r file; do
         allTests+=("$(basename "$file" .cpp)")

@@ -4,7 +4,7 @@
 #pragma once
 
 #include <Types/BasicTypedef.hpp>
-#include <VaLib.hpp>
+#include <Utils/BasicDefine.hpp>
 
 class VaString;
 
@@ -42,6 +42,20 @@ class VaImmutableString {
 
     ~VaImmutableString();
 
+    /**
+     * @brief Creates a VaString object from a given C-style string.
+     * 
+     * @tparam N The size of the input C-style string.
+     * @param str A reference to a constant C-style string array.
+     * @return VaString An instance of VaString initialized with the input string and its size.
+     * 
+     * @note The input string must be a null-terminated C-style string.
+     */
+    template <Size N>
+    static inline VaImmutableString Make(const char (&str)[N]) {
+        return VaImmutableString(str, N);
+    }
+
     VaImmutableString& operator=(const VaImmutableString& other);
     VaImmutableString& operator=(VaImmutableString&& other) noexcept;
 
@@ -70,7 +84,6 @@ class VaImmutableString {
 
     /**
      * @brief Appends the content of another VaImmutableString to this string.
-     * 
      * @param other The VaImmutableString instance to append to this string.
      * @return VaImmutableString& A reference to the modified VaImmutableString instance.
      */
@@ -81,14 +94,12 @@ class VaImmutableString {
 
     /**
      * @brief Checks if two strings are the same.
-     * 
      * @param other The other string to compare with this one
      */
     bool operator==(const VaImmutableString& other) const;
 
     /**
      * @brief Checks if two strings are *not* the same.
-     * 
      * @param other The other string to compare with this one.
      * 
      * @note Inverse of @ref operator==.
@@ -104,7 +115,6 @@ class VaImmutableString {
 
     /**
      * @brief Converts VaImmutableString to a C-style string (char pointer).
-     * 
      * @return C-style string, which is a copy of the VaImmutableString's data.
      * 
      * @warning This function uses new[] to allocate memory for the new string. You must manually release this memory with delete[] later
@@ -113,7 +123,6 @@ class VaImmutableString {
 
     /**
      * @brief Accessing specific characters in the string.
-     * 
      * @param index The index of the character to return.
      * 
      * @warning The char type in C++ is only 1 byte, so if the string contains non-ANSI characters, this may not work as expected.
@@ -121,7 +130,7 @@ class VaImmutableString {
      * 
      * @throw If the index is out of the string's bounds, the function throws an IndexOutOfRangeError
      */
-    char operator[](size_t index) const;
+    char operator[](Size index) const;
 
     TODO(_maqix_, "Add find functions.");
     // Size find(const VaImmutableString&) const;
@@ -144,7 +153,6 @@ class VaImmutableString {
 
     /**
      * @brief Returns the length of the given VaImmutableString.
-     *
      * @param str The string whose length is returned.
      * @return The length of the string.
      *  
@@ -152,5 +160,9 @@ class VaImmutableString {
      */
     friend inline Size len(const VaImmutableString& str) { return str.len; }
 };
+
+inline VaImmutableString operator"" _Vis(const char* str, Size size) {
+    return VaImmutableString(str, size);
+}
 
 std::ostream& operator<<(std::ostream& os, VaImmutableString str);

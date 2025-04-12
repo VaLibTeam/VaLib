@@ -18,7 +18,7 @@ namespace va {
 inline VaString sprintf(const VaString& format);
 
 /**
- * @brief Formats a string using a custom implementation of `printf`-style formatting.
+ * @brief Formats a string using a custom implementation of @ref printf-style formatting.
  * 
  * Supported format specifiers:
  * - %d: Formats an integer.
@@ -46,14 +46,16 @@ VaString sprintf(const VaString& format, T value, Args... args);
 /**
  * @brief Prints a formatted string to the standard output.
  * 
- * This function uses the `sprintf` function to format the string and then prints it
- * to the standard output using `std::fprintf`.
+ * This function uses the @ref sprintf function to format the string and then prints it
+ * to the standard output using std::cout.
  * 
  * @tparam T The type of the current argument to format.
  * @tparam Args The types of the remaining arguments.
  * @param format The format string containing specifiers.
  * @param value The value to replace the first specifier in the format string.
  * @param args The remaining arguments to format.
+ * 
+ * @see sprintf
  */
 template <typename T, typename... Args>
 void printf(const VaString& format, T value, Args... args);
@@ -61,18 +63,20 @@ void printf(const VaString& format, T value, Args... args);
 /**
  * @brief Prints a formatted string to the standard output followed by a newline.
  * 
- * This function uses the `sprintf` function to format the string and then prints it
- * to the standard output using `std::fprintf`, appending a newline character at the end.
+ * This function uses the @ref sprintf function to format the string and then prints it
+ * to the standard output using std::cout, appending a newline character at the end.
  * 
  * @tparam T The type of the current argument to format.
  * @tparam Args The types of the remaining arguments.
  * @param format The format string containing specifiers.
  * @param value The value to replace the first specifier in the format string.
  * @param args The remaining arguments to format.
+ * 
+ * @see sprintf
  */
 template <typename T, typename... Args>
 void printlnf(const VaString& format, T value, Args... args);
 
 } // namespace va
 
-#include <format.tpp>
+#include <__Template/format.tpp>

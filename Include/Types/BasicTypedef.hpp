@@ -3,11 +3,13 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
+#include <Types/BasicConcepts.hpp>
+
 #include <stddef.h>
 #include <stdint.h>
-#include <string>
 
 #include <memory>
+#include <string>
 
 typedef uint8_t uint8;
 typedef uint16_t uint16;
@@ -21,6 +23,8 @@ typedef int64_t int64;
 
 typedef float float32;
 typedef double float64;
+
+typedef int32 rune;
 
 typedef void FuncType();
 typedef void (*FuncPtr)();
@@ -52,19 +56,16 @@ using WeakPtr = std::weak_ptr<T>;
 // ---
 
 typedef size_t Size;
+namespace va {
 
-#ifdef VaLib_USE_CONCEPTS
-#include <concepts>
-
-template <typename T>
-concept Addable = requires(T x, T y) {
-    { x + y } -> std::convertible_to<T>;
-    { x += y } -> std::convertible_to<T&>;
-};
+template <typename T, typename = void>
+struct HasEqualityOperator: std::false_type {};
 
 template <typename T>
-concept Ordered = requires(T a, T b) {
-    { a < b } -> std::convertible_to<bool>;
-};
+struct HasEqualityOperator<T, std::void_t<decltype(std::declval<T>() == std::declval<T>())>>
+    : std::true_type {};
 
-#endif
+template <typename T>
+inline constexpr bool HasEqualityOperatorV = HasEqualityOperator<T>::value;
+
+} // namespace va

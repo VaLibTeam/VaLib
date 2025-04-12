@@ -4,7 +4,7 @@
 #pragma once
 
 #include <Types/String.hpp>
-#include <strings.hpp>
+#include <Utils/Strings.hpp>
 
 #include <cstdio>
 
@@ -81,6 +81,10 @@ VaString sprintf(const VaString& format, T value, Args... args) {
             replacement = VaString(value);
         } else if constexpr (std::is_same<T, VaImmutableString>::value) {
             replacement = VaString(value);
+        #ifdef VaLib_USE_CONCEPTS
+        } else if constexpr (Stringer<T>) {
+            replacement = value.toString();
+        #endif
         } else {
             replacement = "InvalidStr";
         }
@@ -107,13 +111,21 @@ VaString sprintf(const VaString& format, T value, Args... args) {
 }
 
 template <typename T, typename... Args>
-void printf(const VaString& format, T value, Args... args) {
-    std::cout << stdout, "%s", sprintf(format, value, args...);
+inline void printf(const VaString& format, T value, Args... args) {
+    std::cout << va::sprintf(format, value, args...);
+}
+
+inline void printf(VaString format) {
+    std::cout << format;
 }
 
 template <typename T, typename... Args>
-void printlnf(const VaString& format, T value, Args... args) {
-    std::cout << sprintf(format, value, args...) << "\n";
+inline void printlnf(const VaString& format, T value, Args... args) {
+    std::cout << va::sprintf(format, value, args...) << "\n";
+}
+
+inline void printlnf(VaString format) {
+    std::cout << format << "\n";
 }
 
 } // namespace va

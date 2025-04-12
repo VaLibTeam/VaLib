@@ -4,9 +4,12 @@
 
 #define VaLib_USE_CONCEPTS
 
-#include <Types/List.hpp>
-#include <iostream>
 #include <lib/testing.hpp>
+
+#include <Types/List.hpp>
+#include <Types/Slice.hpp>
+
+#include <iostream>
 
 bool testList(testing::Test& t) {
     VaList<int> numbers = {1, 2, 3};
@@ -50,6 +53,47 @@ bool testList(testing::Test& t) {
 
     if (list2 != (list + list)) {
         return t.fail("Extend or operator+ didn't work correctly");
+    }
+
+    VaList<VaString> list3 = {"He", "ll", ", ", "world", "!"};
+    list3.insert(2, "o");
+
+    if (list3.join() != "Hello, world!") {
+        return t.fail("Unexpected result of list3.join");
+    }
+
+    VaList<int64> list4 = {1, 2, 3, 4, 5};
+    list4 = list4.slice(1, -1);
+
+    if (list4 != VaList<int64>{2, 3, 4}) {
+        return t.fail("Slicing didn't work correctly");
+    }
+
+    list4.clear();
+    if (!list4.empty()) {
+        return t.fail("Clear didn't work correctly");
+    }
+
+    struct SomeStruct {
+        int n;
+        float f;
+    };
+
+    VaList<SomeStruct> list5 = {SomeStruct{10, 2.1}, SomeStruct{50, 3.4}};
+    if (list5 != VaList<SomeStruct>{SomeStruct{10, 2.1}, SomeStruct{50, 3.4}}) {
+        return t.fail("Unexpected result");
+    }
+    if (list5 == VaList<SomeStruct>{SomeStruct{6, 2.6}, SomeStruct{124, 1.0}}) {
+        return t.fail("Unexpected result");
+    }
+
+    VaList<int8> list6 = {1, 6, 5, 2, 5, 7, 9};
+    VaSlice<int8> slice(list6);
+
+    for (int i = 0; i < len(list6); i++) {
+        if (list6[i] != slice[i]) {
+            return t.fail("does not work properly with VaSlice");
+        }
     }
 
     return t.success();

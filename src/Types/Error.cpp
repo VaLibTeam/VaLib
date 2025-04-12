@@ -3,13 +3,14 @@
 // (C) 2025 VaLibTeam
 
 #include <Types/Error.hpp>
+#include <Utils/format.hpp>
 
 BaseError::BaseError(VaString m) : msg(m) {}
 
 VaString BaseError::what() const { return msg; }
 
-IndexOutOfTheRangeError::IndexOutOfTheRangeError(VaString m) : BaseError(m) {}
+IndexOutOfRangeError::IndexOutOfRangeError(VaString m) : BaseError(m) {}
 
-IndexOutOfTheRangeError::IndexOutOfTheRangeError(Size range, Size index) {
-    *this = va::sprintf("index out of range [%d] with length %d", index, range);
+IndexOutOfRangeError::IndexOutOfRangeError(Size range, Size index) {
+    msg = va::sprintf("index out of range [%d] with length %d", index, range);
 }

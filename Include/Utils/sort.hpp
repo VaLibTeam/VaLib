@@ -4,13 +4,14 @@
 #pragma once
 
 #ifndef VaLib_USE_CONCEPTS
-#error "sort.hpp: in order for the functions in this header to work properly you need to enable concepts. use #define VaLib_USE_CONCEPTS"
+#error                                                                                             \
+    "sort.hpp: in order for the functions in this header to work properly you need to enable concepts. use #define VaLib_USE_CONCEPTS"
 #endif
 
 #define VaLib_USE_CONCEPTS
 
-#include <Types/Slice.hpp>
 #include <Types/BasicTypedef.hpp>
+#include <Types/Slice.hpp>
 
 namespace va::sort {
 

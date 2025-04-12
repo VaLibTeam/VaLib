@@ -4,6 +4,7 @@
 #pragma once
 
 #include <Types/BasicTypedef.hpp>
+#include <memory>
 
 #include <cstring>
 
@@ -95,7 +96,6 @@ class VaString {
      * @brief Destructor. Releases the allocated memory.
      */
     ~VaString() noexcept;
-
 
     /**
      * @brief Creates a VaString object from a given C-style string.
@@ -219,11 +219,6 @@ class VaString {
      * @param other The VaString to compare with.
      * @return True if the strings are not equal, false otherwise.
      */
-    /**
-     * @brief Compares two VaStrings for inequality.
-     * @param other The VaString to compare with.
-     * @return True if the strings are not equal, false otherwise.
-     */
     bool operator!=(const VaString& other) const noexcept;
 
     /**
@@ -320,6 +315,47 @@ class VaString {
     VaString substr(Size start, Size length = npos) const;
 
     /**
+     * @brief Inserts a substring into the current VaString object at a specified position.
+     * @param pos The position at which to insert the substring. Must be less than or equal to the length of the string.
+     * @param str A pointer to the C-style string to insert.
+     * @param strLen The number of characters to insert from the provided string.
+     * 
+     * @return VaString& A reference to the modified VaString object.
+     * 
+     * @throws IndexOutOfRangeError if the position is greater than the length of the string.
+     */
+    VaString& insert(Size pos, const char* str, Size strLen);
+
+    /**
+     * @brief Inserts a C-style string into the current VaString object at a specified position.
+     * @param pos The position at which to insert the string. Must be less than or equal to the length of the string.
+     * @param str A pointer to the null-terminated C-style string to insert.
+     * @return VaString& A reference to the modified VaString object.
+     * 
+     * @throws IndexOutOfRangeError if the position is greater than the length of the string.
+     */
+    inline VaString& insert(Size pos, const char* str) {
+        return insert(pos, str, std::strlen(str));
+    }
+
+    /**
+     * @brief Inserts another VaString into the current VaString object at a specified position.
+     * @param pos The position at which to insert the VaString. Must be less than or equal to the length of the string.
+     * @param other The VaString to insert.
+     * @return VaString& A reference to the modified VaString object.
+     * 
+     * @throws IndexOutOfRangeError if the position is greater than the length of the string.
+     */
+    inline VaString& insert(Size pos, const VaString& other) {
+        return insert(pos, other.data, other.len);
+    }
+
+    inline char* begin() noexcept { return data; }
+    inline char* end() noexcept { return data + len; }
+    inline const char* begin() const noexcept { return data; }
+    inline const char* end() const noexcept { return data + len; }
+
+    /**
      * @brief Represents an invalid position constant.
      */
     static constexpr Size npos = -1;
@@ -338,5 +374,7 @@ class VaString {
      */
     friend inline Size cap(const VaString& str) { return str.cap; }
 };
+
+inline VaString operator"" _Vs(const char* str, Size size) { return VaString(str, size); }
 
 std::ostream& operator<<(std::ostream& os, const VaString& str);

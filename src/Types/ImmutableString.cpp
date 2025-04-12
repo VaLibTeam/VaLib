@@ -117,7 +117,7 @@ char* VaImmutableString::toCStyleString() const {
     return cstr;
 }
 
-char VaImmutableString::operator[](size_t index) const {
+char VaImmutableString::operator[](Size index) const {
     if (index >= len) throw std::out_of_range("Index out of range");
     return data[index];
 }

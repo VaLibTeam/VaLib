@@ -11,22 +11,49 @@
 #include <Types/ImmutableString.hpp>
 #include <Types/String.hpp>
 
-#ifdef VaLib_USE_CONCEPTS
+namespace va {
+
+VaString toString(int64 num) {
+    if (num == 0) {
+        return VaString("0");
+    }
+
+    char tmp[20];
+    int index = 0;
+
+    while (num > 0) {
+        tmp[index++] = (num % 10) + '0';
+        num /= 10;
+    }
+
+    VaString result;
+    for (int i = index - 1; i >= 0; i--) {
+        result += tmp[i];
+    }
+
+    return result;
+}
+
+VaString toString(VaImmutableString str) { return VaString(str); }
+
+} // namespace va
+
+// #ifdef VaLib_USE_CONCEPTS
 #include <concepts>
 
 template <typename T>
 concept StdStringer = requires(T t) {
-    { t.toStdString() } -> std::same_as<std::string>;
+    { t.toStdString() } -> std::convertible_to<VaString>;
 };
 
 template <typename T>
 concept Stringer = requires(T t) {
-    { t.toString() } -> std::same_as<VaString>;
+    { t.toString() } -> std::convertible_to<VaString>;
 };
 
 template <typename T>
 concept ImmutableStringer = requires(T t) {
-    { t.toImmutableString } -> std::same_as<VaImmutableString>;
+    { t.toImmutableString() } -> std::same_as<VaImmutableString>;
 };
 
 template <StdStringer T>
@@ -46,4 +73,9 @@ std::ostream& operator<<(std::ostream& os, T v) {
     os << v.toImmutableString().toStdString();
 }
 
-#endif
+template <typename T>
+concept ConvertibleToString = Stringer<T> || requires(T t) {
+    { va::toString(t) } -> std::convertible_to<VaString>;
+};
+
+// #endif

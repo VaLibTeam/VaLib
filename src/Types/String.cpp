@@ -3,14 +3,16 @@
 // (C) 2025 VaLibTeam
 
 #include <Types/BasicTypedef.hpp>
-#include <Types/ImmutableString.hpp>
 #include <Types/Error.hpp>
+#include <Types/ImmutableString.hpp>
 #include <Types/String.hpp>
 
 #include <algorithm>
 #include <cstring>
 #include <stdexcept>
 #include <string>
+
+#define GROWTH_SEQ ((Size)(cap * 2))
 
 VaString::VaString() noexcept : len(0), cap(0) { data = nullptr; }
 
@@ -109,7 +111,7 @@ VaString VaString::operator+(char ch) const {
 VaString& VaString::operator+=(const VaString& other) noexcept {
     const Size newLen = len + other.len;
     if (newLen > cap) {
-        resize(std::max(newLen, cap * 2));
+        resize(std::max(newLen, GROWTH_SEQ));
     }
     std::memcpy(data + len, other.data, other.len);
     len = newLen;
@@ -119,7 +121,7 @@ VaString& VaString::operator+=(const VaString& other) noexcept {
 VaString& VaString::append(const char* str, Size strLen) noexcept {
     const Size newLen = len + strLen;
     if (newLen > cap) {
-        resize(std::max(newLen, cap * 2));
+        resize(std::max(newLen, GROWTH_SEQ));
     }
     std::memcpy(data + len, str, strLen);
     len = newLen;
@@ -129,7 +131,7 @@ VaString& VaString::append(const char* str, Size strLen) noexcept {
 VaString& VaString::operator+=(char ch) noexcept {
     const Size newLen = len + 1;
     if (newLen > cap) {
-        resize(std::max(newLen, cap * 2));
+        resize(std::max(newLen, GROWTH_SEQ));
     }
     data[len] = ch;
     len = newLen;
@@ -142,21 +144,17 @@ bool VaString::operator==(const VaString& other) const noexcept {
 
 bool VaString::operator!=(const VaString& other) const noexcept { return !(*this == other); }
 
-char& VaString::operator[](Size index) noexcept {
-    return data[index];
-}
+char& VaString::operator[](Size index) noexcept { return data[index]; }
 
-const char& VaString::operator[](Size index) const noexcept {
-    return data[index];
-}
+const char& VaString::operator[](Size index) const noexcept { return data[index]; }
 
 char& VaString::at(Size index) {
-    if (index >= len) throw IndexOutOfTheRangeError(len, index);
+    if (index >= len) throw IndexOutOfRangeError(len, index);
     return data[index];
 }
 
 const char& VaString::at(Size index) const {
-    if (index >= len) throw IndexOutOfTheRangeError(len, index);
+    if (index >= len) throw IndexOutOfRangeError(len, index);
     return data[index];
 }
 
@@ -170,7 +168,6 @@ char* VaString::toCStyleString() const {
 }
 
 char* VaString::getData() noexcept { return data; }
-
 const char* VaString::getData() const noexcept { return data; }
 
 bool VaString::isEmpty() const { return len == 0; }
@@ -205,6 +202,17 @@ VaString VaString::substr(Size start, Size length) const {
     }
 
     return VaString(data + start, length);
+}
+
+VaString& VaString::insert(Size pos, const char* str, Size strLen) {
+    if (pos > len) {
+        throw IndexOutOfRangeError("Insert position is out of range.");
+    }
+    reserve(len + strLen);
+    std::memmove(data + pos + strLen, data + pos, len - pos);
+    std::memcpy(data + pos, str, strLen);
+    len += strLen;
+    return *this;
 }
 
 std::ostream& operator<<(std::ostream& os, const VaString& str) {

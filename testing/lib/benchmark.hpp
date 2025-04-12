@@ -98,7 +98,7 @@ class BenchmarkGroup {
     void showResults() const {
         std::cout << "\n\033[34;1m[ RESULTS ]:\033[0m\n";
 
-        for (size_t i = 0; i < entries.size(); ++i) {
+        for (Size i = 0; i < entries.size(); ++i) {
             const auto& current = entries[i];
             if (current.result < 0) continue;
 
@@ -113,11 +113,12 @@ class BenchmarkGroup {
                 color = "\033[" + std::to_string(gradient) + "m";
             }
 
-            std::cout << "  \033[1m" << color << current.name << "\033[0m - " << current.result << " µs";
+            std::cout << "  \033[1m" << color << current.name << "\033[0m - " << current.result
+                      << " µs";
 
             if (i == 0) {
                 std::cout << " (the fastest";
-                for (size_t j = 1; j < entries.size(); ++j) {
+                for (Size j = 1; j < entries.size(); ++j) {
                     const auto& slower = entries[j];
                     if (slower.result < 0) continue;
                     float timesFaster = (float)slower.result / (float)current.result;
@@ -132,7 +133,7 @@ class BenchmarkGroup {
                           << std::setprecision(2) << timesSlower << "x";
 
                 bool found = false;
-                for (size_t j = i + 1; j < entries.size(); ++j) {
+                for (Size j = i + 1; j < entries.size(); ++j) {
                     const auto& evenSlower = entries[j];
                     if (evenSlower.result < 0) continue;
                     float timesFaster = (float)evenSlower.result / (float)current.result;

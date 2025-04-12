@@ -6,10 +6,12 @@
 cd "$(dirname "$0")" || exit 1
 source "scripts/utils.sh" || exit 1
 set -e || exit 1
+shopt -s nullglob || exit 1
 
 SRC="src"
 BUILD="build"
-OUTPUT="libva"
+OUTPUT="libvalib"
+OUTDIR="out"
 
 CXX="${CXX:-g++}"
 CXXFLAGS="${CXXFLAGS:-"-Wall -Wextra -std=c++20 -O2 -fPIC"}"
@@ -27,33 +29,42 @@ includePath=(
     "Include"
 )
 
+shouldInstall=false
 target=""
 for arg in "$@"; do
     case $arg in
-    --CXX=*)
+    --cxx=*)
 	    CXX="${arg#*=}" ;;
-	--CXXFLAGS=*)
+	--cxxflags=*)
 	    CXXFLAGS="${arg#*=}" ;;
         
-    --AR=*)
+    --ar=*)
         AR="${arg#*=}" ;;
-    --ARFLAGS=*)
+    --arflags=*)
             ARFLAGS="${arg#*=}" ;;
 
-    --BUILD-DIR=*)
+    --build-dir=*)
         BUILD="${arg#*=}" ;;
-    --OUTPUT=*)
+    --output=*)
         OUTPUT="${arg#*=}" ;;
+    --out-dir=*)
+        OUTDIR="${arg#*=}" ;;
     
     --target=*)
         target=$(echo "$arg" | sed 's/--target=//') ;;
+
+    --install)
+        shouldInstall=true ;;
+
     *)
         ShowError $ArgsErrorExit "Invalid argument: $arg" ;;
     esac
 done
 
+mkdir -p "$OUTDIR"
+
 if [ -z "$target" ]; then
-    ShowError $ErrorExit "Usage: $0 --target={static,shared,object}"
+    ShowError $ErrorExit "Usage: $0 --target={static,shared,object,all}"
 fi
 
 mkdir -p "$BUILD"
@@ -81,23 +92,102 @@ for file in "${toCompile[@]}"; do
     ShowInfo "Progress: $percent% ($compiled/$total)"
 done
 
+BuildStatic() {
+    ShowInfo "Creating static library (.a)..."
+    $AR rcs "$OUTDIR/$OUTPUT.a" "${objFiles[@]}" || ShowError $LinkingErrorExit "Failed to link."
+}
+
+BuildShared() {
+    ShowInfo "Creating shared library (.so)..."
+    $CXX -shared -o "$OUTDIR/$OUTPUT.so" "${objFiles[@]}" || ShowError $LinkingErrorExit "Failed to link."
+}
+
+BuildObject() {
+    ShowInfo "Merging object files into one .o..."
+    ld -r "${objFiles[@]}" -o "$OUTDIR/$OUTPUT.o" || ShowError $LinkingErrorExit "Failed to link."
+}
+
+InstallStatic() {
+    ShowInfo "Installing static library..."
+    install -d "/usr/local/lib"
+    install -m 644 "$OUTDIR/$OUTPUT.a" "/usr/local/lib/" || ShowError $ErrorExit "Failed to install static library."
+}
+
+InstallShared() {
+    ShowInfo "Installing shared library..."
+    install -d "/usr/local/lib"
+    install -m 755 "$OUTDIR/$OUTPUT.so" "/usr/local/lib/" || ShowError $ErrorExit "Failed to install shared library."
+}
+
+InstallHeaders() {
+    VaLibDirs=(Types Utils)
+    SysIncludeDir="/usr/local/include"
+
+    ShowInfo "Installing headers..."
+    for dir in "${includePath[@]}"; do
+        if [[ -d "$dir" ]]; then
+            find "$dir" -type d | while read -r subdir; do
+                relPath="${subdir#$dir/}"
+                targetDir="$SysIncludeDir/$relPath"
+
+                install -d "$targetDir"
+
+                headers=("$subdir"/*.{hpp,tpp,h})
+                if (( ${#headers[@]} )); then
+                    install -m 644 "${headers[@]}" "$targetDir/" || ShowError $ErrorExit "Failed to install headers from $subdir."
+                fi
+            done
+        fi
+    done
+
+    mkdir -p "$SysIncludeDir/VaLib"
+    for dir in "${VaLibDirs[@]}"; do
+        ln -sf "$SysIncludeDir/$dir" "$SysIncludeDir/VaLib/$dir"
+    done
+}
+
 case $target in
+    all)
+        BuildStatic
+        BuildShared
+        BuildObject
+        ;;
     static)
-        ShowInfo "Creating static library (.a)..."
-        $AR rcs "$BUILD/$OUTPUT.a" "${objFiles[@]}" || ShowError $LinkingErrorExit "Failed to link."
+        BuildStatic
         ;;
     shared)
-        ShowInfo "Creating shared library (.so)..."
-        $CXX -shared -o "$BUILD/$OUTPUT.so" "${objFiles[@]}" || ShowError $LinkingErrorExit "Failed to link."
+        BuildShared
         ;;
     object)
-        ShowInfo "Merging object files into one .o..."
-        ld -r "${objFiles[@]}" -o "$BUILD/$OUTPUT.o" || ShowError $LinkingErrorExit "Failed to link."
+        BuildObject
         ;;
     *)
         ShowError $ArgsErrorExit "Not correct target: $target"
         ;;
 esac
+
+if [[ $shouldInstall = true ]]; then
+    if [[ $EUID -ne 0 ]]; then
+        ShowError $ErrorExit "To make the installation option work run the script as root."
+    fi
+
+    InstallHeaders
+
+    case $target in
+    all)
+        InstallStatic
+        InstallShared
+        ;;
+    static)
+        InstallStatic
+        ;;
+    shared)
+        InstallShared
+        ;;
+    esac
+
+    ldconfig
+fi
 
 ShowSuccess "Done!"
 exit $SuccessExit
