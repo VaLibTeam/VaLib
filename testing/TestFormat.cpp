@@ -2,8 +2,8 @@
 // Licensed under GNU GPL v3 License. See LICENSE file.
 // (C) 2025 VaLibTeam
 
-#include <Types/List.hpp>
-#include <Utils/format.hpp>
+#include <VaLib/Types/List.hpp>
+#include <VaLib/Utils/format.hpp>
 #include <lib/testing.hpp>
 
 bool testFormat(testing::Test& t) {

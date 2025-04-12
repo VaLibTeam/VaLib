@@ -3,10 +3,10 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#include <Types/List.hpp>
-#include <Types/Pair.hpp>
-#include <Types/Stack.hpp>
-#include <Types/Tuple.hpp>
+#include <VaLib/Types/List.hpp>
+#include <VaLib/Types/Pair.hpp>
+#include <VaLib/Types/Stack.hpp>
+#include <VaLib/Types/Tuple.hpp>
 
 namespace va {
 

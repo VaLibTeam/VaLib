@@ -2,9 +2,9 @@
 // Licensed under GNU GPL v3 License. See LICENSE file.
 // (C) 2025 VaLibTeam
 
-#include <Types/ImmutableString.hpp>
-#include <Types/String.hpp>
-#include <Utils/ToString.hpp>
+#include <VaLib/Types/ImmutableString.hpp>
+#include <VaLib/Types/String.hpp>
+#include <VaLib/Utils/ToString.hpp>
 
 #include <lib/testing.hpp>
 

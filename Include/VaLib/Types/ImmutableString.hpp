@@ -3,8 +3,8 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#include <Types/BasicTypedef.hpp>
-#include <Utils/BasicDefine.hpp>
+#include <VaLib/Types/BasicTypedef.hpp>
+#include <VaLib/Utils/BasicDefine.hpp>
 
 class VaString;
 

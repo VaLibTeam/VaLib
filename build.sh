@@ -120,14 +120,18 @@ InstallShared() {
 }
 
 InstallHeaders() {
-    VaLibDirs=(Types Utils)
     SysIncludeDir="/usr/local/include"
 
     ShowInfo "Installing headers..."
     for dir in "${includePath[@]}"; do
         if [[ -d "$dir" ]]; then
             find "$dir" -type d | while read -r subdir; do
-                relPath="${subdir#$dir/}"
+                if [[ "$subdir" == "$dir" ]]; then
+                    relPath=""
+                else
+                    relPath="${subdir#"$dir"/}"
+                fi
+
                 targetDir="$SysIncludeDir/$relPath"
 
                 install -d "$targetDir"
@@ -138,11 +142,6 @@ InstallHeaders() {
                 fi
             done
         fi
-    done
-
-    mkdir -p "$SysIncludeDir/VaLib"
-    for dir in "${VaLibDirs[@]}"; do
-        ln -sf "$SysIncludeDir/$dir" "$SysIncludeDir/VaLib/$dir"
     done
 }
 

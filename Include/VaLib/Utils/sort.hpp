@@ -10,8 +10,8 @@
 
 #define VaLib_USE_CONCEPTS
 
-#include <Types/BasicTypedef.hpp>
-#include <Types/Slice.hpp>
+#include <VaLib/Types/BasicTypedef.hpp>
+#include <VaLib/Types/Slice.hpp>
 
 namespace va::sort {
 

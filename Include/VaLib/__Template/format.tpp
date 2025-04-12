@@ -3,10 +3,15 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#include <Types/String.hpp>
-#include <Utils/Strings.hpp>
+#include <VaLib/Types/String.hpp>
+#include <VaLib/Utils/Strings.hpp>
+
+#ifdef VaLib_USE_CONCEPTS
+#include <VaLib/Types/BasicConcepts.hpp>
+#endif
 
 #include <cstdio>
+#include <iostream>
 
 namespace va {
 

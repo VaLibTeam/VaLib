@@ -6,8 +6,8 @@
 
 #include <lib/testing.hpp>
 
-#include <Types/List.hpp>
-#include <Types/Slice.hpp>
+#include <VaLib/Types/List.hpp>
+#include <VaLib/Types/Slice.hpp>
 
 #include <iostream>
 

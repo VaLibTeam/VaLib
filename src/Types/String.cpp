@@ -2,10 +2,10 @@
 // Licensed under GNU GPL v3 License. See LICENSE file.
 // (C) 2025 VaLibTeam
 
-#include <Types/BasicTypedef.hpp>
-#include <Types/Error.hpp>
-#include <Types/ImmutableString.hpp>
-#include <Types/String.hpp>
+#include <VaLib/Types/BasicTypedef.hpp>
+#include <VaLib/Types/Error.hpp>
+#include <VaLib/Types/ImmutableString.hpp>
+#include <VaLib/Types/String.hpp>
 
 #include <algorithm>
 #include <cstring>

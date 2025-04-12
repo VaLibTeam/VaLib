@@ -4,8 +4,8 @@
 
 #include <lib/testing.hpp>
 
-#include <Types/ImmutableString.hpp>
-#include <Types/Pair.hpp>
+#include <VaLib/Types/ImmutableString.hpp>
+#include <VaLib/Types/Pair.hpp>
 
 bool testPair(testing::Test& t) {
     VaPair<int, VaImmutableString> p = {10, "Hello, world!"};

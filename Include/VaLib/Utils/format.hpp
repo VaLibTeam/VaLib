@@ -3,7 +3,7 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#include <Types/String.hpp>
+#include <VaLib/Types/String.hpp>
 #include <cstdio>
 #include <iostream>
 
@@ -79,4 +79,4 @@ void printlnf(const VaString& format, T value, Args... args);
 
 } // namespace va
 
-#include <__Template/format.tpp>
+#include <VaLib/__Template/format.tpp>

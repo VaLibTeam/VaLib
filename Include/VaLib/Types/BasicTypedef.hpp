@@ -3,7 +3,7 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#include <Types/BasicConcepts.hpp>
+#include <VaLib/Types/BasicConcepts.hpp>
 
 #include <stddef.h>
 #include <stdint.h>

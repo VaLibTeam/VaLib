@@ -3,23 +3,23 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#include <Types/BasicConcepts.hpp>
-#include <Types/BasicTypedef.hpp>
-#include <Utils/BasicDefine.hpp>
+#include <VaLib/Types/BasicConcepts.hpp>
+#include <VaLib/Types/BasicTypedef.hpp>
+#include <VaLib/Utils/BasicDefine.hpp>
 
-#include <Types/Array.hpp>
-#include <Types/ImmutableString.hpp>
-#include <Types/Slice.hpp>
-#include <Types/String.hpp>
-#include <Types/List.hpp>
-#include <Types/Tuple.hpp>
-#include <Types/Error.hpp>
-#include <Types/Pair.hpp>
+#include <VaLib/Types/Array.hpp>
+#include <VaLib/Types/ImmutableString.hpp>
+#include <VaLib/Types/Slice.hpp>
+#include <VaLib/Types/String.hpp>
+#include <VaLib/Types/List.hpp>
+#include <VaLib/Types/Tuple.hpp>
+#include <VaLib/Types/Error.hpp>
+#include <VaLib/Types/Pair.hpp>
 
-#include <Utils/Make.hpp>
-#include <Utils/format.hpp>
-#include <Utils/ToString.hpp>
+#include <VaLib/Utils/Make.hpp>
+#include <VaLib/Utils/format.hpp>
+#include <VaLib/Utils/ToString.hpp>
 
 #ifdef VaLib_USE_CONCEPTS
-#include <Utils/sort.hpp>
+#include <VaLib/Utils/sort.hpp>
 #endif

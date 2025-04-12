@@ -3,13 +3,13 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#include <Types/BasicTypedef.hpp>
+#include <VaLib/Types/BasicTypedef.hpp>
 
 #include <ostream>
 #include <string>
 
-#include <Types/ImmutableString.hpp>
-#include <Types/String.hpp>
+#include <VaLib/Types/ImmutableString.hpp>
+#include <VaLib/Types/String.hpp>
 
 namespace va {
 

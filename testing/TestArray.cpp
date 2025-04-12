@@ -6,8 +6,8 @@
 
 #include <lib/testing.hpp>
 
-#include <Types/Array.hpp>
-#include <Types/Slice.hpp>
+#include <VaLib/Types/Array.hpp>
+#include <VaLib/Types/Slice.hpp>
 
 #include <iostream>
 

@@ -3,7 +3,7 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#include <Types/String.hpp>
+#include <VaLib/Types/String.hpp>
 #include <type_traits>
 #include <variant>
 

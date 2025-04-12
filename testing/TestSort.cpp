@@ -6,10 +6,10 @@
 
 #include <lib/testing.hpp>
 
-#include <Types/List.hpp>
+#include <VaLib/Types/List.hpp>
 #include <VaLib.hpp>
 
-#include <Utils/sort.hpp>
+#include <VaLib/Utils/sort.hpp>
 
 bool testSort(testing::Test& t) {
     try {

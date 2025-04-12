@@ -2,8 +2,8 @@
 // Licensed under GNU GPL v3 License. See LICENSE file.
 // (C) 2025 VaLibTeam
 
-#include <Types/Error.hpp>
-#include <Utils/format.hpp>
+#include <VaLib/Types/Error.hpp>
+#include <VaLib/Utils/format.hpp>
 
 BaseError::BaseError(VaString m) : msg(m) {}
 
