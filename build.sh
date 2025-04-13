@@ -29,7 +29,30 @@ includePath=(
     "Include"
 )
 
-shouldInstall=false
+installLibs=false
+installHeaders=false
+
+Help() {
+    echo "Usage: $0 --target=<type> [options...]"
+    echo ""
+    echo "Options:"
+    echo "  --cxx=<compiler>          Specify the C++ compiler to use (default: g++)"
+    echo "  --cxxflags=<flags>        Specify the compiler flags (default: -Wall -Wextra -std=c++20 -O2 -fPIC)"
+    echo "  --ar=<archiver>           Specify the archiver to use (default: ar)"
+    echo "  --arflags=<flags>         Specify the archiver flags"
+    echo
+    echo "  --build-dir=<dir>         Specify the build directory (default: build)"
+    echo "  --output=<name>           Specify the output library name (default: libvalib)"
+    echo "  --out-dir=<dir>           Specify the output directory (default: out)"
+    echo "  --target=<type>           Specify the build target: static, shared, object, or all"
+    echo
+    echo "  --install-headers         Install the headers"
+    echo "  --install-libs            Install the built library"
+    echo "  --install-all/--install   Install the built library and headers"
+    echo
+    echo "  --help                    Show this help message"
+}
+
 target=""
 for arg in "$@"; do
     case $arg in
@@ -41,7 +64,7 @@ for arg in "$@"; do
     --ar=*)
         AR="${arg#*=}" ;;
     --arflags=*)
-            ARFLAGS="${arg#*=}" ;;
+        ARFLAGS="${arg#*=}" ;;
 
     --build-dir=*)
         BUILD="${arg#*=}" ;;
@@ -53,8 +76,21 @@ for arg in "$@"; do
     --target=*)
         target=$(echo "$arg" | sed 's/--target=//') ;;
 
-    --install)
-        shouldInstall=true ;;
+    --install-libs)
+        installLibs=true
+        ;;
+    --install-headers)
+        installHeaders=true
+        ;;
+    --install | --install-all)
+        installLibs=true
+        installHeaders=true
+        ;;
+
+    --help)
+        Help
+        exit $SuccessExit
+        ;;
 
     *)
         ShowError $ArgsErrorExit "Invalid argument: $arg" ;;
@@ -62,11 +98,6 @@ for arg in "$@"; do
 done
 
 mkdir -p "$OUTDIR"
-
-if [ -z "$target" ]; then
-    ShowError $ErrorExit "Usage: $0 --target={static,shared,object,all}"
-fi
-
 mkdir -p "$BUILD"
 
 cppFiles=( $(find "$SRC" -name "*.cpp") )
@@ -94,7 +125,7 @@ done
 
 BuildStatic() {
     ShowInfo "Creating static library (.a)..."
-    $AR rcs "$OUTDIR/$OUTPUT.a" "${objFiles[@]}" || ShowError $LinkingErrorExit "Failed to link."
+    $AR rcs $ARFLAGS "$OUTDIR/$OUTPUT.a" "${objFiles[@]}" || ShowError $LinkingErrorExit "Failed to link."
 }
 
 BuildShared() {
@@ -108,29 +139,23 @@ BuildObject() {
 }
 
 InstallStatic() {
-    ShowInfo "Installing static library..."
     install -d "/usr/local/lib"
     install -m 644 "$OUTDIR/$OUTPUT.a" "/usr/local/lib/" || ShowError $ErrorExit "Failed to install static library."
 }
 
 InstallShared() {
-    ShowInfo "Installing shared library..."
     install -d "/usr/local/lib"
     install -m 755 "$OUTDIR/$OUTPUT.so" "/usr/local/lib/" || ShowError $ErrorExit "Failed to install shared library."
 }
 
 InstallHeaders() {
     SysIncludeDir="/usr/local/include"
-
-    ShowInfo "Installing headers..."
     for dir in "${includePath[@]}"; do
         if [[ -d "$dir" ]]; then
             find "$dir" -type d | while read -r subdir; do
-                if [[ "$subdir" == "$dir" ]]; then
-                    relPath=""
-                else
-                    relPath="${subdir#"$dir"/}"
-                fi
+
+                if [[ "$subdir" == "$dir" ]]; then relPath=""
+                else relPath="${subdir#"$dir"/}"; fi
 
                 targetDir="$SysIncludeDir/$relPath"
 
@@ -145,48 +170,67 @@ InstallHeaders() {
     done
 }
 
-case $target in
-    all)
-        BuildStatic
-        BuildShared
-        BuildObject
-        ;;
-    static)
-        BuildStatic
-        ;;
-    shared)
-        BuildShared
-        ;;
-    object)
-        BuildObject
-        ;;
-    *)
-        ShowError $ArgsErrorExit "Not correct target: $target"
-        ;;
-esac
+if [[ -n "$target" ]]; then
+    case "$target" in
+        all)
+            BuildStatic
+            BuildShared
+            BuildObject
+            ;;
+        static)
+            BuildStatic
+            ;;
+        shared)
+            BuildShared
+            ;;
+        object)
+            BuildObject
+            ;;
+        *)
+            ShowError $ArgsErrorExit "Not correct target: $target"
+            ;;
+    esac
+fi
 
-if [[ $shouldInstall = true ]]; then
+if [[ $installHeaders = true ]]; then
     if [[ $EUID -ne 0 ]]; then
         ShowError $ErrorExit "To make the installation option work run the script as root."
     fi
 
+    ShowInfo "Installing headers..."
     InstallHeaders
-
-    case $target in
-    all)
-        InstallStatic
-        InstallShared
-        ;;
-    static)
-        InstallStatic
-        ;;
-    shared)
-        InstallShared
-        ;;
-    esac
-
-    ldconfig
 fi
+
+if [[ -n "$target" ]]; then
+    if [[ $installLibs = true ]]; then
+        if [[ $EUID -ne 0 ]]; then
+            ShowError $ErrorExit "To make the installation option work run the script as root."
+        fi
+
+        case $target in
+        all)
+            ShowInfo "Installing static library..."
+            InstallStatic
+
+            ShowInfo "Installing shared library..."
+            InstallShared
+            ;;
+        static)
+            ShowInfo "Installing static library..."
+            InstallStatic
+            ;;
+        shared)
+            ShowInfo "Installing shared library..."
+            InstallShared
+            ;;
+        esac
+
+        ldconfig
+    fi
+else
+    ShowInfo "--install-libs: No target specified. nothing to do."
+fi
+
 
 ShowSuccess "Done!"
 exit $SuccessExit
