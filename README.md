@@ -77,7 +77,7 @@ The documentation will be generated in HTML format under `docs/html/index.html`.
 We welcome contributions! If you'd like to contribute to VaLib, please read our [contributing guidelines](CONTRIBUTING.md) and feel free to open issues or pull requests.
 
 ## Features
-### 🚀 Modern C++ Features
+### Modern C++ Features
 VaLib leverages the power of modern C++ standards like [C++20](https://en.cppreference.com/w/cpp/20) and [C++23](https://en.cppreference.com/w/cpp/23) to provide clean, readable, and efficient code. Some of the features used include:
 
 - Concepts
@@ -85,7 +85,7 @@ VaLib leverages the power of modern C++ standards like [C++20](https://en.cppref
 - Smart pointers
 - And much more!
 
-### ⚡ High Performance
+### High Performance
 VaLib is designed from the ground up with performance in mind. Your applications can remain lightweight and fast, even when using advanced features.
 
 > [!TIP] 
