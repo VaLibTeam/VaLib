@@ -8,6 +8,7 @@
 
 #ifdef VaLib_USE_CONCEPTS
 #include <VaLib/Types/BasicConcepts.hpp>
+#include <VaLib/Types/Stringer.hpp>
 #endif
 
 #include <cstdio>
@@ -87,12 +88,29 @@ VaString sprintf(const VaString& format, T value, Args... args) {
         } else if constexpr (std::is_same<T, VaImmutableString>::value) {
             replacement = VaString(value);
         #ifdef VaLib_USE_CONCEPTS
-        } else if constexpr (Stringer<T>) {
+        } else if constexpr (VaStringer<T>) {
             replacement = value.toString();
         #endif
         } else {
             replacement = "InvalidStr";
         }
+        break;
+    case 'q':
+        if constexpr (std::is_same<T, const char*>::value || std::is_same<T, char*>::value) {
+            replacement = VaString(value);
+        } else if constexpr (std::is_same<T, VaString>::value) {
+            replacement = VaString(value);
+        } else if constexpr (std::is_same<T, VaImmutableString>::value) {
+            replacement = VaString(value);
+        #ifdef VaLib_USE_CONCEPTS
+        } else if constexpr (VaStringer<T>) {
+            replacement = value.toString();
+        #endif
+        } else {
+            replacement = "InvalidStr";
+        }
+        
+        replacement = VaString("\"") + strings::escape(replacement) + "\"";
         break;
     case 'c':
         if constexpr (std::is_same<T, char>::value) {

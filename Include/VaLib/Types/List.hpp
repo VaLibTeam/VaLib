@@ -6,8 +6,10 @@
 #include <cstdlib>
 
 #include <VaLib/Types/BasicTypedef.hpp>
-#include <VaLib/Types/Error.hpp>
 #include <VaLib/Utils/BasicDefine.hpp>
+#include <VaLib/Types/BasicConcepts.hpp>
+
+#include <VaLib/Types/Error.hpp>
 
 #include <initializer_list>
 #include <type_traits>
@@ -267,7 +269,7 @@ class VaList {
     bool operator!=(const VaList& other) const { return !(*this == other); }
 
 #ifdef VaLib_USE_CONCEPTS
-    template <Addable A = T>
+    template <va::Addable A = T>
     A sum() const {
         if (len <= 0) return A{};
         A v = at(0);

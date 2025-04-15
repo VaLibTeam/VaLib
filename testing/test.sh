@@ -33,6 +33,12 @@ verbose=false
 tests=()
 benchmarks=()
 
+Clean() {
+    [[ -n "$OUTDIR" ]] && exit $SuccessExit
+
+    rm "$OUTDIR/*"
+}
+
 for arg in "$@"; do
     case "$arg" in
     -Test*)
@@ -42,6 +48,8 @@ for arg in "$@"; do
     
     --echo | --verbose | -v)
         verbose=true ;;
+    --clean)
+        Clean ;;
 
     --cxx=*)
 	    CXX="${arg#*=}" ;;

@@ -21,4 +21,23 @@ inline char numberToChar(int64 num) {
     throw ValueError("Input number is out of range (0-9)");
 }
 
+inline VaString escape(const VaString& input) {
+    VaString result;
+    result.reserve(len(input));
+    for (char c : input) {
+        switch (c) {
+            case '\n': result += "\\n"; break;
+            case '\t': result += "\\t"; break;
+            case '\r': result += "\\r"; break;
+            case '\v': result += "\\v"; break;
+            case '\f': result += "\\f"; break;
+            case '\\': result += "\\\\"; break;
+            case '\"': result += "\\\""; break;
+            case '\'': result += "\\\'"; break;
+            default:   result += c;
+        }
+    }
+    return result;
+}
+
 } // namespace strings

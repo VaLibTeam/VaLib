@@ -74,7 +74,7 @@ doxygen Doxyfile
 The documentation will be generated in HTML format under `docs/html/index.html`.
 
 ## Contributing
-We welcome contributions! If you'd like to contribute to VaLib, please read our [contributing guidelines](CONTRIBUTING.md) (coming soon!) and feel free to open issues or pull requests.
+We welcome contributions! If you'd like to contribute to VaLib, please read our [contributing guidelines](CONTRIBUTING.md) and feel free to open issues or pull requests.
 
 ## Features
 ### 🚀 Modern C++ Features

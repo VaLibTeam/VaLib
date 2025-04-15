@@ -26,8 +26,8 @@ inline VaString sprintf(const VaString& format);
  * - %s: Formats a string (supports @ref VaString, and @ref VaImmutableString, c-style strings `char*`)
  * - %c: Formats a single character (char or @ref rune).
  * - %t: Formats a boolean as "true" or "false".
- * - %p: Formats an pointer.
- * @todo Add more format specifiers
+ * - %p: Formats a pointer.
+ * - %q: Formats a escaped string with quotes around it.
  * 
  * Flags:
  * - `-`: Left-justifies the output within the specified width.

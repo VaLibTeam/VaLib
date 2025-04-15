@@ -3,19 +3,12 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#ifndef VaLib_USE_CONCEPTS
-#error                                                                                             \
-    "sort.hpp: in order for the functions in this header to work properly you need to enable concepts. use #define VaLib_USE_CONCEPTS"
-#endif
-
-#define VaLib_USE_CONCEPTS
-
 #include <VaLib/Types/BasicTypedef.hpp>
 #include <VaLib/Types/Slice.hpp>
 
 namespace va::sort {
 
-template <Ordered T>
+template <typename T>
 void bubble(VaSlice<T>& slice) {
     for (Size i = 0; i < len(slice); i++) {
         for (Size j = 0; j < len(slice) - 1; j++) {
@@ -26,7 +19,7 @@ void bubble(VaSlice<T>& slice) {
     }
 }
 
-template <Ordered T>
+template <typename T>
 void merge(VaSlice<T>& slice) {
     if (len(slice) <= 1) {
         return;
@@ -64,12 +57,12 @@ void merge(VaSlice<T>& slice) {
     }
 }
 
-template <Ordered T>
+template <typename T>
 void merge(VaList<T>& list) {
     sort::merge(VaSlice<T>(list));
 }
 
-template <Ordered T>
+template <typename T>
 void quick(VaSlice<T>& slice) {
     if (len(slice) <= 1) {
         return;
@@ -106,7 +99,7 @@ void quick(VaSlice<T>& slice) {
     }
 }
 
-template <Ordered T>
+template <typename T>
 void quick(VaList<T>& list) {
     sort::quick(VaSlice<T>(list));
 }

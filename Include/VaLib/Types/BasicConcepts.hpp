@@ -3,8 +3,6 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#ifdef VaLib_USE_CONCEPTS
-
 #include <stddef.h>
 #include <stdint.h>
 #include <string>
@@ -12,6 +10,8 @@
 #include <concepts>
 
 typedef size_t Size;
+
+namespace va {
 
 template <typename T>
 concept Addable = requires(T x, T y) {
@@ -62,4 +62,4 @@ concept Hashable = requires(T a) {
     { std::hash<T>{}(a) } -> std::convertible_to<Size>;
 };
 
-#endif
+}

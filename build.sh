@@ -32,25 +32,42 @@ includePath=(
 installLibs=false
 installHeaders=false
 
+uninstallLibs=false
+uninstallHeaders=false
+
 Help() {
-    echo "Usage: $0 --target=<type> [options...]"
+    echo "Usage: $0 [options...]"
     echo ""
     echo "Options:"
-    echo "  --cxx=<compiler>          Specify the C++ compiler to use (default: g++)"
-    echo "  --cxxflags=<flags>        Specify the compiler flags (default: -Wall -Wextra -std=c++20 -O2 -fPIC)"
-    echo "  --ar=<archiver>           Specify the archiver to use (default: ar)"
-    echo "  --arflags=<flags>         Specify the archiver flags"
+    echo "  --cxx=<compiler>             Specify the C++ compiler to use (default: g++)"
+    echo "  --cxxflags=<flags>           Specify the compiler flags (default: -Wall -Wextra -std=c++20 -O2 -fPIC)"
+    echo "  --ar=<archiver>              Specify the archiver to use (default: ar)"
+    echo "  --arflags=<flags>            Specify the archiver flags"
     echo
-    echo "  --build-dir=<dir>         Specify the build directory (default: build)"
-    echo "  --output=<name>           Specify the output library name (default: libvalib)"
-    echo "  --out-dir=<dir>           Specify the output directory (default: out)"
-    echo "  --target=<type>           Specify the build target: static, shared, object, or all"
+    echo "  --build-dir=<dir>            Specify the build directory (default: build)"
+    echo "  --output=<name>              Specify the output library name (default: libvalib)"
+    echo "  --out-dir=<dir>              Specify the output directory (default: out)"
+    echo "  --target=<type>              Specify the build target: static, shared, object, or all"
     echo
-    echo "  --install-headers         Install the headers"
-    echo "  --install-libs            Install the built library"
-    echo "  --install-all/--install   Install the built library and headers"
+    echo "  --install-headers            Install the headers"
+    echo "  --install-libs               Install the built library"
+    echo "  --install-all/--install      Install the built library and headers"
     echo
-    echo "  --help                    Show this help message"
+    echo "  --uninstall-headers          Uninstall the headers"
+    echo "  --uninstall-libs             Uninstall the libraries"
+    echo "  --uninstall-all/--uninstall  Uninstall the libraries and headers"
+    echo
+    echo "  --help                       Show this help message"
+}
+
+Clean() {
+    if [[ -n "$BUILD" ]]; then
+        # ShowInfo "I won't make the same mistake as steam 😎"   # Uncomment me please
+        exit $SuccessExit
+    fi
+
+    rm -r "$BUILD/*"
+    rm -r "$OUTDIR/*"
 }
 
 target=""
@@ -86,6 +103,22 @@ for arg in "$@"; do
         installLibs=true
         installHeaders=true
         ;;
+    
+    --uninstall-libs)
+        uninstallLibs=true
+        ;;
+    --uninstall-headers)
+        uninstallHeaders=true
+        ;;
+    --uninstall | --uninstall-all)
+        uninstallHeaders=true
+        uninstallLibs=true
+        ;;
+    
+    --clean)
+        Clean
+        exit $SuccessExit
+        ;;
 
     --help)
         Help
@@ -97,31 +130,38 @@ for arg in "$@"; do
     esac
 done
 
+if [[ ($uninstallHeaders = true && $installHeaders = true) || ($installLibs = true && $uninstallLibs = true) ]]; then
+    # ShowError $ArgsErrorExit "Conflicting options: Cannot install and uninstall simultaneously."
+    ShowError $ArgsErrorExit "what the fuck are you doing mate"
+fi
+
 mkdir -p "$OUTDIR"
 mkdir -p "$BUILD"
 
-cppFiles=( $(find "$SRC" -name "*.cpp") )
-objFiles=()
-toCompile=()
+if [[ "$target" != "" ]]; then
+    cppFiles=( $(find "$SRC" -name "*.cpp") )
+    objFiles=()
+    toCompile=()
 
-for file in "${cppFiles[@]}"; do
-    obj="$BUILD/$(basename "$file" .cpp).o"
-    objFiles+=("$obj")
+    for file in "${cppFiles[@]}"; do
+        obj="$BUILD/$(basename "$file" .cpp).o"
+        objFiles+=("$obj")
 
-    if [ ! -f "$obj" ] || [ "$file" -nt "$obj" ]; then
-        toCompile+=("$file")
-    fi
-done
+        if [ ! -f "$obj" ] || [ "$file" -nt "$obj" ]; then
+            toCompile+=("$file")
+        fi
+    done
 
-total=${#toCompile[@]}
-compiled=0
+    total=${#toCompile[@]}
+    compiled=0
 
-for file in "${toCompile[@]}"; do
-    obj="$BUILD/$(basename "$file" .cpp).o"
-    $CXX $CXXFLAGS "${includePath[@]/#/-I}" -c "$file" -o "$obj" || ShowError $CompilationErrorExit "Failed to compile $file"
-    percent=$(((compiled + 1) * 100 / total))
-    ShowInfo "Progress: $percent% ($compiled/$total)"
-done
+    for file in "${toCompile[@]}"; do
+        obj="$BUILD/$(basename "$file" .cpp).o"
+        $CXX $CXXFLAGS "${includePath[@]/#/-I}" -c "$file" -o "$obj" || ShowError $CompilationErrorExit "Failed to compile $file"
+        percent=$(((compiled + 1) * 100 / total))
+        ShowInfo "Progress: $percent% ($compiled/$total)"
+    done
+fi
 
 BuildStatic() {
     ShowInfo "Creating static library (.a)..."
@@ -170,6 +210,41 @@ InstallHeaders() {
     done
 }
 
+UninstallStatic() {
+    ShowInfo "Uninstalling static library..."
+    rm -f "/usr/local/lib/$OUTPUT.a" || ShowError $ErrorExit "Failed to uninstall static library."
+}
+
+UninstallShared() {
+    ShowInfo "Uninstalling shared library..."
+    rm -f "/usr/local/lib/$OUTPUT.so" || ShowError $ErrorExit "Failed to uninstall shared library."
+}
+
+UninstallHeaders() {
+    SysIncludeDir="/usr/local/include"
+
+    for dir in "${includePath[@]}"; do
+        if [[ -d "$dir" ]]; then
+            find "$dir" -type d | while read -r subdir; do
+                if [[ "$subdir" == "$dir" ]]; then relPath=""
+                else relPath="${subdir#"$dir"/}"; fi
+
+                targetDir="$SysIncludeDir/$relPath"
+
+                headers=("$subdir"/*.{hpp,tpp,h})
+                if (( ${#headers[@]} )); then
+                    for header in "${headers[@]}"; do
+                        rm -f "$targetDir/$(basename "$header")" || ShowError $ErrorExit "Failed to uninstall header: $header"
+                    done
+                fi
+
+                # Remove empty directories
+                rmdir --ignore-fail-on-non-empty "$targetDir" || true
+            done
+        fi
+    done
+}
+
 if [[ -n "$target" ]]; then
     case "$target" in
         all)
@@ -201,8 +276,10 @@ if [[ $installHeaders = true ]]; then
     InstallHeaders
 fi
 
-if [[ -n "$target" ]]; then
-    if [[ $installLibs = true ]]; then
+if [[ $installLibs = true ]]; then
+    if [[ -z "$target" ]]; then
+        ShowInfo "--install-libs: No target specified. nothing to do."
+    else
         if [[ $EUID -ne 0 ]]; then
             ShowError $ErrorExit "To make the installation option work run the script as root."
         fi
@@ -227,10 +304,27 @@ if [[ -n "$target" ]]; then
 
         ldconfig
     fi
-else
-    ShowInfo "--install-libs: No target specified. nothing to do."
 fi
 
+if [[ $uninstallHeaders = true ]]; then
+    if [[ $EUID -ne 0 ]]; then
+        ShowError $ErrorExit "To make the uninstallation option work run the script as root."
+    fi
+
+    ShowInfo "Uninstalling headers..."
+    UninstallHeaders
+fi
+
+if [[ $uninstallLibs = true ]]; then
+    if [[ $EUID -ne 0 ]]; then
+        ShowError $ErrorExit "To make the uninstallation option work run the script as root."
+    fi
+
+    ShowInfo "Uninstalling libraries..."
+    UninstallStatic
+    UninstallShared
+    ldconfig
+fi
 
 ShowSuccess "Done!"
 exit $SuccessExit

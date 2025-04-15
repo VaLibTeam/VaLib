@@ -4,6 +4,8 @@
 #pragma once
 
 #include <VaLib/Types/BasicTypedef.hpp>
+#include <VaLib/Types/BasicConcepts.hpp>
+#include <VaLib/Types/Stringer.hpp>
 
 #include <ostream>
 #include <string>
@@ -38,23 +40,8 @@ VaString toString(VaImmutableString str) { return VaString(str); }
 
 } // namespace va
 
-// #ifdef VaLib_USE_CONCEPTS
+#ifdef VaLib_USE_CONCEPTS
 #include <concepts>
-
-template <typename T>
-concept StdStringer = requires(T t) {
-    { t.toStdString() } -> std::convertible_to<VaString>;
-};
-
-template <typename T>
-concept Stringer = requires(T t) {
-    { t.toString() } -> std::convertible_to<VaString>;
-};
-
-template <typename T>
-concept ImmutableStringer = requires(T t) {
-    { t.toImmutableString() } -> std::same_as<VaImmutableString>;
-};
 
 template <StdStringer T>
 std::ostream& operator<<(std::ostream& os, T v) {
@@ -62,7 +49,7 @@ std::ostream& operator<<(std::ostream& os, T v) {
     return os;
 }
 
-template <Stringer T>
+template <VaStringer T>
 std::ostream& operator<<(std::ostream& os, T v) {
     os << v.toString();
     return os;
@@ -74,8 +61,8 @@ std::ostream& operator<<(std::ostream& os, T v) {
 }
 
 template <typename T>
-concept ConvertibleToString = Stringer<T> || requires(T t) {
+concept ConvertibleToString = VaStringer<T> || requires(T t) {
     { va::toString(t) } -> std::convertible_to<VaString>;
 };
 
-// #endif
+#endif
