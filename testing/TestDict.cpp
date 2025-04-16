@@ -68,7 +68,7 @@ bool TestDict(testing::Test& t) {
     if (dict.contains("hello") || size(dict) != 2) {
         return t.fail("remove failed");
     }
-    
+
     if (dict.atIndex(0) != 50 || dict.atIndex(1) != 30) {
         return t.fail("order not preserved after remove");
     }
@@ -121,12 +121,12 @@ bool TestDict(testing::Test& t) {
         return t.fail("expected IndexOutOfRangeError");
     }
 
-    // Test set method
-    orderedDict.set("new", 5);
+    // Test put method
+    orderedDict.put("new", 5);
     if (!orderedDict.contains("new") || orderedDict.at("new") != 5) {
         return t.fail("set failed for new key");
     }
-    orderedDict.set("new", 6);
+    orderedDict.put("new", 6);
     if (orderedDict.at("new") != 6) {
         return t.fail("set failed for existing key");
     }
