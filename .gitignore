@@ -45,3 +45,7 @@
 /docs/
 
 vgcore.*
+
+/*/.nvim
+/.nvim
+/testing/.nvim
