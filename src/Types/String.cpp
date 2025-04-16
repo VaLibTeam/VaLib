@@ -144,6 +144,16 @@ bool VaString::operator==(const VaString& other) const noexcept {
 
 bool VaString::operator!=(const VaString& other) const noexcept { return !(*this == other); }
 
+bool VaString::operator<(const VaString& other) const {
+    Size minLen = len < other.len ? len : other.len;
+
+    for (Size i = 0; i < minLen; i++) {
+        if (data[i] < other.data[i]) return true;
+        if (data[i] > other.data[i]) return false;
+    }
+    return len < other.len;
+}
+
 char& VaString::operator[](Size index) noexcept { return data[index]; }
 
 const char& VaString::operator[](Size index) const noexcept { return data[index]; }

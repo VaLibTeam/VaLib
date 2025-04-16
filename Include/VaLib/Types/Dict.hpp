@@ -177,7 +177,7 @@ class VaDict {
 
         Entry* current = other.head;
         while (current != nullptr) {
-            set(current->key, current->value);
+            put(current->key, current->value);
             current = current->nextOrder;
         }
     }
@@ -201,7 +201,7 @@ class VaDict {
      */
     VaDict(std::initializer_list<VaPair<const K&, const V&>> init) : VaDict() {
         for (const auto& [k, v] : init) {
-            set(k, v);
+            put(k, v);
         }
     }
 
@@ -243,7 +243,7 @@ class VaDict {
 
         Entry* current = other.head;
         while (current != nullptr) {
-            set(current->key, current->value);
+            put(current->key, current->value);
             current = current->nextOrder;
         }
 
@@ -274,6 +274,65 @@ class VaDict {
         other.cap = 0;
 
         return *this;
+    }
+
+    /**
+    * @brief Lexicographically compares two dictionaries.
+    *
+    * Elements are compared in insertion order. If keys differ, the key comparison determines the result.
+    *
+    * @note Requires both @ref K and @ref V to be comparable via <.
+    * @warning Behavior is undefined if the types do not implement @a operator<.
+    *
+    * @param other The other dictionary to compare with.
+    * @return @a true if this dictionary is lexicographically less than the other.
+    */
+    bool operator<(const VaDict<K, V>& other) const {
+        Entry* a = head;
+        Entry* b = other.head;
+    
+        while (a != nullptr && b != nullptr) {
+            if (a->key < b->key) return true;
+            if (b->key < a->key) return false;
+    
+            if (a->value < b->value) return true;
+            if (b->value < a->value) return false;
+    
+            a = a->nextOrder;
+            b = b->nextOrder;
+        }
+    
+        return b != nullptr;
+    }
+
+    /**
+     * @brief Lexicographically compares two dictionaries in the opposite direction.
+     * @param other The other dictionary to compare with.
+     * @return `true` if this dictionary is lexicographically greater than the other.
+     * 
+     * @note Equivalent to `!(this < other) && !(this == other)`.
+     * @warning Requires both `K` and `V` to implement `operator<` or `operator>`.
+     */
+    bool operator>(const VaDict<K, V>& other) const {
+        return other < *this;
+    }
+    
+    /**
+     * @brief Checks if this dictionary is less than or equal to the other.
+     * @param other The other dictionary to compare with.
+     * @return `true` if this dictionary is less than or equal to the other.
+     */
+    bool operator<=(const VaDict<K, V>& other) const {
+        return !(other < *this);
+    }
+    
+    /**
+     * @brief Checks if this dictionary is greater than or equal to the other.
+     * @param other The other dictionary to compare with.
+     * @return `true` if this dictionary is greater than or equal to the other.
+     */
+    bool operator>=(const VaDict<K, V>& other) const {
+        return !(*this < other);
     }
 
     /** 
@@ -397,7 +456,7 @@ class VaDict {
         size++;
     }
 
-    void set(const K& key, const V& value) {
+    void put(const K& key, const V& value) {
         if (size >= cap * 0.75) resize(cap * 2);
 
         Size index = computeIndex(key);

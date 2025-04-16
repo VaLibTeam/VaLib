@@ -234,6 +234,20 @@ class VaString {
      */
     bool operator!=(const VaString& other) const noexcept;
 
+    bool operator<(const VaString& other) const;
+
+    inline bool operator>(const VaString other) const {
+        return other < *this;
+    }
+
+    inline bool operator<=(const VaString other) const {
+        return !(*this > other);
+    }
+
+    inline bool operator>=(const VaString& other) const {
+        return !(*this < other);
+    }
+
     /**
      * @brief Provides access to a character at a specific index.
      * @param index The index of the character to access.
