@@ -135,7 +135,7 @@ Benchmark() {
     echo -e "\033[35;1m" "Benchmarking $benchFile..." "\033[0m"
 
     "$CXX" $CXXFLAGS "$benchFile.cpp" "${includePath[@]/#/-I}" -c -o "$obj" || ShowError $CompilationErrorExit "Benchmark \"$benchFile\" failed to compile."
-    "$CXX" $CXXFLAGS $buildMode "$obj" -o "$out" || ShowError $LinkingErrorExit "Benchmark \"$benchFile\" failed to link."
+    "$CXX" $CXXFLAGS $buildMode "$obj" "build/benchmarking.o" -o "$out" || ShowError $LinkingErrorExit "Benchmark \"$benchFile\" failed to link."
 
     ShowInfo "start"
 
@@ -151,19 +151,26 @@ Benchmark() {
     fi
 }
 
+CompileLib() {
+    "$CXX" $CXXFLAGS "lib/benchmarking.cpp" "${includePath[@]/#/-I}" -c -o "build/benchmarking.o" || ShowError $CompilationErrorExit "Failed to compile benchmark.cpp."
+    # "$CXX" $CXXFLAGS "lib/testing.cpp" "${includePath[@]/#/-I}" -c -o "build/testing.o" || ShowError $CompilationErrorExit "Failed to compile testing.cpp."
+}
+
 CheckEnvironment
 CheckLibraries
+
+CompileLib
 
 if [[ $totalTests -le 0 && $totalBenchmarks -le 0 ]]; then
     allTests=()
     while IFS= read -r file; do
-        allTests+=("$(basename "$file" .cpp)")
-    done < <(find . -iname "Test*.cpp")
+        [[ "$(dirname "$file")" == "." ]] && allTests+=("$(basename "$file" .cpp)")
+    done < <(find . -maxdepth 1 -iname "Test*.cpp")
 
     allBenchmarks=()
     while IFS= read -r file; do
-        allBenchmarks+=("$(basename "$file" .cpp)")
-    done < <(find . -iname "Benchmark*.cpp")
+        [[ "$(dirname "$file")" == "." ]] && allBenchmarks+=("$(basename "$file" .cpp)")
+    done < <(find . -maxdepth 1 -iname "Benchmark*.cpp")
 
     tests=("${allTests[@]}")
     benchmarks=("${allBenchmarks[@]}")

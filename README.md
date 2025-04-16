@@ -83,7 +83,7 @@ VaLib leverages the power of modern C++ standards like [C++20](https://en.cppref
 - Concepts
 - Variadic templates
 - Smart pointers
-- And much more!
+- **And much more!**
 
 ### High Performance
 VaLib is designed from the ground up with performance in mind. Your applications can remain lightweight and fast, even when using advanced features.

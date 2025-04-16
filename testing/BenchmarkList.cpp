@@ -2,7 +2,7 @@
 // Licensed under GNU GPL v3 License. See LICENSE file.
 // (C) 2025 VaLibTeam
 
-#include <lib/benchmark.hpp>
+#include <lib/benchmarking.hpp>
 
 #include <VaLib/Types/List.hpp>
 #include <VaLib/Types/String.hpp>

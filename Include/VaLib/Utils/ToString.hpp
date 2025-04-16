@@ -15,7 +15,7 @@
 
 namespace va {
 
-VaString toString(int64 num) {
+inline VaString toString(int64 num) {
     if (num == 0) {
         return VaString("0");
     }
@@ -36,7 +36,7 @@ VaString toString(int64 num) {
     return result;
 }
 
-VaString toString(VaImmutableString str) { return VaString(str); }
+inline VaString toString(VaImmutableString str) { return VaString(str); }
 
 } // namespace va
 

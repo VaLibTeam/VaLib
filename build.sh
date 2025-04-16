@@ -37,7 +37,7 @@ uninstallHeaders=false
 
 Help() {
     echo "Usage: $0 [options...]"
-    echo ""
+    echo
     echo "Options:"
     echo "  --cxx=<compiler>             Specify the C++ compiler to use (default: g++)"
     echo "  --cxxflags=<flags>           Specify the compiler flags (default: -Wall -Wextra -std=c++20 -O2 -fPIC)"
@@ -47,7 +47,7 @@ Help() {
     echo "  --build-dir=<dir>            Specify the build directory (default: build)"
     echo "  --output=<name>              Specify the output library name (default: libvalib)"
     echo "  --out-dir=<dir>              Specify the output directory (default: out)"
-    echo "  --target=<type>              Specify the build target: static, shared, object, or all"
+    echo "  --target=<type>              Specify the build target"
     echo
     echo "  --install-headers            Install the headers"
     echo "  --install-libs               Install the built library"
@@ -58,16 +58,17 @@ Help() {
     echo "  --uninstall-all/--uninstall  Uninstall the libraries and headers"
     echo
     echo "  --help                       Show this help message"
+    echo
+    echo "Targets:"
+    echo "  all                          Build all targets (static, shared, and object)"
+    echo "  static                       Build the static library (.a)"
+    echo "  shared                       Build the shared library (.so)"
+    echo "  object                       Build a single merged object file (.o)"
 }
 
 Clean() {
-    if [[ -n "$BUILD" ]]; then
-        # ShowInfo "I won't make the same mistake as steam 😎"   # Uncomment me please
-        exit $SuccessExit
-    fi
-
-    rm -r "$BUILD/*"
-    rm -r "$OUTDIR/*"
+    [[ -d "$BUILD" ]]  && [[ "$(ls -A "$BUILD")" ]]  && rm -r "$BUILD"/*
+    [[ -d "$OUTDIR" ]] && [[ "$(ls -A "$OUTDIR")" ]] && rm -r "$OUTDIR"/*
 }
 
 target=""
@@ -138,8 +139,8 @@ fi
 mkdir -p "$OUTDIR"
 mkdir -p "$BUILD"
 
-if [[ "$target" != "" ]]; then
-    cppFiles=( $(find "$SRC" -name "*.cpp") )
+CompileSources() {
+    mapfile -t cppFiles < <(find "$SRC" -name "*.cpp")
     objFiles=()
     toCompile=()
 
@@ -147,30 +148,34 @@ if [[ "$target" != "" ]]; then
         obj="$BUILD/$(basename "$file" .cpp).o"
         objFiles+=("$obj")
 
-        if [ ! -f "$obj" ] || [ "$file" -nt "$obj" ]; then
+        if [[ ! -f "$obj" || "$file" -nt "$obj" ]]; then
             toCompile+=("$file")
         fi
     done
 
     total=${#toCompile[@]}
-    compiled=0
+    if [[ $total -eq 0 ]]; then
+        ShowInfo "Nothing to compile"
+        return
+    fi
 
+    compiled=0
     for file in "${toCompile[@]}"; do
         obj="$BUILD/$(basename "$file" .cpp).o"
-        $CXX $CXXFLAGS "${includePath[@]/#/-I}" -c "$file" -o "$obj" || ShowError $CompilationErrorExit "Failed to compile $file"
-        percent=$(((compiled + 1) * 100 / total))
+        "$CXX" $CXXFLAGS "${includePath[@]/#/-I}" -c "$file" -o "$obj" || ShowError $CompilationErrorExit "Failed to compile $file"
+        percent=$(( (compiled++ + 1) * 100 / total ))
         ShowInfo "Progress: $percent% ($compiled/$total)"
     done
-fi
+}
 
 BuildStatic() {
     ShowInfo "Creating static library (.a)..."
-    $AR rcs $ARFLAGS "$OUTDIR/$OUTPUT.a" "${objFiles[@]}" || ShowError $LinkingErrorExit "Failed to link."
+    "$AR" rcs $ARFLAGS "$OUTDIR/$OUTPUT.a" "${objFiles[@]}" || ShowError $LinkingErrorExit "Failed to link."
 }
 
 BuildShared() {
     ShowInfo "Creating shared library (.so)..."
-    $CXX -shared -o "$OUTDIR/$OUTPUT.so" "${objFiles[@]}" || ShowError $LinkingErrorExit "Failed to link."
+    "$CXX" -shared -o "$OUTDIR/$OUTPUT.so" "${objFiles[@]}" || ShowError $LinkingErrorExit "Failed to link."
 }
 
 BuildObject() {
@@ -189,7 +194,7 @@ InstallShared() {
 }
 
 InstallHeaders() {
-    SysIncludeDir="/usr/local/include"
+    sysIncludeDir="/usr/local/include"
     for dir in "${includePath[@]}"; do
         if [[ -d "$dir" ]]; then
             find "$dir" -type d | while read -r subdir; do
@@ -197,7 +202,7 @@ InstallHeaders() {
                 if [[ "$subdir" == "$dir" ]]; then relPath=""
                 else relPath="${subdir#"$dir"/}"; fi
 
-                targetDir="$SysIncludeDir/$relPath"
+                targetDir="$sysIncludeDir/$relPath"
 
                 install -d "$targetDir"
 
@@ -221,7 +226,7 @@ UninstallShared() {
 }
 
 UninstallHeaders() {
-    SysIncludeDir="/usr/local/include"
+    sysIncludeDir="/usr/local/include"
 
     for dir in "${includePath[@]}"; do
         if [[ -d "$dir" ]]; then
@@ -229,7 +234,7 @@ UninstallHeaders() {
                 if [[ "$subdir" == "$dir" ]]; then relPath=""
                 else relPath="${subdir#"$dir"/}"; fi
 
-                targetDir="$SysIncludeDir/$relPath"
+                targetDir="$sysIncludeDir/$relPath"
 
                 headers=("$subdir"/*.{hpp,tpp,h})
                 if (( ${#headers[@]} )); then
@@ -246,24 +251,26 @@ UninstallHeaders() {
 }
 
 if [[ -n "$target" ]]; then
+    CompileSources
+    
     case "$target" in
-        all)
-            BuildStatic
-            BuildShared
-            BuildObject
-            ;;
-        static)
-            BuildStatic
-            ;;
-        shared)
-            BuildShared
-            ;;
-        object)
-            BuildObject
-            ;;
-        *)
-            ShowError $ArgsErrorExit "Not correct target: $target"
-            ;;
+    all)
+        BuildStatic
+        BuildShared
+        BuildObject
+        ;;
+    static)
+        BuildStatic
+        ;;
+    shared)
+        BuildShared
+        ;;
+    object)
+        BuildObject
+        ;;
+    *)
+        ShowError $ArgsErrorExit "Not correct target: $target"
+        ;;
     esac
 fi
 
@@ -284,7 +291,7 @@ if [[ $installLibs = true ]]; then
             ShowError $ErrorExit "To make the installation option work run the script as root."
         fi
 
-        case $target in
+        case "$target" in
         all)
             ShowInfo "Installing static library..."
             InstallStatic
@@ -323,6 +330,7 @@ if [[ $uninstallLibs = true ]]; then
     ShowInfo "Uninstalling libraries..."
     UninstallStatic
     UninstallShared
+
     ldconfig
 fi
 

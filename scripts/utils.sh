@@ -21,3 +21,10 @@ ShowInfo() {
     msg="${*}"
     echo -e "\033[1;34m[ INFO ]:\033[94m $msg\033[0m"
 }
+
+# ANSI COLORS
+RED="\033[31m"
+GREEN="\033[32m"
+YELLOW="\033[33m"
+BOLD="\033[1m"
+RESET="\033[0m"

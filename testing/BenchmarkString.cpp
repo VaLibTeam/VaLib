@@ -3,7 +3,7 @@
 // (C) 2025 VaLibTeam
 
 #define VaLib_USE_CONCEPTS
-#include <lib/benchmark.hpp>
+#include <lib/benchmarking.hpp>
 
 #include <VaLib/Types/String.hpp>
 #include <VaLib.hpp>

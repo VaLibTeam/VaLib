@@ -28,18 +28,18 @@ Please read the following guidelines before submitting pull requests or patches.
    - Exceptions are allowed if justified, but the default should follow this rule.
 
 7. **Code Formatting**
-      - Always use `clang-format` with the configuration provided in the `.clang-format` file included in the repository.
-      - Please avoid modifying `.clang-format` unless there's a strong documented reason.
+   - Always use `clang-format` with the configuration provided in the `.clang-format` file included in the repository.
+   - Please avoid modifying `.clang-format` unless there's a strong documented reason.
 
-   8. **Testing and Benchmarking**
-      - After adding a new class or functionality, always include a corresponding test in the `testing/` directory.
-      - Optionally, add a benchmark if performance is a concern.
-      - Small utility functions or trivial changes may be exempt from this rule, but use discretion.
-   
+8. **Testing and Benchmarking**
+   - After adding a new class or functionality, always include a corresponding test in the `testing/` directory.
+   - Optionally, add a benchmark if performance is a concern.
+   - Small utility functions or trivial changes may be exempt from this rule, but use discretion.
+
 ## Bash Script Style Guide
 1. **Naming Conventions**
    - Use `PascalCase` for function names.
-   - Use `camelCase` for variable names, except for arrays of exit codes, which are written in `PascalCase`.
+   - Use `camelCase` for variable names, except for table of exit codes, which are written in `PascalCase`.
 
 2. **Indentation**
    - Use 4 spaces for indentation. Avoid tabs.
@@ -59,6 +59,9 @@ Please read the following guidelines before submitting pull requests or patches.
 7. **Logging and Errors**
    - Do not use `echo` for error or warning messages.
    - Always source `scripts/utils.sh` and use predefined functions like `ShowError`, `ShowWarn`, etc.
+
+8. **Function Syntax**
+   - Define functions using the syntax `Name() { code... }`, with parentheses `()` but without the `function` keyword.
 
 ## Submitting Contributions
 - When submitting a pull request, provide a clear and concise description of the change and its purpose.
