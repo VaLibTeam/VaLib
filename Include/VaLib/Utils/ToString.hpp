@@ -3,8 +3,8 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#include <VaLib/Types/BasicTypedef.hpp>
 #include <VaLib/Types/BasicConcepts.hpp>
+#include <VaLib/Types/BasicTypedef.hpp>
 #include <VaLib/Types/Stringer.hpp>
 
 #include <ostream>

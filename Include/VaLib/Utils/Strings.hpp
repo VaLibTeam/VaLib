@@ -26,15 +26,15 @@ inline VaString escape(const VaString& input) {
     result.reserve(len(input));
     for (char c : input) {
         switch (c) {
-            case '\n': result += "\\n"; break;
-            case '\t': result += "\\t"; break;
-            case '\r': result += "\\r"; break;
-            case '\v': result += "\\v"; break;
-            case '\f': result += "\\f"; break;
-            case '\\': result += "\\\\"; break;
-            case '\"': result += "\\\""; break;
-            case '\'': result += "\\\'"; break;
-            default:   result += c;
+        case '\n': result += "\\n"; break;
+        case '\t': result += "\\t"; break;
+        case '\r': result += "\\r"; break;
+        case '\v': result += "\\v"; break;
+        case '\f': result += "\\f"; break;
+        case '\\': result += "\\\\"; break;
+        case '\"': result += "\\\""; break;
+        case '\'': result += "\\\'"; break;
+        default: result += c;
         }
     }
     return result;

@@ -89,9 +89,9 @@ class IndexOutOfRangeError: public BaseError {
 class NullPointerError: public BaseError {
   public:
     /**
-         * @brief Constructor with a default error message.
-         * @param m The error message (default: "null pointer error").
-         */
+     * @brief Constructor with a default error message.
+     * @param m The error message (default: "null pointer error").
+     */
     NullPointerError(VaString m = "null pointer error") : BaseError(m) {}
 };
 
@@ -101,10 +101,19 @@ class NullPointerError: public BaseError {
 class DivisionByZeroError: public BaseError {
   public:
     /**
-         * @brief Constructor with a default error message.
-         * @param m The error message (default: "division by zero").
-         */
+     * @brief Constructor with a default error message.
+     * @param m The error message (default: "division by zero").
+     */
     DivisionByZeroError(VaString m = "division by zero") : BaseError(m) {}
+};
+
+class KeyNotFoundError: public BaseError {
+  public:
+    /**
+     * @brief Constructor with a default error message.
+     * @param m The error message (default: "key not found").
+     */
+    KeyNotFoundError(VaString m = "key not found") : BaseError(m) {}
 };
 
 /**
@@ -113,9 +122,9 @@ class DivisionByZeroError: public BaseError {
 class FileNotFoundError: public BaseError {
   public:
     /**
-         * @brief Constructor with a default error message.
-         * @param m The error message (default: "file not found").
-         */
+     * @brief Constructor with a default error message.
+     * @param m The error message (default: "file not found").
+     */
     FileNotFoundError(VaString m = "file not found") : BaseError(m) {}
 };
 
@@ -125,9 +134,9 @@ class FileNotFoundError: public BaseError {
 class PermissionError: public BaseError {
   public:
     /**
-         * @brief Constructor with a default error message.
-         * @param m The error message (default: "permission denied").
-         */
+     * @brief Constructor with a default error message.
+     * @param m The error message (default: "permission denied").
+     */
     PermissionError(VaString m = "permission denied") : BaseError(m) {}
 };
 

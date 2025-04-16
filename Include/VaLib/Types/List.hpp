@@ -5,9 +5,9 @@
 
 #include <cstdlib>
 
+#include <VaLib/Types/BasicConcepts.hpp>
 #include <VaLib/Types/BasicTypedef.hpp>
 #include <VaLib/Utils/BasicDefine.hpp>
-#include <VaLib/Types/BasicConcepts.hpp>
 
 #include <VaLib/Types/Error.hpp>
 

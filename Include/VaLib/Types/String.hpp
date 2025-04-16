@@ -123,6 +123,19 @@ class VaString {
         if (minCap > cap) resize(minCap);
     }
 
+    Size hash() const {
+        constexpr int64 fnvOffset = 14695981039346656037ull;
+        constexpr int64 fnvPrime = 1099511628211ull;
+    
+        Size h = fnvOffset;
+        for (Size i = 0; i < len; ++i) {
+            h ^= static_cast<uint64>(static_cast<uint8>(data[i]));
+            h *= fnvPrime;
+        }
+    
+        return h;
+    }
+
     /**
      * @brief Copy assignment operator. Copies the content of another VaString.
      * @param other The VaString to copy from.
@@ -374,6 +387,17 @@ class VaString {
      */
     friend inline Size cap(const VaString& str) { return str.cap; }
 };
+
+namespace std {
+
+template <>
+struct hash<VaString> {
+    Size operator()(const VaString& str) {
+        return str.hash();
+    }
+};
+
+}
 
 inline VaString operator"" _Vs(const char* str, Size size) { return VaString(str, size); }
 

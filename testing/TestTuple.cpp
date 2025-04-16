@@ -4,8 +4,8 @@
 
 #include <lib/testing.hpp>
 
-#include <VaLib/Types/Tuple.hpp>
 #include <VaLib.hpp>
+#include <VaLib/Types/Tuple.hpp>
 
 VaTuple<int, int> mulAndDiv(int x, int y) { return {x * y, x / y}; };
 

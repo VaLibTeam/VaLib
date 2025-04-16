@@ -5,8 +5,8 @@
 
 #include <iostream>
 
-#include <VaLib/Types/String.hpp>
 #include <VaLib.hpp>
+#include <VaLib/Types/String.hpp>
 
 namespace testing {
 

@@ -4,6 +4,4 @@
 
 #include <lib/benchmarking.hpp>
 
-int main() {
-    return benchmarking::todo();
-}
+int main() { return benchmarking::todo(); }

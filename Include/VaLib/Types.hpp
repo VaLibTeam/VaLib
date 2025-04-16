@@ -7,10 +7,11 @@
 #include <VaLib/Types/BasicTypedef.hpp>
 
 #include <VaLib/Types/Array.hpp>
+#include <VaLib/Types/Dict.hpp>
+#include <VaLib/Types/Error.hpp>
 #include <VaLib/Types/ImmutableString.hpp>
+#include <VaLib/Types/List.hpp>
+#include <VaLib/Types/Pair.hpp>
 #include <VaLib/Types/Slice.hpp>
 #include <VaLib/Types/String.hpp>
-#include <VaLib/Types/List.hpp>
 #include <VaLib/Types/Tuple.hpp>
-#include <VaLib/Types/Error.hpp>
-#include <VaLib/Types/Pair.hpp>

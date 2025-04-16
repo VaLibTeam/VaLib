@@ -8,13 +8,13 @@
 #include <VaLib/Types/BasicConcepts.hpp>
 #include <VaLib/Types/BasicTypedef.hpp>
 
-#define cpp_98 199711L
-#define cpp_03 199711L
-#define cpp_11 201103L
-#define cpp_14 201402L
-#define cpp_17 201703L
-#define cpp_20 202002L
-#define cpp_23 202302L
+#define CPP98 199711L
+#define CPP03 199711L
+#define CPP11 201103L
+#define CPP14 201402L
+#define CPP17 201703L
+#define CPP20 202002L
+#define CPP23 202302L
 
 #define stringify(expr) #expr
 #define dbg(expr) VaString(stringify(expr)) + ": " + std::to_string(expr)

@@ -6,8 +6,8 @@
 #include <VaLib/Utils/BasicDefine.hpp>
 
 #include <VaLib/Utils/Make.hpp>
-#include <VaLib/Utils/format.hpp>
 #include <VaLib/Utils/ToString.hpp>
+#include <VaLib/Utils/format.hpp>
 
 #ifdef VaLib_USE_CONCEPTS
 #include <VaLib/Utils/sort.hpp>

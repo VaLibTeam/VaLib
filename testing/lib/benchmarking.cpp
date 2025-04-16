@@ -47,8 +47,7 @@ int BenchmarkGroup::run() {
         for (int i = 0; i < repeatCount; ++i) {
             Time t = entry.func(b);
             if (t < 0) {
-                std::cerr << "\033[31;1m[ FAIL ]:\033[0m " << entry.name << ": " << b.msg
-                          << "\n";
+                std::cerr << "\033[31;1m[ FAIL ]:\033[0m " << entry.name << ": " << b.msg << "\n";
                 entry.result = -1;
                 break;
             }
@@ -59,7 +58,7 @@ int BenchmarkGroup::run() {
 
     std::sort(entries.begin(), entries.end(),
               [](const Entry& a, const Entry& b) { return a.result < b.result; });
-    
+
     showResults();
     return 0;
 }

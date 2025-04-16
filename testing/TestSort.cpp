@@ -6,8 +6,8 @@
 
 #include <lib/testing.hpp>
 
-#include <VaLib/Types/List.hpp>
 #include <VaLib.hpp>
+#include <VaLib/Types/List.hpp>
 
 #include <VaLib/Utils/sort.hpp>
 

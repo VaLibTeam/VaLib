@@ -3,8 +3,8 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#include <VaLib/Types/String.hpp>
 #include <VaLib/Types/ImmutableString.hpp>
+#include <VaLib/Types/String.hpp>
 
 #include <string>
 

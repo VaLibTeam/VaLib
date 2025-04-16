@@ -5,8 +5,8 @@
 #define VaLib_USE_CONCEPTS
 #include <lib/benchmarking.hpp>
 
-#include <VaLib/Types/String.hpp>
 #include <VaLib.hpp>
+#include <VaLib/Types/String.hpp>
 
 constexpr Size appendBenchmarkLimit = 1000000;
 
