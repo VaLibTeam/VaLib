@@ -19,6 +19,6 @@ concept VaStringer = requires(T t) {
 };
 
 template <typename T>
-concept ImmutableStringer = requires(T t) {
+concept VaImmutableStringer = requires(T t) {
     { t.toImmutableString() } -> std::same_as<VaImmutableString>;
 };

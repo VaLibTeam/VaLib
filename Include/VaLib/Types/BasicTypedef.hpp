@@ -69,3 +69,7 @@ template <typename T>
 inline constexpr bool HasEqualityOperatorV = HasEqualityOperator<T>::value;
 
 } // namespace va
+
+// nothing. 🙏
+struct NoneType {};
+NoneType nil{};

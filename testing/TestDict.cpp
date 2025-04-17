@@ -7,7 +7,7 @@
 #include <VaLib/Types.hpp>
 #include <VaLib/Utils.hpp>
 
-bool TestDict(testing::Test& t) {
+bool testDict(testing::Test& t) {
     VaDict<VaString, int> dict;
 
     dict["test"] = 10;
@@ -94,7 +94,7 @@ bool TestDict(testing::Test& t) {
 
     VaDict<VaString, int> orderedDict;
     orderedDict.insert(0, "first", 1);  // insert at beginning
-    orderedDict.insert(1, "third", 3); // append
+    orderedDict.insert(1, "third", 3);  // append
     orderedDict.insert(1, "second", 2); // insert in middle
 
     if (orderedDict.atIndex(0) != 1 || orderedDict.atIndex(1) != 2 || orderedDict.atIndex(2) != 3) {
@@ -102,7 +102,8 @@ bool TestDict(testing::Test& t) {
     }
 
     orderedDict.insert(0, "second", 4); // should remove from old position first
-    if (size(orderedDict) != 3 || orderedDict.atIndex(0) != 4 || orderedDict.atIndex(1) != 1 || orderedDict.atIndex(2) != 3) {
+    if (size(orderedDict) != 3 || orderedDict.atIndex(0) != 4 || orderedDict.atIndex(1) != 1 ||
+        orderedDict.atIndex(2) != 3) {
         return t.fail("insert with existing key failed");
     }
 
@@ -134,4 +135,4 @@ bool TestDict(testing::Test& t) {
     return t.success();
 }
 
-int main() { return testing::run(TestDict); }
+int main() { return testing::run(testDict); }

@@ -126,13 +126,13 @@ class VaString {
     Size hash() const {
         constexpr int64 fnvOffset = 14695981039346656037ull;
         constexpr int64 fnvPrime = 1099511628211ull;
-    
+
         Size h = fnvOffset;
         for (Size i = 0; i < len; ++i) {
             h ^= static_cast<uint64>(static_cast<uint8>(data[i]));
             h *= fnvPrime;
         }
-    
+
         return h;
     }
 
@@ -236,17 +236,11 @@ class VaString {
 
     bool operator<(const VaString& other) const;
 
-    inline bool operator>(const VaString other) const {
-        return other < *this;
-    }
+    inline bool operator>(const VaString other) const { return other < *this; }
 
-    inline bool operator<=(const VaString other) const {
-        return !(*this > other);
-    }
+    inline bool operator<=(const VaString other) const { return !(*this > other); }
 
-    inline bool operator>=(const VaString& other) const {
-        return !(*this < other);
-    }
+    inline bool operator>=(const VaString& other) const { return !(*this < other); }
 
     /**
      * @brief Provides access to a character at a specific index.
@@ -406,12 +400,10 @@ namespace std {
 
 template <>
 struct hash<VaString> {
-    Size operator()(const VaString& str) {
-        return str.hash();
-    }
+    Size operator()(const VaString& str) { return str.hash(); }
 };
 
-}
+} // namespace std
 
 inline VaString operator"" _Vs(const char* str, Size size) { return VaString(str, size); }
 

@@ -74,16 +74,16 @@ class VaDict {
 
     void insertBefore(Entry* next, Entry* newEntry) {
         Entry* prev = next ? next->prevOrder : tail;
-    
+
         newEntry->nextOrder = next;
         newEntry->prevOrder = prev;
-    
+
         if (prev) {
             prev->nextOrder = newEntry;
         } else {
             head = newEntry;
         }
-    
+
         if (next) {
             next->prevOrder = newEntry;
         } else {
@@ -94,7 +94,7 @@ class VaDict {
     void appendEntry(Entry* newEntry) {
         newEntry->prevOrder = tail;
         newEntry->nextOrder = nullptr;
-    
+
         if (tail) {
             tail->nextOrder = newEntry;
         } else {
@@ -109,13 +109,13 @@ class VaDict {
         } else {
             head = entry->nextOrder;
         }
-    
+
         if (entry->nextOrder) {
             entry->nextOrder->prevOrder = entry->prevOrder;
         } else {
             tail = entry->prevOrder;
         }
-    
+
         entry->nextOrder = entry->prevOrder = nullptr;
     }
 
@@ -124,13 +124,13 @@ class VaDict {
             entry->prevOrder->nextOrder = entry->nextOrder;
         else
             head = entry->nextOrder;
-    
+
         if (entry->nextOrder)
             entry->nextOrder->prevOrder = entry->prevOrder;
         else
             tail = entry->prevOrder;
-    }    
-  
+    }
+
   public:
     /**
      * @brief Struct representing a mutable key-value pair reference.
@@ -140,7 +140,7 @@ class VaDict {
         const K& key;
         V& value;
     };
-    
+
     /**
      * @brief Struct representing a const key-value pair reference.
      * @note Used for accessing entries in pairAtIndex() for const VaDict.
@@ -290,18 +290,18 @@ class VaDict {
     bool operator<(const VaDict<K, V>& other) const {
         Entry* a = head;
         Entry* b = other.head;
-    
+
         while (a != nullptr && b != nullptr) {
             if (a->key < b->key) return true;
             if (b->key < a->key) return false;
-    
+
             if (a->value < b->value) return true;
             if (b->value < a->value) return false;
-    
+
             a = a->nextOrder;
             b = b->nextOrder;
         }
-    
+
         return b != nullptr;
     }
 
@@ -313,27 +313,21 @@ class VaDict {
      * @note Equivalent to `!(this < other) && !(this == other)`.
      * @warning Requires both `K` and `V` to implement `operator<` or `operator>`.
      */
-    bool operator>(const VaDict<K, V>& other) const {
-        return other < *this;
-    }
-    
+    bool operator>(const VaDict<K, V>& other) const { return other < *this; }
+
     /**
      * @brief Checks if this dictionary is less than or equal to the other.
      * @param other The other dictionary to compare with.
      * @return `true` if this dictionary is less than or equal to the other.
      */
-    bool operator<=(const VaDict<K, V>& other) const {
-        return !(other < *this);
-    }
-    
+    bool operator<=(const VaDict<K, V>& other) const { return !(other < *this); }
+
     /**
      * @brief Checks if this dictionary is greater than or equal to the other.
      * @param other The other dictionary to compare with.
      * @return `true` if this dictionary is greater than or equal to the other.
      */
-    bool operator>=(const VaDict<K, V>& other) const {
-        return !(*this < other);
-    }
+    bool operator>=(const VaDict<K, V>& other) const { return !(*this < other); }
 
     /** 
      * @brief Checks if this dictionary is equal to another, ignoring insertion order.
@@ -343,24 +337,24 @@ class VaDict {
     bool operator==(const VaDict<K, V>& other) const {
         if (size != other.size) return false;
         if (&other == this) return true;
-    
+
         for (const Entry* e = head; e != nullptr; e = e->nextOrder) {
             V otherValue;
             if (!other.get(e->key, otherValue)) {
                 return false;
             }
-    
-            #if __cplusplus >= CPP20
+
+#if __cplusplus >= CPP20
             if constexpr (requires { e->value == otherValue; }) {
                 if (!(e->value == otherValue)) return false;
             } else {
                 if (std::memcmp(&e->value, &otherValue, sizeof(V)) != 0) return false;
             }
-            #else
+#else
             if (!(e->value == otherValue)) return false;
-            #endif
+#endif
         }
-    
+
         return true;
     }
 
@@ -369,9 +363,7 @@ class VaDict {
      * @param other The dictionary to compare with.
      * @return true if the dictionaries differ, false otherwise.
      */
-    bool operator!=(const VaDict<K, V>& other) const {
-        return !(*this == other);
-    }
+    bool operator!=(const VaDict<K, V>& other) const { return !(*this == other); }
 
     /**
      * @brief Compares two dictionaries for equality, preserving insertion order.
@@ -383,27 +375,27 @@ class VaDict {
     bool equalsOrdered(const VaDict<K, V>& other) const {
         if (size != other.size) return false;
         if (&other == this) return true;
-    
+
         const Entry* a = head;
         const Entry* b = other.head;
-    
+
         while (a && b) {
             if (!(a->key == b->key)) return false;
-    
-            #if __cplusplus >= CPP20
+
+#if __cplusplus >= CPP20
             if constexpr (requires { a->value == b->value; }) {
                 if (!(a->value == b->value)) return false;
             } else {
                 if (std::memcmp(&a->value, &b->value, sizeof(V)) != 0) return false;
             }
-            #else
+#else
             if (!(a->value == b->value)) return false;
-            #endif
-    
+#endif
+
             a = a->nextOrder;
             b = b->nextOrder;
         }
-    
+
         return true;
     }
 
@@ -429,20 +421,20 @@ class VaDict {
      */
     void insert(Size index, const K& key, const V& value) {
         if (index > size) throw IndexOutOfRangeError(size, index);
-    
+
         if (contains(key)) {
             remove(key);
             if (index > size) index = size;
         }
-    
+
         if (size >= cap * 0.75) resize(cap * 2);
-    
+
         Size bucketIndex = computeIndex(key);
         Entry* newEntry = new Entry(key, value);
-    
+
         newEntry->next = buckets[bucketIndex];
         buckets[bucketIndex] = newEntry;
-    
+
         if (index == size) {
             appendEntry(newEntry);
         } else {
@@ -452,7 +444,7 @@ class VaDict {
             }
             insertBefore(target, newEntry);
         }
-    
+
         size++;
     }
 
@@ -548,7 +540,7 @@ class VaDict {
                 } else {
                     buckets[index] = entry->next;
                 }
-    
+
                 unlinkFromOrder(entry);
 
                 delete entry;
@@ -587,19 +579,19 @@ class VaDict {
     V& operator[](const K& key) {
         Size index = computeIndex(key);
         Entry* entry = buckets[index];
-    
+
         while (entry != nullptr) {
             if (entry->key == key) {
                 return entry->value;
             }
             entry = entry->next;
         }
-    
+
         // Create and link new entry directly
         Entry* newEntry = new Entry(key, V());
         newEntry->next = buckets[index];
         buckets[index] = newEntry;
-    
+
         if (tail == nullptr) {
             head = tail = newEntry;
         } else {
@@ -607,11 +599,11 @@ class VaDict {
             newEntry->prevOrder = tail;
             tail = newEntry;
         }
-    
+
         size++;
         return newEntry->value;
     }
-    
+
     // --- at
     /**
      * @brief Returns a reference to the value for the given key.

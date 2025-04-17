@@ -12,6 +12,7 @@
 #include <VaLib/Types/ImmutableString.hpp>
 #include <VaLib/Types/List.hpp>
 #include <VaLib/Types/Pair.hpp>
+#include <VaLib/Types/Set.hpp>
 #include <VaLib/Types/Slice.hpp>
 #include <VaLib/Types/String.hpp>
 #include <VaLib/Types/Tuple.hpp>

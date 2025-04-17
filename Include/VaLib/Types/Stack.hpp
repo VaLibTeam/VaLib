@@ -10,6 +10,11 @@
 #include <stdexcept>
 #include <vector>
 
+#ifdef VaLib_USE_CONCEPTS
+
+template <typename T, typename Container>
+class StackBase;
+
 template <typename C, typename T>
 concept VaContainer = requires(C t, T elm, T value, Size index) {
     { t.append(elm) } -> std::same_as<void>;
@@ -31,9 +36,6 @@ concept StdContainer = requires(C t, T elm, T value, Size index) {
 
     { t[index] } -> std::convertible_to<T&>;
 };
-
-template <typename T, typename Container>
-class StackBase;
 
 template <typename T, typename Container>
     requires VaContainer<Container, T>
@@ -104,6 +106,44 @@ class StackBase<T, Container> {
 
     inline bool empty() const { return container.size() == 0; }
 };
+
+#else
+
+template <typename T, typename Container>
+class StackBase {
+  protected:
+    Container container;
+
+    Size size() const { return len(container); }
+
+  public:
+    void push(const T& value) { container.append(value); }
+
+    void pop() {
+        if (empty()) {
+            throw IndexOutOfRangeError("Stack is empty");
+        }
+        container.pop();
+    }
+
+    T& top() {
+        if (empty()) {
+            throw IndexOutOfRangeError("Stack is empty");
+        }
+        return container[len(container) - 1];
+    }
+
+    const T& top() const {
+        if (empty()) {
+            throw IndexOutOfRangeError("Stack is empty");
+        }
+        return container[len(container) - 1];
+    }
+
+    inline bool empty() const { return len(container) == 0; }
+};
+
+#endif
 
 template <typename T>
 class StackBase<T, void> {

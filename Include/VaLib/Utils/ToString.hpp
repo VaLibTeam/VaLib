@@ -55,7 +55,7 @@ std::ostream& operator<<(std::ostream& os, T v) {
     return os;
 }
 
-template <ImmutableStringer T>
+template <VaImmutableStringer T>
 std::ostream& operator<<(std::ostream& os, T v) {
     os << v.toImmutableString().toStdString();
 }
