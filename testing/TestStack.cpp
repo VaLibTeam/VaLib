@@ -6,7 +6,11 @@
 
 #include <VaLib/Types/Stack.hpp>
 
-#define expect(code) try { code } catch (...) {}
+#define expect(code)                                                                               \
+    try {                                                                                          \
+        code                                                                                       \
+    } catch (...) {                                                                                \
+    }
 
 template <typename T, typename C>
 bool testStackFor(testing::Test& t) {
@@ -37,12 +41,12 @@ bool testStackFor(testing::Test& t) {
         return t.fail("Expected exception on pop() from empty stack.");
     })
 
-    expect({
-        s.top();
-        return t.fail("Expected exception on top() from empty stack.");
-    })
+        expect({
+            s.top();
+            return t.fail("Expected exception on top() from empty stack.");
+        })
 
-    return t.success();
+            return t.success();
 }
 
 bool testStack(testing::Test& t) {
@@ -53,6 +57,4 @@ bool testStack(testing::Test& t) {
     return t.success();
 }
 
-int main() {
-    return testing::run(testStack);
-}
+int main() { return testing::run(testStack); }

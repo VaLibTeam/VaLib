@@ -19,9 +19,9 @@ struct DictEntry {
     K key;
     V value;
 
-    DictEntry<K, V>* next;      // Next in hash bucket
-    DictEntry<K, V>* prevOrder; // Previous in insertion order
-    DictEntry<K, V>* nextOrder; // Next in insertion order
+    DictEntry<K, V>* next;      ///< Next in hash bucket
+    DictEntry<K, V>* prevOrder; ///< Previous in insertion order
+    DictEntry<K, V>* nextOrder; ///< Next in insertion order
 
     DictEntry(const K& k, const V& v) : next(nullptr), prevOrder(nullptr), nextOrder(nullptr) {
         key = k;
@@ -34,21 +34,16 @@ class VaDict {
   protected:
     using Entry = DictEntry<K, V>;
 
-    Size cap;
-    Size size;
+    Size cap;  ///< Capacity of the hash table
+    Size size; ///< Current number of entries stored in the hash table.
 
-    /** 
-     * @brief Array of pointers to hash buckets (each bucket is a linked list of entries).
-    */
-    Entry** buckets;
+    Entry**
+        buckets; ///< Array of pointers to hash buckets (each bucket is a linked list of entries).
 
     Entry* head;
     Entry* tail;
 
-    /** 
-     * @brief Hash function used to compute bucket indices from keys.
-     */
-    Hash hashFunc;
+    Hash hashFunc; ///< Hash function used to compute bucket indices from keys.
 
     Size computeIndex(const K& key) const { return hashFunc(key) % cap; }
 
@@ -120,15 +115,17 @@ class VaDict {
     }
 
     void unlinkFromOrder(Entry* entry) {
-        if (entry->prevOrder)
+        if (entry->prevOrder) {
             entry->prevOrder->nextOrder = entry->nextOrder;
-        else
+        } else {
             head = entry->nextOrder;
+        }
 
-        if (entry->nextOrder)
+        if (entry->nextOrder) {
             entry->nextOrder->prevOrder = entry->prevOrder;
-        else
+        } else {
             tail = entry->prevOrder;
+        }
     }
 
   public:
@@ -402,6 +399,7 @@ class VaDict {
     /**
      * @brief Ensures capacity is at least the specified amount.
      * @param minCap The minimum number of buckets to reserve.
+     * 
      * @note Triggers rehashing if current capacity is smaller.
      */
     void reserve(Size minCap) {
@@ -502,6 +500,7 @@ class VaDict {
 
     /**
      * @brief Removes all key-value pairs from the dictionary.
+     * 
      * @note Leaves the capacity unchanged.
      * @note After clearing, size is 0 and iteration is reset.
      */
@@ -524,6 +523,7 @@ class VaDict {
     /**
      * @brief Removes a key-value pair from the dictionary.
      * @param key The key to remove.
+     * 
      * @note Does nothing if key is not found.
      * @note Preserves order of remaining elements.
      */
@@ -573,6 +573,7 @@ class VaDict {
      * @brief Returns a reference to the value for the given key, inserting a default if missing.
      * @param key The key to retrieve or insert.
      * @return Reference to the existing or newly inserted value.
+     * 
      * @note Inserts default-constructed value if key is not present.
      * @note May cause rehash if load factor exceeds threshold.
      */
@@ -705,6 +706,7 @@ class VaDict {
      * @brief Returns a const key-value pair reference at a given insertion index.
      * @param index Index of the entry to access.
      * @return A ConstPairRef with const references to key and value.
+     * 
      * @throws IndexOutOfRangeError if index is invalid.
      * @note Use when no modification is needed.
      */
@@ -731,9 +733,7 @@ class VaDict {
             if (ptr) ptr = ptr->nextOrder;
         }
 
-        VaPair<const K&, V&> operator*() {
-            return VaPair<const K&, V&>{ptr->key, ptr->value};
-        }
+        VaPair<const K&, V&> operator*() { return VaPair<const K&, V&>{ptr->key, ptr->value}; }
 
         VaPair<const K&, const V&> operator*() const {
             return VaPair<const K&, const V&>{ptr->key, ptr->value};

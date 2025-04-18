@@ -294,9 +294,7 @@ class VaString {
      */
     char* getData() noexcept;
 
-    inline operator std::string() const {
-        return this->toStdString();
-    }
+    inline operator std::string() const { return this->toStdString(); }
 
     /**
      * @brief  Provides access to the internal C-style string representation.

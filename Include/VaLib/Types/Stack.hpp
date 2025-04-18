@@ -239,18 +239,11 @@ class StackBase<T, void> {
     bool isEmpty() const { return len == 0; }
 };
 
-}
+} // namespace va::detail
 
 template <typename T, typename Container = void>
 class VaStack: public va::detail::StackBase<T, Container> {
   public:
-    // using va::detail::StackBase<T, Container>::StackBase;
-    // using va::detail::StackBase<T, Container>::push;
-    // using va::detail::StackBase<T, Container>::pop;
-    // using va::detail::StackBase<T, Container>::top;
-    // using va::detail::StackBase<T, Container>::empty;
-    // using va::detail::StackBase<T, Container>::size;
-
     friend inline Size len(const VaStack& stack) { return stack.size(); }
     friend inline Size cap(const VaStack& stack) { return stack.capacity(); }
 };

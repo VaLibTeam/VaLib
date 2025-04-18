@@ -261,11 +261,11 @@ class VaTuple<Head, Tail...>: protected VaTuple<Tail...> {
     template <Size I>
     using Element = typename std::tuple_element<I, VaTuple>::type;
 
-    template<typename... Types1, typename... Types2, Size... I1, Size... I2>
+    template <typename... Types1, typename... Types2, Size... I1, Size... I2>
     friend auto concatenate(const VaTuple<Types1...>&, const VaTuple<Types2...>&,
                             std::index_sequence<I1...>, std::index_sequence<I2...>);
 
-    template<typename... Types1, typename... Types2>
+    template <typename... Types1, typename... Types2>
     friend auto operator+(const VaTuple<Types1...>&, const VaTuple<Types2...>&);
 };
 

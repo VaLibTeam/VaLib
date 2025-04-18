@@ -48,6 +48,12 @@ bool testList(testing::Test& t) {
         return t.fail("Sum didn't work correctly");
     }
 
+    list.del(0);
+    list.del(1);
+    if (list != VaList<int>{20}) {
+        return t.fail("unexpected result");
+    }
+
     VaList<int> list2 = list;
     list2.extend(list);
 
@@ -59,6 +65,11 @@ bool testList(testing::Test& t) {
     list3.insert(2, "o");
 
     if (list3.join() != "Hello, world!") {
+        return t.fail("Unexpected result of list3.join");
+    }
+
+    list3.del(2);
+    if (list3.join() != "Hell, world!") {
         return t.fail("Unexpected result of list3.join");
     }
 

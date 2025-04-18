@@ -34,9 +34,7 @@ class Test {
         return false;
     }
 
-    bool helper(Function<bool, Test&> testFunc) {
-        return testFunc(*this);
-    }
+    bool helper(Function<bool, Test&> testFunc) { return testFunc(*this); }
 };
 
 int run(Function<bool, Test&> func) {

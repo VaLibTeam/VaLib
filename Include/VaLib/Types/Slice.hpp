@@ -20,15 +20,14 @@
 template <typename T>
 class VaSlice {
   protected:
-    T* data;    ///< Pointer to the first element in the slice
-    Size len;   ///< Number of elements in the slice
+    T* data;  ///< Pointer to the first element in the slice
+    Size len; ///< Number of elements in the slice
 
     friend class VaList<T>;
 
   public:
     /**
      * @brief Construct from pointer and size
-     * 
      * @param data Pointer to the first element
      * @param size Number of elements
      * 
@@ -36,10 +35,9 @@ class VaSlice {
      * @warning The caller must ensure the pointer remains valid for the slice's lifetime
      */
     VaSlice(T* data, Size size) : data(data), len(size) {}
-    
+
     /**
      * @brief Construct from pointer range
-     * 
      * @param begin Pointer to the first element
      * @param end Pointer to one past the last element
      * 
@@ -50,7 +48,6 @@ class VaSlice {
 
     /**
      * @brief Construct from VaList
-     * 
      * @param list VaList to create a view of
      * 
      * @note This creates a view of the entire VaList
@@ -59,7 +56,6 @@ class VaSlice {
 
     /**
       * @brief Construct from any container with data() and size() methods
-      * 
       * @tparam C Container type
       * @param container Container to create view of
       * 
@@ -70,7 +66,6 @@ class VaSlice {
 
     /**
      * @brief Construct from any const container with data() and size() methods
-     * 
      * @tparam C Container type
      * @param container Container to create view of
      * 
@@ -81,7 +76,6 @@ class VaSlice {
 
     /**
      * @brief Construct from C-style array
-     * 
      * @tparam N Size of the array
      * @param arr Array to create view of
      * 
@@ -92,26 +86,27 @@ class VaSlice {
 
     /// @brief Default copy constructor
     VaSlice(const VaSlice&) = default;
+
     /// @brief Default move constructor
     VaSlice(VaSlice&&) = default;
+
     /// @brief Default copy assignment
     VaSlice& operator=(const VaSlice&) = default;
+
     /// @brief Default move assignment
     VaSlice& operator=(VaSlice&&) = default;
 
     /**
      * @brief Access element without bounds checking
-     * 
      * @param index Position of the element
      * @return Reference to the element
      * 
      * @warning No bounds checking is performed - unsafe if index is invalid
      */
     T& operator[](Size index) { return data[index]; }
-    
+
     /**
      * @brief Access const element without bounds checking
-     * 
      * @param index Position of the element
      * @return Const reference to the element
      * 
@@ -121,7 +116,6 @@ class VaSlice {
 
     /**
      * @brief Access element with bounds checking
-     * 
      * @param index Position of the element
      * @return Reference to the element
      * @throw IndexOutOfRangeError if index is out of bounds
@@ -155,7 +149,7 @@ class VaSlice {
      * @note Useful for interoperability with C-style APIs
      */
     T* getData() noexcept { return data; }
-    
+
     /**
      * @brief Get const raw pointer to the data
      * 
@@ -231,31 +225,31 @@ class VaSlice {
      * @return Iterator to first element
      */
     inline T* begin() noexcept { return data; }
-    
+
     /**
      * @brief Get iterator to end
      * @return Iterator to one past the last element
      */
     inline T* end() noexcept { return data + len; }
-    
+
     /**
      * @brief Get const iterator to beginning
      * @return Const iterator to first element
      */
-    const inline T* begin() const noexcept { return data; }
-    
+    inline const T* begin() const noexcept { return data; }
+
     /**
      * @brief Get const iterator to end
      * @return Const iterator to one past the last element
      */
-    const inline T* end() const noexcept { return data + len; }
+    inline const T* end() const noexcept { return data + len; }
 
     /**
      * @brief Get reverse iterator to beginning
      * @return Reverse iterator starting at the end
      */
     std::reverse_iterator<T*> rbegin() noexcept { return std::reverse_iterator<T*>(end()); }
-    
+
     /**
      * @brief Get reverse iterator to end
      * @return Reverse iterator starting at one before the first element

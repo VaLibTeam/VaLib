@@ -46,6 +46,7 @@
 
 vgcore.*
 
-/*/.nvim
-/.nvim
-/testing/.nvim
+/**/.nvim/
+/.nvim/
+/testing/.nvim/
+/**/__pycache__/
