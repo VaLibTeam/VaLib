@@ -26,6 +26,7 @@ class VaList {
 
     void resize(Size newCap) {
         T* newData = static_cast<T*>(std::malloc(newCap * sizeof(T)));
+        if (!newData) throw NullPointerError();
 
         if constexpr (std::is_trivially_copyable_v<T>) {
             std::memcpy(newData, data, len * sizeof(T));
@@ -246,7 +247,10 @@ class VaList {
     }
 
     T pop() {
-        if (len == 0) throw IndexOutOfRangeError(len, 0);
+        if (len == 0) {
+            throw ValueError("pop() on empty list");
+        }
+
         T value = std::move(data[len - 1]);
         data[len - 1].~T();
         len--;

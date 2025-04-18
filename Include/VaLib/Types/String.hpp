@@ -18,19 +18,14 @@ class VaImmutableString;
  * @class VaString string implementation for VaLib
  * A dynamic string class for managing and manipulating character strings.
  * 
+ * @ingroup string
+ * 
  * @note VaString is mutable.
  */
 class VaString {
   protected:
-    /**
-     * @brief The current length of the string.
-     */
-    Size len;
-
-    /**
-     * @brief The current capacity of the string buffer.
-     */
-    Size cap;
+    Size len; ///< The current length of the string.
+    Size cap; ///< The current capacity of the string buffer.
 
     /**
      * @brief raw string data.
@@ -396,6 +391,14 @@ class VaString {
      * @return The capacity of the string buffer.
      */
     friend inline Size cap(const VaString& str) { return str.cap; }
+
+    friend inline VaString operator+(const char* lhs, const VaString& rhs) {
+        return VaString(lhs) + rhs;
+    }
+
+    friend inline bool operator==(const char* lhs, const VaString& rhs) {
+        return VaString(lhs) == rhs;
+    }
 };
 
 namespace std {

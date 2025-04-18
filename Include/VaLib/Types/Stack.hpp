@@ -10,6 +10,8 @@
 #include <stdexcept>
 #include <vector>
 
+namespace va::detail {
+
 #ifdef VaLib_USE_CONCEPTS
 
 template <typename T, typename Container>
@@ -29,7 +31,7 @@ concept VaContainer = requires(C t, T elm, T value, Size index) {
 template <typename C, typename T>
 concept StdContainer = requires(C t, T elm, T value, Size index) {
     { t.push_back(elm) } -> std::same_as<void>;
-    { t.pop_back() } -> std::convertible_to<T>;
+    { t.pop_back() } -> std::convertible_to<void>;
 
     { t.size() } -> std::convertible_to<Size>;
     { t.capacity() } -> std::convertible_to<Size>;
@@ -44,6 +46,7 @@ class StackBase<T, Container> {
     Container container;
 
     Size size() const { return len(container); }
+    Size capacity() const { return cap(container); }
 
   public:
     void push(const T& value) { container.append(value); }
@@ -52,6 +55,7 @@ class StackBase<T, Container> {
         if (isEmpty()) {
             throw IndexOutOfRangeError("Stack is empty");
         }
+
         container.pop();
     }
 
@@ -79,6 +83,7 @@ class StackBase<T, Container> {
     Container container;
 
     Size size() const { return container.size(); }
+    Size capacity() const { return container.capacity(); }
 
   public:
     void push(const T& value) { container.push_back(value); }
@@ -87,6 +92,7 @@ class StackBase<T, Container> {
         if (isEmpty()) {
             throw IndexOutOfRangeError("Stack is empty");
         }
+
         container.pop_back();
     }
 
@@ -115,6 +121,7 @@ class StackBase {
     Container container;
 
     Size size() const { return len(container); }
+    Size capacity() const { return cap(container); }
 
   public:
     void push(const T& value) { container.append(value); }
@@ -148,67 +155,102 @@ class StackBase {
 template <typename T>
 class StackBase<T, void> {
   protected:
-    Size capacity;
-    Size stackSize;
-    std::unique_ptr<T[]> data;
+    Size len, cap;
+    T* data;
 
-    Size size() const { return stackSize; }
+    void resize(Size newCap) {
+        T* newData = static_cast<T*>(std::malloc(newCap * sizeof(T)));
+        if (!newData) throw NullPointerError();
 
-    void resize() {
-        Size newCapacity = capacity == 0 ? 1 : capacity * 2;
-        std::unique_ptr<T[]> newData(new T[newCapacity]);
-
-        for (Size i = 0; i < stackSize; ++i) {
-            newData[i] = std::move(data[i]);
+        if constexpr (std::is_trivially_copyable_v<T>) {
+            std::memcpy(newData, data, len * sizeof(T));
+        } else {
+            for (Size i = 0; i < len; i++) {
+                new (&newData[i]) T(std::move(data[i]));
+                data[i].~T();
+            }
         }
 
-        data = std::move(newData);
-        capacity = newCapacity;
+        std::free(data);
+
+        data = newData;
+        cap = newCap;
+    }
+
+    Size size() const { return len; }
+    Size capacity() const { return cap; }
+
+    inline void deleteObjects() {
+        if constexpr (!std::is_trivially_destructible_v<T>) {
+            for (Size i = 0; i < len; i++) {
+                data[i].~T();
+            }
+        }
+    }
+
+    inline void expand() { resize(cap == 0 ? 4 : cap * 2); }
+
+    inline void update() {
+        if (len >= cap) expand();
     }
 
   public:
-    StackBase() : capacity(0), stackSize(0), data(nullptr) {}
-
-    void push(const T& value) {
-        if (stackSize >= capacity) {
-            resize();
+    StackBase() : cap(0), len(0), data(nullptr) {}
+    ~StackBase() {
+        if (data) {
+            deleteObjects();
+            std::free(data);
         }
-        data[stackSize++] = value;
+    }
+
+    void push(const T& elm) {
+        update();
+        new (&data[len++]) T(elm);
+    }
+
+    void push(T&& elm) {
+        update();
+        new (&data[len++]) T(std::move(elm));
     }
 
     void pop() {
-        if (isEmpty()) {
-            throw std::out_of_range("Stack is empty");
+        if (len <= 0) {
+            throw ValueError("pop() on empty stack");
         }
-        --stackSize;
+
+        data[len - 1].~T();
+        len--;
     }
 
     T& top() {
         if (isEmpty()) {
-            throw std::out_of_range("Stack is empty");
+            throw IndexOutOfRangeError("Stack is empty");
         }
-        return data[stackSize - 1];
+        return data[len - 1];
     }
 
     const T& top() const {
         if (isEmpty()) {
-            throw std::out_of_range("Stack is empty");
+            throw IndexOutOfRangeError("Stack is empty");
         }
-        return data[stackSize - 1];
+        return data[len - 1];
     }
 
-    bool isEmpty() const { return stackSize == 0; }
+    bool isEmpty() const { return len == 0; }
 };
 
-template <typename T, typename Container = void>
-class Stack: protected StackBase<T, Container> {
-  public:
-    using StackBase<T, Container>::StackBase;
-    using StackBase<T, Container>::push;
-    using StackBase<T, Container>::pop;
-    using StackBase<T, Container>::top;
-    using StackBase<T, Container>::empty;
-    using StackBase<T, Container>::size;
+}
 
-    friend inline Size len(const Stack& stack) { return stack.size(); }
+template <typename T, typename Container = void>
+class VaStack: public va::detail::StackBase<T, Container> {
+  public:
+    // using va::detail::StackBase<T, Container>::StackBase;
+    // using va::detail::StackBase<T, Container>::push;
+    // using va::detail::StackBase<T, Container>::pop;
+    // using va::detail::StackBase<T, Container>::top;
+    // using va::detail::StackBase<T, Container>::empty;
+    // using va::detail::StackBase<T, Container>::size;
+
+    friend inline Size len(const VaStack& stack) { return stack.size(); }
+    friend inline Size cap(const VaStack& stack) { return stack.capacity(); }
 };

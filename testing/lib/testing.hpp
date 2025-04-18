@@ -33,6 +33,10 @@ class Test {
         std::cerr << "\033[31;1m" << "[ FAIL ]: " << "\033[0m" << msg << "\n";
         return false;
     }
+
+    bool helper(Function<bool, Test&> testFunc) {
+        return testFunc(*this);
+    }
 };
 
 int run(Function<bool, Test&> func) {

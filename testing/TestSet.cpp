@@ -6,6 +6,7 @@
 
 #include <VaLib/Types.hpp>
 #include <VaLib/Utils.hpp>
+
 bool testSet(testing::Test& t) {
     VaSet<int> set = {1, 2, 3};
 
