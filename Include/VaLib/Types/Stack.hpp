@@ -49,27 +49,27 @@ class StackBase<T, Container> {
     void push(const T& value) { container.append(value); }
 
     void pop() {
-        if (empty()) {
+        if (isEmpty()) {
             throw IndexOutOfRangeError("Stack is empty");
         }
         container.pop();
     }
 
     T& top() {
-        if (empty()) {
+        if (isEmpty()) {
             throw IndexOutOfRangeError("Stack is empty");
         }
         return container[len(container) - 1];
     }
 
     const T& top() const {
-        if (empty()) {
+        if (isEmpty()) {
             throw IndexOutOfRangeError("Stack is empty");
         }
         return container[len(container) - 1];
     }
 
-    inline bool empty() const { return len(container) == 0; }
+    inline bool isEmpty() const { return len(container) == 0; }
 };
 
 template <typename T, typename Container>
@@ -84,27 +84,27 @@ class StackBase<T, Container> {
     void push(const T& value) { container.push_back(value); }
 
     void pop() {
-        if (empty()) {
+        if (isEmpty()) {
             throw IndexOutOfRangeError("Stack is empty");
         }
         container.pop_back();
     }
 
     T& top() {
-        if (empty()) {
+        if (isEmpty()) {
             throw IndexOutOfRangeError("Stack is empty");
         }
         return container[container.size() - 1];
     }
 
     const T& top() const {
-        if (empty()) {
+        if (isEmpty()) {
             throw IndexOutOfRangeError("Stack is empty");
         }
         return container[container.size() - 1];
     }
 
-    inline bool empty() const { return container.size() == 0; }
+    inline bool isEmpty() const { return container.size() == 0; }
 };
 
 #else
@@ -120,27 +120,27 @@ class StackBase {
     void push(const T& value) { container.append(value); }
 
     void pop() {
-        if (empty()) {
+        if (isEmpty()) {
             throw IndexOutOfRangeError("Stack is empty");
         }
         container.pop();
     }
 
     T& top() {
-        if (empty()) {
+        if (isEmpty()) {
             throw IndexOutOfRangeError("Stack is empty");
         }
         return container[len(container) - 1];
     }
 
     const T& top() const {
-        if (empty()) {
+        if (isEmpty()) {
             throw IndexOutOfRangeError("Stack is empty");
         }
         return container[len(container) - 1];
     }
 
-    inline bool empty() const { return len(container) == 0; }
+    inline bool isEmpty() const { return len(container) == 0; }
 };
 
 #endif
@@ -177,27 +177,27 @@ class StackBase<T, void> {
     }
 
     void pop() {
-        if (empty()) {
+        if (isEmpty()) {
             throw std::out_of_range("Stack is empty");
         }
         --stackSize;
     }
 
     T& top() {
-        if (empty()) {
+        if (isEmpty()) {
             throw std::out_of_range("Stack is empty");
         }
         return data[stackSize - 1];
     }
 
     const T& top() const {
-        if (empty()) {
+        if (isEmpty()) {
             throw std::out_of_range("Stack is empty");
         }
         return data[stackSize - 1];
     }
 
-    bool empty() const { return stackSize == 0; }
+    bool isEmpty() const { return stackSize == 0; }
 };
 
 template <typename T, typename Container = void>

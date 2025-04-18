@@ -145,10 +145,16 @@ class VaList {
     }
 
     void prepend(const T& elm) { insert(0, elm); }
-
     void prepend(T&& elm) { insert(0, elm); }
 
     void extend(const VaList& other) { *this += other; }
+
+    template <typename... Args>
+    T& emplace(Args&&... args) {
+        update();
+        new (&data[len]) T(std::forward<Args>(args)...);
+        return data[len++];
+    }
 
     T& operator[](Size index) { return data[index]; }
     const T& operator[](Size index) const { return data[index]; }
@@ -172,6 +178,21 @@ class VaList {
         }
         new (&data[index]) T(std::move(value));
         len++;
+    }
+
+    template <typename... Args>
+    T& insertEmplace(Size index, Args&&... args) {
+        if (index > len) throw IndexOutOfRangeError(len, index);
+        update();
+
+        for (Size i = len; i > index; i--) {
+            new (&data[i]) T(std::move(data[i - 1]));
+            data[i - 1].~T();
+        }
+
+        new (&data[index]) T(std::forward<Args>(args)...);
+        len++;
+        return data[index];
     }
 
     void del(Size index) {
@@ -293,7 +314,7 @@ class VaList {
     inline T* getData() { return data; }
     inline const T* getData() const { return data; }
 
-    inline bool empty() const { return len <= 0; }
+    inline bool isEmpty() const { return len <= 0; }
     inline explicit operator bool() const { return len > 0; }
 
     void clear() {

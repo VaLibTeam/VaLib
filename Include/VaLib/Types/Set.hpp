@@ -50,10 +50,10 @@ class VaSet {
         NodeHandle(const NodeHandle&) = delete;
         NodeHandle& operator=(const NodeHandle&) = delete;
 
-        bool empty() const { return node == nullptr; }
+        bool isEmpty() const { return node == nullptr; }
         const T& key() const { return node->key; }
 
-        inline operator bool() { return !empty(); }
+        inline operator bool() { return !isEmpty(); }
 
         Node* getRaw() const { return node; }
     };
@@ -326,7 +326,7 @@ class VaSet {
     }
 
     VaPair<iterator, bool> insert(NodeHandle&& nh) {
-        if (nh.empty()) return {end(), false};
+        if (nh.isEmpty()) return {end(), false};
 
         Node* z = nh.node;
         Node* y = nullptr;
@@ -470,7 +470,7 @@ class VaSet {
 
     NodeHandle extract(const T& key) { return extract(find(key)); }
 
-    bool empty() const { return len == 0; }
+    bool isEmpty() const { return len == 0; }
     friend inline Size len(const VaSet& set) { return set.len; }
 
     friend bool operator==(const VaSet& lhs, const VaSet& rhs) {

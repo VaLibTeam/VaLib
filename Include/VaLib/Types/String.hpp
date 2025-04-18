@@ -237,9 +237,7 @@ class VaString {
     bool operator<(const VaString& other) const;
 
     inline bool operator>(const VaString other) const { return other < *this; }
-
     inline bool operator<=(const VaString other) const { return !(*this > other); }
-
     inline bool operator>=(const VaString& other) const { return !(*this < other); }
 
     /**
@@ -300,6 +298,10 @@ class VaString {
      *       Modifying the data through this pointer will affect the VaString object.
      */
     char* getData() noexcept;
+
+    inline operator std::string() const {
+        return this->toStdString();
+    }
 
     /**
      * @brief  Provides access to the internal C-style string representation.

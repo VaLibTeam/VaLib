@@ -70,7 +70,7 @@ bool testList(testing::Test& t) {
     }
 
     list4.clear();
-    if (!list4.empty()) {
+    if (!list4.isEmpty()) {
         return t.fail("Clear didn't work correctly");
     }
 

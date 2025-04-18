@@ -55,25 +55,25 @@ class VaSlice {
 
     Size sizeBytes() const noexcept { return len * sizeof(T); }
 
-    bool empty() const noexcept { return len == 0; }
+    bool isEmpty() const noexcept { return len == 0; }
 
     T& front() {
-        if (empty()) throw ValueError("front() called on empty slice");
+        if (isEmpty()) throw ValueError("front() called on empty slice");
         return data[0];
     }
 
     T& back() {
-        if (empty()) throw ValueError("back() called on empty slice");
+        if (isEmpty()) throw ValueError("back() called on empty slice");
         return data[len - 1];
     }
 
     const T& front() const {
-        if (empty()) throw ValueError("front() called on empty slice");
+        if (isEmpty()) throw ValueError("front() called on empty slice");
         return data[0];
     }
 
     const T& back() const {
-        if (empty()) throw ValueError("back() called on empty slice");
+        if (isEmpty()) throw ValueError("back() called on empty slice");
         return data[len - 1];
     }
 

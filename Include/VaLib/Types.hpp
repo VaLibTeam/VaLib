@@ -3,7 +3,10 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
+#ifdef VaLib_USE_CONCEPTS
 #include <VaLib/Types/BasicConcepts.hpp>
+#endif
+
 #include <VaLib/Types/BasicTypedef.hpp>
 
 #include <VaLib/Types/Array.hpp>

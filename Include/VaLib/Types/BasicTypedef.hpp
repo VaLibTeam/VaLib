@@ -72,4 +72,4 @@ inline constexpr bool HasEqualityOperatorV = HasEqualityOperator<T>::value;
 
 // nothing. 🙏
 struct NoneType {};
-NoneType nil{};
+constexpr NoneType nil{};

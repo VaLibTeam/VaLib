@@ -731,13 +731,17 @@ class VaDict {
             if (ptr) ptr = ptr->nextOrder;
         }
 
-        VaPair<const K&, V&> operator*() const {
+        VaPair<const K&, V&> operator*() {
             return VaPair<const K&, V&>{ptr->key, ptr->value};
+        }
+
+        VaPair<const K&, const V&> operator*() const {
+            return VaPair<const K&, const V&>{ptr->key, ptr->value};
         }
     };
 
-    const Entry* begin() const { return head; }
-    const Entry* end() const { return nullptr; }
+    Iterator begin() const { return Iterator(head); }
+    Iterator end() const { return Iterator(nullptr); }
 
     Iterator begin() { return Iterator(head); }
     Iterator end() { return Iterator(nullptr); }
