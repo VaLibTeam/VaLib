@@ -3,7 +3,7 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#define VaLib_VERSION 1.1
+#define VaLib_VERSION 1.3
 #include <VaLib/AutoEnable.hpp>
 
 #include <VaLib/Types.hpp>
