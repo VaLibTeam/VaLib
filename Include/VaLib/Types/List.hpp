@@ -3,17 +3,18 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#include <cstdlib>
-
 #include <VaLib/Types/BasicConcepts.hpp>
 #include <VaLib/Types/BasicTypedef.hpp>
 #include <VaLib/Utils/BasicDefine.hpp>
 
 #include <VaLib/Types/Error.hpp>
+#include <VaLib/Types/Pair.hpp>
 
 #include <initializer_list>
 #include <type_traits>
+#include <algorithm>
 #include <utility>
+#include <cstdlib>
 
 template <typename T>
 class VaSlice;
@@ -23,7 +24,7 @@ class VaList {
   protected:
     Size len; ///< Number of elements currently stored.
     Size cap; ///< Current capacity of the allocated buffer.
-    T* data; ///< Pointer to the raw array of elements.
+    T* data;  ///< Pointer to the raw array of elements.
 
     /**
      * @brief Resizes the internal buffer to a new capacity.
@@ -195,6 +196,7 @@ class VaList {
         for (Size i = 0; i < other.len; i++) {
             result.data[len + i] = other.data[i];
         }
+
         return result;
     }
 
@@ -329,6 +331,46 @@ class VaList {
     const T& at(Size index) const {
         if (index >= len) throw IndexOutOfRangeError(len, index);
         return data[index];
+    }
+
+    /**
+     * @brief Returns a reference to the first element in the list.
+     * @return Reference to the first element.
+     * @throws IndexError If the list is empty.
+     */
+    T& front() {
+        if (len <= 0) throw IndexError("front() on empty list");
+        return data[0];
+    }
+
+    /**
+     * @brief Returns a const reference to the first element in the list.
+     * @return Const reference to the first element.
+     * @throws IndexError If the list is empty.
+     */
+    const T& front() const {
+        if (len <= 0) throw IndexError("front() on empty list");
+        return data[0];
+    }
+
+    /**
+     * @brief Returns a reference to the last element in the list.
+     * @return Reference to the last element.
+     * @throws IndexError If the list is empty.
+     */
+    T& back() {
+        if (len <= 0) throw IndexError("back() on empty list");
+        return data[len-1];
+    }
+
+    /**
+     * @brief Returns a const reference to the last element in the list.
+     * @return Const reference to the last element.
+     * @throws IndexError If the list is empty.
+     */
+    const T& back() const {
+        if (len <= 0) throw IndexError("back() on empty list");
+        return data[len-1];
     }
 
     /**
@@ -500,6 +542,27 @@ class VaList {
         return result;
     }
 
+    template <typename U = T>
+    std::enable_if_t<std::is_invocable_r_v<bool, U>, bool> all() const {
+        for (int i = 0; i < len; i++) {
+            if (!static_cast<bool>(data[i])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    template <typename U = T>
+    std::enable_if_t<std::is_invocable_r_v<bool, U>, bool> any() const {
+        for (int i = 0; i < len; i++) {
+            if (static_cast<bool>(data[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * @brief Returns a pointer to the internal data array.
      * @return Pointer to the data.
@@ -553,3 +616,120 @@ class VaList {
      */
     friend inline Size cap(const VaList& list) { return list.cap; }
 };
+
+namespace va {
+
+/**
+ * @brief Applies a transformation function to each element of the input list and returns a new list.
+ * @tparam Old Input type.
+ * @tparam New Output type.
+ * @param mod Function that transforms elements from Old to New.
+ * @param data Input list.
+ * @return A new VaList containing the transformed elements.
+ */
+template<typename Old, typename New>
+VaList<New> map(Function<Old, New> mod, const VaList<Old>& data) {
+    VaList<New> result;
+    result.reserve(len(data));
+
+    for (Size i = 0; i < len(data); i++) {
+        result.append(mod(data[i]));
+    }
+
+    return result;
+}
+
+/**
+ * @brief Returns a new list containing only the elements that satisfy the predicate.
+ * @tparam T Element type.
+ * @param predicate Function that returns true for elements to keep.
+ * @param data Input list.
+ * @return A new VaList containing the filtered elements.
+ */
+template<typename T>
+VaList<T> filter(Function<T, bool> predicate, const VaList<T>& data) {
+    VaList<T> result;
+    for (Size i = 0; i < len(data); i++) {
+        if (predicate(data[i])) {
+            result.append(data[i]);
+        }
+    }
+    
+    return result;
+}
+
+/**
+ * @brief Reduces the list to a single value by applying a reducer function.
+ * @tparam T Element type.
+ * @tparam R Accumulator/result type.
+ * @param reducer Function taking accumulator and element, returning new accumulator.
+ * @param data Input list.
+ * @param initial Initial value for the accumulator.
+ * @return The final reduced value.
+ */
+template<typename T, typename R>
+R reduce(Function<R, R, T> reducer, const VaList<T>& data, R initial) {
+    R acc = initial;
+    for (Size i = 0; i < len(data); i++) {
+        acc = reducer(acc, data[i]);
+    }
+    return acc;
+}
+
+/**
+ * @brief Returns a new list of (index, element) pairs.
+ * @tparam T Element type.
+ * @param data Input list.
+ * @return A VaList of VaPair<Size, T>.
+ */
+template<typename T>
+VaList<VaPair<Size, T>> enumerate(const VaList<T>& data) {
+    VaList<VaPair<Size, T>> result;
+    result.reserve(len(data));
+    for (Size i = 0; i < len(data); i++) {
+        result.append({i, data[i]});
+    }
+
+    return result;
+}
+
+/**
+ * @brief Combines two lists element-wise into a list of pairs.
+ * @tparam T1 Type of the first list.
+ * @tparam T2 Type of the second list.
+ * @param a First input list.
+ * @param b Second input list.
+ * @return A VaList of VaPair<T1, T2>.
+ * 
+ * @note Truncates to the shorter list.
+ */
+template<typename T1, typename T2>
+VaList<VaPair<T1, T2>> zip(const VaList<T1>& a, const VaList<T2>& b) {
+    Size count = std::min(len(a), len(b));
+
+    VaList<VaPair<T1, T2>> result;
+    result.reserve(count);
+    for (Size i = 0; i < count; i++) {
+        result.emplace(a[i], b[i]);
+    }
+
+    return result;
+}
+
+/**
+ * @brief Returns a reversed copy of the input list.
+ * @tparam T Element type.
+ * @param data Input list.
+ * @return A new VaList with elements in reverse order.
+ */
+template<typename T>
+VaList<T> reversed(const VaList<T>& data) {
+    VaList<T> result;
+    result.reserve(len(data));
+    for (Size i = len(data); i-- > 0;) {
+        result.append(data[i]);
+    }
+    return result;
+}
+
+}

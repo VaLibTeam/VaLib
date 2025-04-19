@@ -4,12 +4,12 @@
 
 #include <lib/benchmarking.hpp>
 
-#include <iostream>
-
 #include <VaLib/Types.hpp>
 #include <VaLib/Utils.hpp>
 
 #include <chrono>
+#include <iostream>
+#include <fstream>
 
 namespace benchmarking {
 
@@ -113,5 +113,41 @@ void BenchmarkGroup::showResults() const {
         }
     }
 }
+
+void BenchmarkGroup::exportToMarkdown(const VaString& filename) const {
+    std::ofstream file(filename);
+    if (!file.good() || !file.is_open()) {
+        std::cerr << "Failed to open file for Markdown export: " << filename << "\n";
+        return;
+    }
+
+    file << "# Benchmark Results: " << groupName << "\n\n";
+    file << "| Benchmark | Time (µs) | Note |\n";
+    file << "|-----------|-----------|------|\n";
+
+    const auto& fastest = entries.front();
+
+    for (const auto& entry : entries) {
+        if (entry.result < 0) {
+            file << "| " << entry.name << " | ❌ | Failed: " << entry.result << " |\n";
+            continue;
+        }
+
+        std::string note;
+        if (entry.name == fastest.name) {
+            note = "Fastest";
+        } else {
+            float timesSlower = (float)entry.result / (float)fastest.result;
+            std::ostringstream oss;
+            oss << std::fixed << std::setprecision(2) << timesSlower;
+            note = oss.str() + "x slower";
+        }
+
+        file << "| " << entry.name << " | " << entry.result << " | " << note << " |\n";
+    }
+
+    file.close();
+}
+
 
 } // namespace benchmarking

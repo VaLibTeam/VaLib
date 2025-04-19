@@ -11,6 +11,15 @@
 
 #include <iostream>
 
+std::ostream& operator<<(std::ostream& os, VaList<int> list) {
+    os << "[";
+    for (const auto elm : list) {
+        os << elm << ", ";
+    }
+    os << "]";
+    return os;
+}
+
 bool testList(testing::Test& t) {
     VaList<int> numbers = {1, 2, 3};
     for (int i = 0; i < len(numbers); i++) {
@@ -56,7 +65,7 @@ bool testList(testing::Test& t) {
 
     VaList<int> list2 = list;
     list2.extend(list);
-
+    
     if (list2 != (list + list)) {
         return t.fail("Extend or operator+ didn't work correctly");
     }

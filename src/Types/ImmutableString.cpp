@@ -8,7 +8,7 @@
 #include <cstring>
 #include <stdexcept>
 
-VaImmutableString::VaImmutableString() : len(0) { data = new char[0]; }
+VaImmutableString::VaImmutableString() : len(0), data(nullptr) {}
 
 VaImmutableString::VaImmutableString(const std::string& str) {
     len = str.size();

@@ -106,9 +106,10 @@ CheckLibraries() {
 }
 
 Test() {
-    testFile="$1"
-    obj="$OUTDIR/$testFile.o"
-    out="$OUTDIR/$testFile"
+    local testFile="$1"
+    
+    local obj="$OUTDIR/$testFile.o"
+    local out="$OUTDIR/$testFile"
 
     echo -e "\033[34;1m" "Testing $testFile..." "\033[0m"
 

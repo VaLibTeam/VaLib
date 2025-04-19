@@ -49,6 +49,8 @@ class BenchmarkGroup {
 
     int run();
     void showResults() const;
+
+    void exportToMarkdown(const VaString& filename) const;
 };
 
 template <typename T>

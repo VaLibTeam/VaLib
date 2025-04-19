@@ -9,8 +9,7 @@ BaseError::BaseError(VaString m) : msg(m) {}
 
 VaString BaseError::what() const { return msg; }
 
-IndexOutOfRangeError::IndexOutOfRangeError(VaString m) : BaseError(m) {}
-
+IndexOutOfRangeError::IndexOutOfRangeError(VaString m) : IndexError(m) {}
 IndexOutOfRangeError::IndexOutOfRangeError(Size range, Size index) {
     msg = va::sprintf("index out of range [%d] with length %d", index, range);
 }

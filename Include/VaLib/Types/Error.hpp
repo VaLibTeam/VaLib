@@ -64,10 +64,15 @@ class TypeError: public BaseError {
     using BaseError::BaseError;
 };
 
+class IndexError: public BaseError {
+  public:
+    using BaseError::BaseError;
+};
+
 /**
  * @brief Error class for index out of range errors.
  */
-class IndexOutOfRangeError: public BaseError {
+class IndexOutOfRangeError: public IndexError {
   public:
     /**
      * @brief Constructor with a default error message.
@@ -114,6 +119,25 @@ class KeyNotFoundError: public BaseError {
      * @param m The error message (default: "key not found").
      */
     KeyNotFoundError(VaString m = "key not found") : BaseError(m) {}
+};
+
+class InvalidCastError: public BaseError {
+  public:
+    /**
+     * @brief Constructor with a default error message.
+     * @param m The error message (default: "invalid cast").
+     */
+    InvalidCastError(VaString m = "invalid cast") : BaseError(m) {}
+};
+
+class InvalidAnyCastError: public BaseError {
+  public:
+    InvalidAnyCastError(VaString m = "invalid any cast") : BaseError(m) {}
+};
+
+class InvalidVariantCastError: public BaseError {
+  public:
+    InvalidVariantCastError(VaString m = "invalid variant cast") : BaseError(m) {}
 };
 
 /**

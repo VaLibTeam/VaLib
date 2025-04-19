@@ -7,8 +7,10 @@ Please read the following guidelines before submitting pull requests or patches.
 
 ## C++ Style Guide
 1. **Naming Conventions**
-   - Use `PascalCase` for class names and static method names.
-   - Use `camelCase` for everything else, including variables, non-static methods, and function names.
+   - Use `PascalCase` for:
+     - Class names, Static method names
+     - Enum names, Enum values
+   - Use `camelCase` for everything else, including variables, non-static methods, function names, parameters.
 
 2. **Control Structures**
    - Omit braces (`{}`) in conditional statements and loops only if the body is simple and clearly readable, such as a single `x++`, `break`, or a function call like `myFunction()`.

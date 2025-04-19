@@ -268,7 +268,7 @@ class __BasicArray {
 };
 
 } // namespace va::detail
-    
+
 /**
  * @brief Public array type
  * @tparam T Type of elements stored in array

@@ -35,6 +35,8 @@ installHeaders=false
 uninstallLibs=false
 uninstallHeaders=false
 
+toCompile=()
+
 Help() {
     echo "Usage: $0 [options...]"
     echo
@@ -69,6 +71,46 @@ Help() {
 Clean() {
     [[ -d "$BUILD" ]]  && [[ "$(ls -A "$BUILD")" ]]  && rm -r "$BUILD"/*
     [[ -d "$OUTDIR" ]] && [[ "$(ls -A "$OUTDIR")" ]] && rm -r "$OUTDIR"/*
+}
+
+CheckArgs() {
+    if [[ ($uninstallHeaders = true && $installHeaders = true) || ($installLibs = true && $uninstallLibs = true) ]]; then
+        # ShowError $ArgsErrorExit "Conflicting options: Cannot install and uninstall simultaneously."
+        ShowError $ArgsErrorExit "What the fuck are you doing mate"
+    fi
+
+    toCheckCommands=("$CXX" "$AR")
+    for cmd in "${toCheckCommands[@]}"; do
+        if ! command -v "$cmd" > /dev/null 2>&1; then
+            ShowError "$NotExit" "Tool '$cmd' is not installed."
+
+            if CanInstall "$cmd"; then
+                read -n 1 -r -p "$(ShowYn 'Do you want to install it?')" ans
+                echo
+
+                case "$ans" in
+                [Yy])
+                    if ! Install "$cmd"; then
+                        ShowWarn "Failed to install $cmd."
+                    fi
+                    ;;
+                [Nn]) ;;
+                *)
+                    ShowError $ErrorExit "Invalid option."
+                    ;;
+                esac
+            else
+                exit "$ArgsErrorExit"
+            fi
+        fi
+    done
+
+    toCheckDirs=("$SRC")
+    for dir in "${toCheckDirs[@]}"; do
+        if [[ ! -d "$dir" ]]; then
+            ShowError "$ArgsErrorExit" "Directory '$dir' does not exist."
+        fi
+    done
 }
 
 target=""
@@ -131,10 +173,7 @@ for arg in "$@"; do
     esac
 done
 
-if [[ ($uninstallHeaders = true && $installHeaders = true) || ($installLibs = true && $uninstallLibs = true) ]]; then
-    # ShowError $ArgsErrorExit "Conflicting options: Cannot install and uninstall simultaneously."
-    ShowError $ArgsErrorExit "what the fuck are you doing mate"
-fi
+CheckArgs
 
 mkdir -p "$OUTDIR"
 mkdir -p "$BUILD"
@@ -142,7 +181,6 @@ mkdir -p "$BUILD"
 CompileSources() {
     mapfile -t cppFiles < <(find "$SRC" -name "*.cpp")
     objFiles=()
-    toCompile=()
 
     for file in "${cppFiles[@]}"; do
         obj="$BUILD/$(basename "$file" .cpp).o"
@@ -234,7 +272,7 @@ UninstallHeaders() {
                 if [[ "$subdir" == "$dir" ]]; then relPath=""
                 else relPath="${subdir#"$dir"/}"; fi
 
-                targetDir="$sysIncludeDir/$relPath"
+                local targetDir="$sysIncludeDir/$relPath"
 
                 headers=("$subdir"/*.{hpp,tpp,h})
                 if (( ${#headers[@]} )); then
