@@ -28,7 +28,7 @@ bool testAny(testing::Test& t) {
         return t.fail("expected an exception");
     })
 
-    return t.success();
+        return t.success();
 }
 
 int main() { testing::run(testAny); }

@@ -16,10 +16,10 @@
 #define CPP20 202002L
 #define CPP23 202302L
 
-#define expect(code)                                                                                    \
-    try {                                                                                               \
-        code                                                                                            \
-    } catch (...) {                                                                                     \
+#define expect(code)                                                                               \
+    try {                                                                                          \
+        code                                                                                       \
+    } catch (...) {                                                                                \
     }
 
 #define stringify(expr) #expr

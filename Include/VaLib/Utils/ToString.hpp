@@ -3,7 +3,10 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
+#ifdef VaLib_USE_CONCEPTS
 #include <VaLib/Types/BasicConcepts.hpp>
+#endif
+
 #include <VaLib/Types/BasicTypedef.hpp>
 #include <VaLib/Types/Stringer.hpp>
 
@@ -15,28 +18,25 @@
 
 namespace va {
 
-inline VaString toString(int64 num) {
-    if (num == 0) {
-        return VaString("0");
-    }
+VaString toString(int64 num);
+inline VaString toString(int32 num) { return toString((int64)num); }
+inline VaString toString(int16 num) { return toString((int64)num); }
+inline VaString toString(int8 num) { return toString((int64)num); }
 
-    char tmp[20];
-    int index = 0;
+VaString toString(uint64 num);
+inline VaString toString(uint32 num) { return toString((uint64)num); }
+inline VaString toString(uint16 num) { return toString((uint64)num); }
+inline VaString toString(uint8 num) { return toString((uint64)num); }
 
-    while (num > 0) {
-        tmp[index++] = (num % 10) + '0';
-        num /= 10;
-    }
-
-    VaString result;
-    for (int i = index - 1; i >= 0; i--) {
-        result += tmp[i];
-    }
-
-    return result;
+constexpr int AUTO_PRECISION = -1;
+VaString toString(float64 num, int precision = AUTO_PRECISION);
+inline VaString toString(float32 num, int precision = AUTO_PRECISION) {
+    return toString((float64)num, precision);
 }
 
 inline VaString toString(VaImmutableString str) { return VaString(str); }
+inline VaString toString(std::string str) { return VaString(str); }
+inline VaString toString(const char* str) { return VaString(str); }
 
 } // namespace va
 

@@ -35,6 +35,9 @@ class VaPair {
      */
     VaPair(T1 a1, T2 a2) noexcept : first(a1), second(a2) {}
 
+    template <typename U1, typename U2>
+    VaPair(U1&& a1, U2&& a2) : first(std::forward<U1>(a1)), second(std::forward<U2>(a2)) {}
+
     /**
      * @brief Constructs from std::pair.
      * @param p std::pair to copy values from

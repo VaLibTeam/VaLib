@@ -9,6 +9,6 @@
 #define VaLib_USE_CONCEPTS
 #endif
 
-#if defined(__GNUC__) && !defined(__STRICT_ANSI__)
+#ifdef __SIZEOF_INT128__
 #define VaLib_USE_INT128
 #endif

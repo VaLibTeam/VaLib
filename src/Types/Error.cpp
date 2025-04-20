@@ -5,9 +5,9 @@
 #include <VaLib/Types/Error.hpp>
 #include <VaLib/Utils/format.hpp>
 
-BaseError::BaseError(VaString m) : msg(m) {}
+VaBaseError::VaBaseError(VaString m) : msg(m) {}
 
-VaString BaseError::what() const { return msg; }
+VaString VaBaseError::what() const { return msg; }
 
 IndexOutOfRangeError::IndexOutOfRangeError(VaString m) : IndexError(m) {}
 IndexOutOfRangeError::IndexOutOfRangeError(Size range, Size index) {

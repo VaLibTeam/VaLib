@@ -8,8 +8,8 @@
 #include <VaLib/Utils.hpp>
 
 #include <chrono>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 
 namespace benchmarking {
 
@@ -148,6 +148,5 @@ void BenchmarkGroup::exportToMarkdown(const VaString& filename) const {
 
     file.close();
 }
-
 
 } // namespace benchmarking

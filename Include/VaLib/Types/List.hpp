@@ -10,11 +10,11 @@
 #include <VaLib/Types/Error.hpp>
 #include <VaLib/Types/Pair.hpp>
 
+#include <algorithm>
+#include <cstdlib>
 #include <initializer_list>
 #include <type_traits>
-#include <algorithm>
 #include <utility>
-#include <cstdlib>
 
 template <typename T>
 class VaSlice;
@@ -360,7 +360,7 @@ class VaList {
      */
     T& back() {
         if (len <= 0) throw IndexError("back() on empty list");
-        return data[len-1];
+        return data[len - 1];
     }
 
     /**
@@ -370,7 +370,7 @@ class VaList {
      */
     const T& back() const {
         if (len <= 0) throw IndexError("back() on empty list");
-        return data[len-1];
+        return data[len - 1];
     }
 
     /**
@@ -627,7 +627,7 @@ namespace va {
  * @param data Input list.
  * @return A new VaList containing the transformed elements.
  */
-template<typename Old, typename New>
+template <typename Old, typename New>
 VaList<New> map(Function<Old, New> mod, const VaList<Old>& data) {
     VaList<New> result;
     result.reserve(len(data));
@@ -646,7 +646,7 @@ VaList<New> map(Function<Old, New> mod, const VaList<Old>& data) {
  * @param data Input list.
  * @return A new VaList containing the filtered elements.
  */
-template<typename T>
+template <typename T>
 VaList<T> filter(Function<T, bool> predicate, const VaList<T>& data) {
     VaList<T> result;
     for (Size i = 0; i < len(data); i++) {
@@ -654,7 +654,7 @@ VaList<T> filter(Function<T, bool> predicate, const VaList<T>& data) {
             result.append(data[i]);
         }
     }
-    
+
     return result;
 }
 
@@ -667,7 +667,7 @@ VaList<T> filter(Function<T, bool> predicate, const VaList<T>& data) {
  * @param initial Initial value for the accumulator.
  * @return The final reduced value.
  */
-template<typename T, typename R>
+template <typename T, typename R>
 R reduce(Function<R, R, T> reducer, const VaList<T>& data, R initial) {
     R acc = initial;
     for (Size i = 0; i < len(data); i++) {
@@ -682,7 +682,7 @@ R reduce(Function<R, R, T> reducer, const VaList<T>& data, R initial) {
  * @param data Input list.
  * @return A VaList of VaPair<Size, T>.
  */
-template<typename T>
+template <typename T>
 VaList<VaPair<Size, T>> enumerate(const VaList<T>& data) {
     VaList<VaPair<Size, T>> result;
     result.reserve(len(data));
@@ -703,7 +703,7 @@ VaList<VaPair<Size, T>> enumerate(const VaList<T>& data) {
  * 
  * @note Truncates to the shorter list.
  */
-template<typename T1, typename T2>
+template <typename T1, typename T2>
 VaList<VaPair<T1, T2>> zip(const VaList<T1>& a, const VaList<T2>& b) {
     Size count = std::min(len(a), len(b));
 
@@ -722,7 +722,7 @@ VaList<VaPair<T1, T2>> zip(const VaList<T1>& a, const VaList<T2>& b) {
  * @param data Input list.
  * @return A new VaList with elements in reverse order.
  */
-template<typename T>
+template <typename T>
 VaList<T> reversed(const VaList<T>& data) {
     VaList<T> result;
     result.reserve(len(data));
@@ -732,4 +732,4 @@ VaList<T> reversed(const VaList<T>& data) {
     return result;
 }
 
-}
+} // namespace va

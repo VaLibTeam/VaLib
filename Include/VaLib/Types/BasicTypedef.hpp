@@ -25,6 +25,7 @@ typedef float float32;
 typedef double float64;
 
 typedef int32 rune;
+typedef unsigned int uint;
 
 typedef void FuncType();
 typedef void (*FuncPtr)();
@@ -43,17 +44,6 @@ typedef time_t Time;
 typedef __int128_t int128;
 typedef __uint128_t uint128;
 #endif
-
-// types from C++ stdlib
-template <typename T>
-using UniquePtr = std::unique_ptr<T>;
-
-template <typename T>
-using SharedPtr = std::shared_ptr<T>;
-
-template <typename T>
-using WeakPtr = std::weak_ptr<T>;
-// ---
 
 typedef size_t Size;
 namespace va {

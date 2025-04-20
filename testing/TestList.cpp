@@ -65,7 +65,7 @@ bool testList(testing::Test& t) {
 
     VaList<int> list2 = list;
     list2.extend(list);
-    
+
     if (list2 != (list + list)) {
         return t.fail("Extend or operator+ didn't work correctly");
     }

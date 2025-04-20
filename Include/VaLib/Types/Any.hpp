@@ -11,14 +11,14 @@
 #include <type_traits>
 #include <utility>
 
-#include <typeinfo>
-#include <type_traits>
 #include <new>
-#include <utility>
 #include <stdexcept>
+#include <type_traits>
+#include <typeinfo>
+#include <utility>
 
 class VaAny {
-protected:
+  protected:
     using TypeID = const std::type_info;
 
     static constexpr std::size_t SBO_SIZE = 24;
@@ -48,21 +48,19 @@ protected:
         static const VTable vt = {
             // destroy
             [](void* ptr) { static_cast<T*>(ptr)->~T(); },
-    
+
             // copy
-            [] (const void* src, void* dest) {
+            [](const void* src, void* dest) {
                 if constexpr (std::is_copy_constructible_v<T>) {
                     new (dest) T(*static_cast<const T*>(src));
                 } else {
                     throw std::runtime_error("Type is not copyable");
                 }
             },
-    
+
             // move
-            [](void* src, void* dest) {
-                new (dest) T(std::move(*static_cast<T*>(src)));
-            },
-    
+            [](void* src, void* dest) { new (dest) T(std::move(*static_cast<T*>(src))); },
+
             // clone (heap copy)
             [](const void* src) -> void* {
                 if constexpr (std::is_copy_constructible_v<T>) {
@@ -72,14 +70,12 @@ protected:
                 } else {
                     throw std::runtime_error("Type is not copyable");
                 }
-            }
-        };
+            }};
         return &vt;
-    }    
+    }
 
-public:
+  public:
     VaAny() = default;
-
 
     template <typename T>
     VaAny(T&& value) {
@@ -122,9 +118,7 @@ public:
         }
     }
 
-    ~VaAny() {
-        reset();
-    }
+    ~VaAny() { reset(); }
 
     VaAny& operator=(const VaAny& other) {
         if (this != &other) {
@@ -219,18 +213,14 @@ public:
         return *static_cast<const T*>(dataPtr());
     }
 
-    bool hasValue() const noexcept {
-        return vtable != nullptr;
-    }
+    bool hasValue() const noexcept { return vtable != nullptr; }
 
     template <typename T>
     bool isType() const {
         return type && *type == typeid(T);
     }
 
-    TypeID& currentType() const {
-        return type ? *type : typeid(void);
-    }
+    TypeID& currentType() const { return type ? *type : typeid(void); }
 
     void* unsafePtr() noexcept { return dataPtr(); }
     const void* unsafePtr() const noexcept { return dataPtr(); }
