@@ -196,7 +196,21 @@ class VaDict {
      * @brief Constructs a dictionary from an initializer list of key-value pairs.
      * @param init Initializer list of key-value pairs.
      */
-    VaDict(std::initializer_list<VaPair<const K&, const V&>> init) : VaDict() {
+    template <typename U1 = K, typename U2 = V, typename = std::enable_if_t<!std::is_reference_v<U2>>>
+    VaDict(std::initializer_list<VaPair<U1, U2>> init) : VaDict() {
+        resize(init.size());
+        for (auto& [k, v] : init) {
+            put(k, v);
+        }
+    }
+
+    /** 
+     * @brief Constructs a dictionary from an initializer list of key-value pairs.
+     * @param init Initializer list of key-value pairs.
+     */
+    template <typename U1 = K, typename U2 = V, typename = std::enable_if_t<std::is_reference_v<U2>>>
+    VaDict(std::initializer_list<VaPair<const U1, const U2>> init) : VaDict() {
+        resize(init.size());
         for (const auto& [k, v] : init) {
             put(k, v);
         }

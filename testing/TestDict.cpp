@@ -7,6 +7,14 @@
 #include <VaLib/Types.hpp>
 #include <VaLib/Utils.hpp>
 
+void prt(VaDict<VaString, int> dict) {
+    std::cout << "{";
+    for (auto [k, v] : dict) {
+        std::cout << "\"" << k << "\"" << ": " << v << ", ";
+    }
+    std::cout << "}";
+}
+
 bool testDict(testing::Test& t) {
     VaDict<VaString, int> dict;
 
@@ -60,6 +68,8 @@ bool testDict(testing::Test& t) {
 
     VaDict<VaString, int> a = {{"a", 1}, {"b", 2}};
     VaDict<VaString, int> b = {{"b", 2}, {"a", 1}};
+    prt(a);
+    prt(b);
 
     if (a != b) return t.fail("unordered dicts should be equal");
     if (a.equalsOrdered(b)) return t.fail("unordered dicts shloudn't be equal with equalsOrdered");
