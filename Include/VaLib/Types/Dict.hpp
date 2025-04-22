@@ -29,6 +29,54 @@ struct DictEntry {
     }
 };
 
+template <typename K, typename V>
+struct DictKVRef {
+    K& key;
+    V& value;
+};
+
+namespace std {
+
+template <typename K, typename V>
+
+struct tuple_size<DictKVRef<K, V>> : std::integral_constant<Size, 2> {};
+
+template <typename K, typename V>
+struct tuple_element<0, DictKVRef<K, V>> {
+    using type = K&;
+};
+template <typename K, typename V>
+struct tuple_element<1, DictKVRef<K, V>> {
+    using type = V&;
+};
+
+}
+
+template <std::size_t N, typename K, typename V>
+decltype(auto) get(DictKVRef<K, V>& kv) {
+    if constexpr (N == 0) return (kv.key);
+    else if constexpr (N == 1) return (kv.value);
+    else static_assert(N < 2);
+}
+
+template <std::size_t N, typename K, typename V>
+decltype(auto) get(const DictKVRef<K, V>& kv) {
+    if constexpr (N == 0) return (kv.key);
+    else if constexpr (N == 1) return (kv.value);
+    else static_assert(N < 2);
+}
+
+
+/**
+ * @class VaDict A hash-based dictionary (map) that maintains insertion order.
+ * This class implements a dictionary (key-value store) using a hash table with separate chaining.
+ * 
+ * @tparam K The key type (must support equality comparison and hashing).
+ * @tparam V The value type.
+ * @tparam Hash The hash function type (defaults to `DictHash<K>`).
+ *
+ * @note it preserves the order in which elements were inserted.
+ */
 template <typename K, typename V, typename Hash = DictHash<K>>
 class VaDict {
   protected:
@@ -37,8 +85,7 @@ class VaDict {
     Size cap;  ///< Capacity of the hash table
     Size size; ///< Current number of entries stored in the hash table.
 
-    Entry**
-        buckets; ///< Array of pointers to hash buckets (each bucket is a linked list of entries).
+    Entry** buckets; ///< Array of pointers to hash buckets (each bucket is a linked list of entries).
 
     Entry* head;
     Entry* tail;
@@ -747,10 +794,12 @@ class VaDict {
             if (ptr) ptr = ptr->nextOrder;
         }
 
-        VaPair<const K&, V&> operator*() { return VaPair<const K&, V&>{ptr->key, ptr->value}; }
-
-        VaPair<const K&, const V&> operator*() const {
-            return VaPair<const K&, const V&>{ptr->key, ptr->value};
+        DictKVRef<K, V> operator*() {
+            return { ptr->key, ptr->value };
+        }
+        
+        DictKVRef<K, const V> operator*() const {
+            return { ptr->key, ptr->value };
         }
     };
 
@@ -766,9 +815,9 @@ class VaDict {
         void operator++() {
             if (ptr) ptr = ptr->nextOrder;
         }
-
-        VaPair<const K&, const V&> operator*() const {
-            return VaPair<const K&, const V&>{ptr->key, ptr->value};
+        
+        DictKVRef<K, const V> operator*() const {
+            return { ptr->key, ptr->value };
         }
     };
 

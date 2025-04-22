@@ -7,14 +7,6 @@
 #include <VaLib/Types.hpp>
 #include <VaLib/Utils.hpp>
 
-void prt(VaDict<VaString, int> dict) {
-    std::cout << "{";
-    for (auto [k, v] : dict) {
-        std::cout << "\"" << k << "\"" << ": " << v << ", ";
-    }
-    std::cout << "}";
-}
-
 bool testDict(testing::Test& t) {
     VaDict<VaString, int> dict;
 
@@ -68,8 +60,6 @@ bool testDict(testing::Test& t) {
 
     VaDict<VaString, int> a = {{"a", 1}, {"b", 2}};
     VaDict<VaString, int> b = {{"b", 2}, {"a", 1}};
-    prt(a);
-    prt(b);
 
     if (a != b) return t.fail("unordered dicts should be equal");
     if (a.equalsOrdered(b)) return t.fail("unordered dicts shloudn't be equal with equalsOrdered");
@@ -140,6 +130,21 @@ bool testDict(testing::Test& t) {
     orderedDict.put("new", 6);
     if (orderedDict.at("new") != 6) {
         return t.fail("set failed for existing key");
+    }
+
+    for (const auto& [k, v] : orderedDict) {
+        if (orderedDict.at(k) != v) {
+            return t.fail("unexpected result");
+        }
+    }
+    for (auto&& [k, v] : orderedDict) {
+        if (orderedDict.at(k) != v) {
+            return t.fail("unexpected result");
+        }
+        orderedDict[k] = 123;
+        if (orderedDict.at(k) != 123) {
+            return t.fail("unexpected result");
+        }
     }
 
     return t.success();
