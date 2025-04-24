@@ -3,36 +3,39 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#include <VaLib/Types/BasicTypedef.hpp>
+#include <VaLib/Utils/BasicDefine.hpp>
 
+#include <VaLib/Types/BasicTypedef.hpp>
 #include <VaLib/Types/Pair.hpp>
 
-#include <functional>
-#include <memory>
+enum class VaSetTreeColor { Red, Black };
+
+template <typename T>
+struct VaSetNode {
+    using Color = VaSetTreeColor;
+
+    const T key;
+
+    VaSetNode<T>* left;
+    VaSetNode<T>* right;
+    VaSetNode<T>* parent;
+
+    Color color;
+
+    VaSetNode(const T& k, VaSetNode<T>* p = nullptr, Color c = Color::Red)
+        : key(k), left(nullptr), right(nullptr) {
+        parent = p;
+        color = c;
+    }
+};
 
 template <typename T, typename Compare = std::less<T>>
 class VaSet {
   public:
-    enum class Color { Red, Black };
+    using Color = VaSetTreeColor;
+    using Node = VaSetNode<T>;
 
-    struct Node {
-        friend class VaSet;
-
-        const T key;
-
-        Node* left;
-        Node* right;
-        Node* parent;
-
-        Color color;
-
-        Node(const T& k, Node* p = nullptr, Color c = Color::Red)
-            : key(k), left(nullptr), right(nullptr) {
-            parent = p;
-            color = c;
-        }
-    };
-
+  public:
     class NodeHandle {
         friend class VaSet;
 
@@ -63,18 +66,18 @@ class VaSet {
         Node* getRaw() const { return node; }
     };
 
-    class iterator {
+    class Iterator {
       protected:
         Node* current;
 
         friend class VaSet;
 
       public:
-        iterator(Node* p = nullptr) : current(p) {}
+        Iterator(Node* p = nullptr) : current(p) {}
 
         const T& operator*() const { return current->key; }
 
-        iterator& operator++() {
+        Iterator& operator++() {
             if (current->right) {
                 current = current->right;
                 while (current->left) {
@@ -93,23 +96,22 @@ class VaSet {
             return *this;
         }
 
-        iterator operator++(int) {
-            iterator tmp = *this;
+        Iterator operator++(int) {
+            Iterator tmp = *this;
             ++(*this);
             return tmp;
         }
 
-        friend inline bool operator!=(const iterator& lhs, const iterator& rhs) {
+        friend inline bool operator!=(const Iterator& lhs, const Iterator& rhs) {
             return lhs.current != rhs.current;
         }
-        friend inline bool operator==(const iterator& lhs, const iterator& rhs) {
+        friend inline bool operator==(const Iterator& lhs, const Iterator& rhs) {
             return lhs.current == rhs.current;
         }
     };
 
     friend class NodeHandle;
-    friend struct Node;
-    friend class iterator;
+    friend class Iterator;
 
   protected:
     Node* root;
@@ -195,50 +197,66 @@ class VaSet {
 
     void deleteFixup(Node* x) {
         while (x != root && (!x || x->color == Color::Black)) {
+            // case 1: x is the left child of its parent
             if (x == x->parent->left) {
-                Node* w = x->parent->right;
+                Node* w = x->parent->right; // w is x's sibling
+
+                // case 1.1: sibling w is red
                 if (w->color == Color::Red) {
                     w->color = Color::Black;
                     x->parent->color = Color::Red;
                     leftRotate(x->parent);
                     w = x->parent->right;
                 }
+
+                // Case 1.2: both of w's children are black
                 if ((!w->left || w->left->color == Color::Black) &&
                     (!w->right || w->right->color == Color::Black)) {
-                    w->color = Color::Red;
-                    x = x->parent;
+                    w->color = Color::Red; // Recolor w to red
+                    x = x->parent;         // Move the problem up the tree
                 } else {
+                    // case 1.3: w's right child is black
                     if (!w->right || w->right->color == Color::Black) {
                         w->left->color = Color::Black;
                         w->color = Color::Red;
                         rightRotate(w);
                         w = x->parent->right;
                     }
+
+                    // case 1.4: w's right child is red
+                    // final color changes and left rotation
                     w->color = x->parent->color;
                     x->parent->color = Color::Black;
                     w->right->color = Color::Black;
                     leftRotate(x->parent);
                     x = root;
                 }
-            } else {
+            } else { // case 2: x is the right child (symmetric to case 1)
                 Node* w = x->parent->left;
+
+                // case 2.1: sibling w is red
                 if (w->color == Color::Red) {
                     w->color = Color::Black;
                     x->parent->color = Color::Red;
                     rightRotate(x->parent);
                     w = x->parent->left;
                 }
+
+                // case 2.2: both of w's children are black
                 if ((!w->right || w->right->color == Color::Black) &&
                     (!w->left || w->left->color == Color::Black)) {
                     w->color = Color::Red;
                     x = x->parent;
                 } else {
+                    // case 2.3: w's left child is black
                     if (!w->left || w->left->color == Color::Black) {
                         w->right->color = Color::Black;
                         w->color = Color::Red;
                         leftRotate(w);
                         w = x->parent->left;
                     }
+
+                    // case 2.4: w's left child is red
                     w->color = x->parent->color;
                     x->parent->color = Color::Black;
                     w->left->color = Color::Black;
@@ -286,22 +304,22 @@ class VaSet {
   public:
     VaSet() : root(nullptr), len(0) {}
     VaSet(std::initializer_list<T> init) : VaSet() {
-        for (const T& val : init) {
+        for (const T& val: init) {
             insert(val);
         }
     }
 
     ~VaSet() { clear(root); }
 
-    iterator begin() const {
+    Iterator begin() const {
         Node* z = root;
         while (z && z->left) z = z->left;
-        return iterator(z);
+        return Iterator(z);
     }
 
-    iterator end() const { return iterator(nullptr); }
+    Iterator end() const { return Iterator(nullptr); }
 
-    VaPair<iterator, bool> insert(const T& key) {
+    VaPair<Iterator, bool> insert(const T& key) {
         Node* y = nullptr;
         Node* x = root;
         while (x) {
@@ -312,7 +330,7 @@ class VaSet {
             } else if (comp(x->key, key)) {
                 x = x->right;
             } else {
-                return {iterator(x), false};
+                return {Iterator(x), false};
             }
         }
 
@@ -327,10 +345,10 @@ class VaSet {
 
         insertFixup(z);
         len++;
-        return {iterator(z), true};
+        return {Iterator(z), true};
     }
 
-    VaPair<iterator, bool> insert(NodeHandle&& nh) {
+    VaPair<Iterator, bool> insert(NodeHandle&& nh) {
         if (nh.isEmpty()) return {end(), false};
 
         Node* z = nh.node;
@@ -347,7 +365,7 @@ class VaSet {
                 delete z;
                 nh.node = nullptr;
 
-                return {iterator(x), false};
+                return {Iterator(x), false};
             }
         }
 
@@ -362,10 +380,10 @@ class VaSet {
         insertFixup(z);
         nh.node = nullptr;
         len++;
-        return {iterator(z), true};
+        return {Iterator(z), true};
     }
 
-    iterator find(const T& key) const {
+    Iterator find(const T& key) const {
         Node* x = root;
         while (x) {
             if (comp(key, x->key)) {
@@ -373,7 +391,7 @@ class VaSet {
             } else if (comp(x->key, key)) {
                 x = x->right;
             } else {
-                return iterator(x);
+                return Iterator(x);
             }
         }
         return end();
@@ -397,7 +415,7 @@ class VaSet {
         }
     }
 
-    void erase(iterator pos) {
+    void erase(Iterator pos) {
         Node* z = pos.current;
         if (!z) return;
 
@@ -433,7 +451,7 @@ class VaSet {
         len--;
     }
 
-    NodeHandle extract(iterator pos) {
+    NodeHandle extract(Iterator pos) {
         Node* z = pos.current;
         if (!z) return NodeHandle();
 
@@ -476,8 +494,11 @@ class VaSet {
     NodeHandle extract(const T& key) { return extract(find(key)); }
 
     bool isEmpty() const { return len == 0; }
+
+  public friends:
     friend inline Size len(const VaSet& set) { return set.len; }
 
+  public operators:
     friend bool operator==(const VaSet& lhs, const VaSet& rhs) {
         if (lhs.len != rhs.len) return false;
         auto it1 = lhs.begin();
@@ -514,7 +535,11 @@ class VaSet {
     friend inline bool operator<=(const VaSet& lhs, const VaSet& rhs) { return !(rhs < lhs); }
     friend inline bool operator>=(const VaSet& lhs, const VaSet& rhs) { return !(lhs < rhs); }
 
-    friend inline VaSet operator|(VaSet f, VaSet s) {
-        //!TODO
+    friend inline VaSet operator|(const VaSet& lhs, const VaSet& rhs) {
+        VaSet result = lhs;
+        for (auto& val: rhs) {
+            result.insert(val);
+        }
+        return result;
     }
 };

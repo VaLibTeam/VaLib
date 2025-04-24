@@ -3,12 +3,9 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
+#include "VaLib/Utils/BasicDefine.hpp"
 #include <VaLib/Types/BasicTypedef.hpp>
 #include <VaLib/Types/Error.hpp>
-
-#include <memory>
-#include <stdexcept>
-#include <vector>
 
 namespace va::detail {
 
@@ -243,7 +240,7 @@ class StackBase<T, void> {
 
 template <typename T, typename Container = void>
 class VaStack: public va::detail::StackBase<T, Container> {
-  public:
+  public friends:
     friend inline Size len(const VaStack& stack) { return stack.size(); }
     friend inline Size cap(const VaStack& stack) { return stack.capacity(); }
 };

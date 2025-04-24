@@ -91,40 +91,10 @@ class __BasicArray {
     template <Size L>
     __BasicArray<T, N + L> operator+(const __BasicArray<T, L>& other) const {
         __BasicArray<T[N + L], 0> result;
-        std::copy(begin(), end(), result.begin());
+        std::copy(this->begin(), this->end(), result.begin());
         std::copy(other.begin(), other.end(), result.begin() + N);
         return result;
     }
-
-    /**
-     * @brief Returns iterator to beginning
-     * @return Pointer to first element
-     */
-    constexpr T* begin() noexcept { return data; }
-
-    /**
-     * @brief Returns iterator to end
-     * @return Pointer to one past last element
-     */
-    constexpr T* end() noexcept { return data + N; }
-
-    /**
-     * @brief Returns iterator to beginning (const version)
-     * @return Const pointer to first element
-     */
-    constexpr const T* begin() const noexcept { return data; }
-
-    /**
-     * @brief Returns iterator to end (const version)
-     * @return Const pointer to one past last element
-     */
-    constexpr const T* end() const noexcept { return data + N; }
-
-    /**
-     * @brief Returns array size
-     * @return Number of elements in array
-     */
-    constexpr Size size() const noexcept { return N; }
 
     /**
      * @brief Returns pointer to underlying data
@@ -143,8 +113,6 @@ class __BasicArray {
     /**
      * @brief Accesses first element
      * @return Reference to first element
-     *
-     * @warning Undefined behavior if array is empty (but size is static >0)
      */
     constexpr T& front() noexcept { return data[0]; }
 
@@ -216,6 +184,7 @@ class __BasicArray {
         return data[I];
     }
 
+  public operators:
     /**
      * @brief Equality comparison
      * @param lhs First array to compare
@@ -265,6 +234,30 @@ class __BasicArray {
             return true;
         }
     }
+
+  public iterators:
+    using Iterator = T*;
+    using ConstIterator = const T*;
+    using ReverseIterator = std::reverse_iterator<Iterator>;
+    using ConstReverseIterator = std::reverse_iterator<ConstIterator>;
+
+    constexpr Iterator begin() noexcept { return data; }
+    constexpr Iterator end() noexcept { return data + N; }
+
+    constexpr ConstIterator begin() const noexcept { return data; }
+    constexpr ConstIterator end() const noexcept { return data + N; }
+
+    constexpr ConstIterator cbegin() const noexcept { return data; }
+    constexpr ConstIterator cend() const noexcept { return data + N; }
+
+    constexpr ReverseIterator rbegin() noexcept { return ReverseIterator(end()); }
+    constexpr ReverseIterator rend() noexcept { return ReverseIterator(begin()); }
+
+    constexpr ConstReverseIterator rbegin() const noexcept { return ConstReverseIterator(end()); }
+    constexpr ConstReverseIterator rend() const noexcept { return ConstReverseIterator(begin()); }
+
+    constexpr ConstReverseIterator crbegin() const noexcept { return ConstReverseIterator(cend()); }
+    constexpr ConstReverseIterator crend() const noexcept { return ConstReverseIterator(cbegin()); }
 };
 
 } // namespace va::detail

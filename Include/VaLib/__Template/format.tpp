@@ -4,7 +4,9 @@
 #pragma once
 
 #include <VaLib/Types/String.hpp>
+
 #include <VaLib/Utils/Strings.hpp>
+#include <VaLib/Utils/ToString.hpp>
 
 #ifdef VaLib_USE_CONCEPTS
 #include <VaLib/Types/BasicConcepts.hpp>
@@ -51,13 +53,13 @@ VaString sprintf(const VaString& format, T value, Args... args) {
             if (!formatFlags.isEmpty()) {
                 Size startIndex = (leftJustify || zeroPad) ? 1 : 0;
                 try {
-                    width = std::stoi(formatFlags.substr(startIndex).toCStyleString());
+                    width = std::stoi(formatFlags.substr(startIndex).toStdString());
                 } catch (...) {
                     width = 0;
                 }
             }
 
-            replacement = VaString(std::to_string((int)value));
+            replacement = va::toString(static_cast<int>(value));
 
             if (width > 0 && len(replacement) < width) {
                 Size padSize = width - len(replacement);
@@ -149,6 +151,10 @@ inline void printlnf(const VaString& format, T value, Args... args) {
 
 inline void printlnf(VaString format) {
     std::cout << format << "\n";
+}
+
+inline void printlnf() {
+    std::cout << "\n";
 }
 
 } // namespace va

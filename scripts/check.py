@@ -27,7 +27,7 @@ def checkHeader(lines: list[str], expected: str) -> bool:
     headerLines: list[str] = expected.splitlines()
     if len(lines) < len(headerLines):
         return False
-    
+
     return lines[:len(headerLines)] == headerLines
 
 def hasPragmaOnce(lines: list[str], expectedHeader: str) -> bool:
@@ -70,16 +70,16 @@ def processFile(path: str, fix: bool, isHeader: bool, expectedHeader: str) -> bo
         showWarn("Invalid or missing header in:", path)
         if fix:
             fixFile(path, isHeader, expectedHeader)
-        
+
         return True
 
     if isHeader and (not hasPragmaOnce(lines, expectedHeader)):
         showWarn("Missing #pragma once in:", path)
         if fix:
             fixFile(path, isHeader, expectedHeader)
-        
+
         return True
-    
+
     return False
 
 def findFiles() -> Generator[str, None, None]:
@@ -97,12 +97,12 @@ def main() -> int:
         isHeader: bool = ext == ".hpp"
         header: str = headerHeader if isHeader else sourceHeader
         fixed = processFile(path, fix, isHeader, header) or fixed
-    
+
     if not fixed:
         showSuccess("Nothing to do!")
     else:
         showSuccess("Done")
-    
+
     return 0
 
 if __name__ == "__main__":

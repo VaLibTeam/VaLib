@@ -39,9 +39,8 @@ int run(Function<Time, Benchmark&> func, int repeat) {
 }
 
 int BenchmarkGroup::run() {
-    std::cout << "\033[36;1m[ BENCHMARK GROUP ]:\033[0m " << groupName << " (" << repeatCount
-              << "x each)\n";
-    for (auto& entry : entries) {
+    va::printlnf("\033[36;1m[ BENCHMARK GROUP ]:\033[0m %s (%dx each)", groupName, repeatCount);
+    for (auto& entry: entries) {
         Benchmark b;
         Time total = 0;
         for (int i = 0; i < repeatCount; ++i) {
@@ -57,14 +56,14 @@ int BenchmarkGroup::run() {
     }
 
     std::sort(entries.begin(), entries.end(),
-              [](const Entry& a, const Entry& b) { return a.result < b.result; });
+        [](const Entry& a, const Entry& b) { return a.result < b.result; });
 
     showResults();
     return 0;
 }
 
 void BenchmarkGroup::showResults() const {
-    std::cout << "\n\033[34;1m[ RESULTS ]:\033[0m\n";
+    va::printlnf("\033[34;1m[ RESULTS ]:\033[0m");
 
     for (Size i = 0; i < len(entries); i++) {
         const auto& current = entries[i];
@@ -78,11 +77,10 @@ void BenchmarkGroup::showResults() const {
         } else {
             // Gradient from yellow to orange
             int gradient = 33 + (i * 2);
-            color = "\033[" + std::to_string(gradient) + "m";
+            color = "\033[" + va::toString(gradient) + "m";
         }
 
-        std::cout << "  \033[1m" << color << current.name << "\033[0m - " << current.result
-                  << " µs";
+        va::printf("  \033[1m%s%s\033[0m - %dµs", color, current.name, current.result);
 
         if (i == 0) {
             std::cout << " (the fastest";
@@ -112,6 +110,7 @@ void BenchmarkGroup::showResults() const {
             std::cout << ")\n";
         }
     }
+    va::printlnf();
 }
 
 void BenchmarkGroup::exportToMarkdown(const VaString& filename) const {
@@ -127,20 +126,18 @@ void BenchmarkGroup::exportToMarkdown(const VaString& filename) const {
 
     const auto& fastest = entries.front();
 
-    for (const auto& entry : entries) {
+    for (const auto& entry: entries) {
         if (entry.result < 0) {
             file << "| " << entry.name << " | ❌ | Failed: " << entry.result << " |\n";
             continue;
         }
 
-        std::string note;
+        VaString note;
         if (entry.name == fastest.name) {
             note = "Fastest";
         } else {
             float timesSlower = (float)entry.result / (float)fastest.result;
-            std::ostringstream oss;
-            oss << std::fixed << std::setprecision(2) << timesSlower;
-            note = oss.str() + "x slower";
+            note = va::toString(timesSlower, 2) + "x slower";
         }
 
         file << "| " << entry.name << " | " << entry.result << " | " << note << " |\n";

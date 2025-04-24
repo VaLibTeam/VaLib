@@ -24,7 +24,7 @@ inline char numberToChar(int64 num) {
 inline VaString escape(const VaString& input) {
     VaString result;
     result.reserve(len(input));
-    for (char c : input) {
+    for (char c: input) {
         switch (c) {
         case '\n': result += "\\n"; break;
         case '\t': result += "\\t"; break;

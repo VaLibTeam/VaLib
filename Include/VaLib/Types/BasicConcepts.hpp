@@ -25,13 +25,29 @@ concept Ordered = requires(T a, T b) {
     { a > b } -> std::convertible_to<bool>;
 };
 
-template <typename T, typename I>
+template <typename It, typename T>
+concept Iterator = requires(It it) {
+    { ++it } -> std::same_as<It&>;
+    { it++ } -> std::same_as<It>;
+
+    { *it } -> std::convertible_to<T&>;
+};
+
+template <typename It, typename T>
+concept ConstIterator = requires(It it) {
+    { ++it } -> std::same_as<It&>;
+    { it++ } -> std::same_as<It>;
+
+    { *it } -> std::convertible_to<const T&>;
+};
+
+template <typename T, typename V>
 concept IterableWith = requires(T t) {
-    { std::begin(t) } -> std::convertible_to<I*>;
-    { std::end(t) } -> std::convertible_to<I*>;
-} && requires(const T t) {
-    { std::begin(t) } -> std::convertible_to<const I*>;
-    { std::end(t) } -> std::convertible_to<const I*>;
+    requires Iterator<decltype(t.begin()), V>;
+    requires Iterator<decltype(t.end()), V>;
+} && requires(const T ct) {
+    requires ConstIterator<decltype(ct.begin()), V>;
+    requires ConstIterator<decltype(ct.end()), V>;
 };
 
 template <typename R, typename... Args>

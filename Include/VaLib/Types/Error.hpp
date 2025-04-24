@@ -213,8 +213,8 @@ class VaResult {
     /**
      * @brief Internal helper to clean up the error if present.
      */
-    void destroy() noexcept(std::is_nothrow_destructible_v<T> &&
-                            std::is_nothrow_destructible_v<E>) {
+    void destroy() noexcept(
+        std::is_nothrow_destructible_v<T> && std::is_nothrow_destructible_v<E>) {
         if (ok) {
             val.~T();
         } else {
@@ -257,7 +257,7 @@ class VaResult {
     /**
      * @brief Copy constructor.
      * @param other The other VaResult to copy.
-     * 
+     *
      * The error is deep-copied using the copy constructor of type E.
      */
     VaResult(const VaResult& other) : ok(other.ok) {
@@ -333,7 +333,7 @@ class VaResult {
     /**
      * @brief Get the value if the result is successful.
      * @return The value.
-     * 
+     *
      * @throws ValueError if the result holds an error.
      */
     inline const T& unwrap() const {
@@ -346,7 +346,7 @@ class VaResult {
     /**
      * @brief Get the error if the result is an error.
      * @return A pointer to the error.
-     * 
+     *
      * @throws ValueError if the result holds a value.
      */
     inline const E* unwrapErr() const {
@@ -365,7 +365,7 @@ class VaResult {
 
     /**
      * @brief Throws the stored error by calling its `throwIt()` method.
-     * 
+     *
      * @throws ValueError if the result holds a value.
      * @throws Any exception thrown by the error's `throwIt()` method.
      * @note This overload is enabled only if the error type E has a member function `throwIt()`.
@@ -381,7 +381,7 @@ class VaResult {
 
     /**
      * @brief Throws the stored error by value.
-     * 
+     *
      * @throws ValueError if the result holds a value.
      * @throws A copy of the error object (thrown by value).
      * @note This overload is enabled only if the error type E does not have a `throwIt()` method.

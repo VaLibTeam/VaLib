@@ -71,7 +71,7 @@ void quick(VaSlice<T>& slice) {
     T pivot = slice[len(slice) / 2];
     VaList<T> leftList, middleList, rightList;
 
-    for (const T& val : slice) {
+    for (const T& val: slice) {
         if (val < pivot) {
             leftList.append(val);
         } else if (val == pivot) {
@@ -88,13 +88,13 @@ void quick(VaSlice<T>& slice) {
     sort::quick(right);
 
     Size index = 0;
-    for (const T& val : left) {
+    for (const T& val: left) {
         slice[index++] = val;
     }
-    for (const T& val : middleList) {
+    for (const T& val: middleList) {
         slice[index++] = val;
     }
-    for (const T& val : right) {
+    for (const T& val: right) {
         slice[index++] = val;
     }
 }

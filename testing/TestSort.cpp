@@ -28,7 +28,7 @@ bool testSort(testing::Test& t) {
 
             if (testData != VaList<int>{1, 2, 2, 2, 2, 4, 5, 5, 5, 5, 6, 7, 9}) {
                 VaList<VaString> strArr;
-                for (auto& n : testData) {
+                for (auto& n: testData) {
                     strArr.append(VaString(std::to_string(n)));
                 }
 

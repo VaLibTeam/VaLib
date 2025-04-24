@@ -8,6 +8,8 @@ source "scripts/utils.sh" || exit 1
 set -e || exit 1
 shopt -s nullglob || exit 1
 
+alias pass=':'
+
 SRC="src"
 BUILD="build"
 OUTPUT="libvalib"
@@ -15,6 +17,15 @@ OUTDIR="out"
 
 CXX="${CXX:-g++}"
 CXXFLAGS="${CXXFLAGS:-"-Wall -Wextra -std=c++20 -O2 -fPIC"}"
+
+if [ -f "compile_flags.txt" ]; then
+    readFlags=$(tr '\n' ' ' < compile_flags.txt)
+    if [ -n "$readFlags" ]; then
+        CXXFLAGS="$readFlags"
+    else
+        CXXFLAGS="${CXXFLAGS:-"-Wall -Wextra -std=c++20 -O2 -fPIC"}"
+    fi
+fi
 
 AR="ar"
 ARFLAGS=""
@@ -36,6 +47,7 @@ uninstallLibs=false
 uninstallHeaders=false
 
 toCompile=()
+target=""
 
 Help() {
     echo "Usage: $0 [options...]"
@@ -69,8 +81,8 @@ Help() {
 }
 
 Clean() {
-    [[ -d "$BUILD" ]]  && [[ "$(ls -A "$BUILD")" ]]  && rm -r "$BUILD"/*
-    [[ -d "$OUTDIR" ]] && [[ "$(ls -A "$OUTDIR")" ]] && rm -r "$OUTDIR"/*
+    [[ -n "$BUILD" && -d "$BUILD" && "$(ls -A "$BUILD")"    ]] && rm -r "$BUILD"/*
+    [[ -n "$OUTDIR" && -d "$OUTDIR" && "$(ls -A "$OUTDIR")" ]] && rm -r "$OUTDIR"/*
 }
 
 CheckArgs() {
@@ -94,7 +106,9 @@ CheckArgs() {
                         ShowWarn "Failed to install $cmd."
                     fi
                     ;;
-                [Nn]) ;;
+                [Nn])
+                    pass
+                    ;;
                 *)
                     ShowError $ErrorExit "Invalid option."
                     ;;
@@ -113,70 +127,66 @@ CheckArgs() {
     done
 }
 
-target=""
-for arg in "$@"; do
-    case $arg in
-    --cxx=*)
-	    CXX="${arg#*=}" ;;
-	--cxxflags=*)
-	    CXXFLAGS="${arg#*=}" ;;
-        
-    --ar=*)
-        AR="${arg#*=}" ;;
-    --arflags=*)
-        ARFLAGS="${arg#*=}" ;;
+ParseFlags() {
+    for arg in "$@"; do
+        case $arg in
+            --cxx=*)
+            CXX="${arg#*=}" ;;
+            --cxxflags=*)
+            CXXFLAGS="${arg#*=}" ;;
 
-    --build-dir=*)
-        BUILD="${arg#*=}" ;;
-    --output=*)
-        OUTPUT="${arg#*=}" ;;
-    --out-dir=*)
-        OUTDIR="${arg#*=}" ;;
-    
-    --target=*)
-        target=$(echo "$arg" | sed 's/--target=//') ;;
+            --ar=*)
+            AR="${arg#*=}" ;;
+            --arflags=*)
+            ARFLAGS="${arg#*=}" ;;
 
-    --install-libs)
-        installLibs=true
-        ;;
-    --install-headers)
-        installHeaders=true
-        ;;
-    --install | --install-all)
-        installLibs=true
-        installHeaders=true
-        ;;
-    
-    --uninstall-libs)
-        uninstallLibs=true
-        ;;
-    --uninstall-headers)
-        uninstallHeaders=true
-        ;;
-    --uninstall | --uninstall-all)
-        uninstallHeaders=true
-        uninstallLibs=true
-        ;;
-    
-    --clean)
-        Clean
-        exit $SuccessExit
-        ;;
+            --build-dir=*)
+            BUILD="${arg#*=}" ;;
+            --output=*)
+            OUTPUT="${arg#*=}" ;;
+            --out-dir=*)
+            OUTDIR="${arg#*=}" ;;
 
-    --help)
-        Help
-        exit $SuccessExit
-        ;;
+            --target=*)
+            target=$(echo "$arg" | sed 's/--target=//') ;;
 
-    *)
-        ShowError $ArgsErrorExit "Invalid argument: $arg" ;;
-    esac
-done
+            --install-libs)
+            installLibs=true
+            ;;
+            --install-headers)
+            installHeaders=true
+            ;;
+            --install | --install-all)
+            installLibs=true
+            installHeaders=true
+            ;;
 
-CheckArgs
+            --uninstall-libs)
+            uninstallLibs=true
+            ;;
+            --uninstall-headers)
+            uninstallHeaders=true
+            ;;
+            --uninstall | --uninstall-all)
+            uninstallHeaders=true
+            uninstallLibs=true
+            ;;
 
-mkdir -p "$OUTDIR"
-mkdir -p "$BUILD"
+            --clean)
+            Clean
+            exit $SuccessExit
+            ;;
+
+            --help)
+            Help
+            exit $SuccessExit
+            ;;
+
+            *)
+            ShowError $ArgsErrorExit "Invalid argument: $arg" ;;
+        esac
+    done
+}
 
 CompileSources() {
     mapfile -t cppFiles < <(find "$SRC" -name "*.cpp")
@@ -288,89 +298,99 @@ UninstallHeaders() {
     done
 }
 
-if [[ -n "$target" ]]; then
-    CompileSources
-    
-    case "$target" in
-    all)
-        BuildStatic
-        BuildShared
-        BuildObject
-        ;;
-    static)
-        BuildStatic
-        ;;
-    shared)
-        BuildShared
-        ;;
-    object)
-        BuildObject
-        ;;
-    *)
-        ShowError $ArgsErrorExit "Not correct target: $target"
-        ;;
-    esac
-fi
+Main() {
+    ParseFlags "$@"
+    CheckArgs
 
-if [[ $installHeaders = true ]]; then
-    if [[ $EUID -ne 0 ]]; then
-        ShowError $ErrorExit "To make the installation option work run the script as root."
+    mkdir -p "$OUTDIR"
+    mkdir -p "$BUILD"
+
+    if [[ -n "$target" ]]; then
+        CompileSources
+
+        case "$target" in
+        all)
+            BuildStatic
+            BuildShared
+            BuildObject
+            ;;
+        static)
+            BuildStatic
+            ;;
+        shared)
+            BuildShared
+            ;;
+        object)
+            BuildObject
+            ;;
+        *)
+            ShowError $ArgsErrorExit "Not correct target: $target"
+            ;;
+        esac
     fi
 
-    ShowInfo "Installing headers..."
-    InstallHeaders
-fi
-
-if [[ $installLibs = true ]]; then
-    if [[ -z "$target" ]]; then
-        ShowInfo "--install-libs: No target specified. nothing to do."
-    else
+    if [[ $installHeaders = true ]]; then
         if [[ $EUID -ne 0 ]]; then
             ShowError $ErrorExit "To make the installation option work run the script as root."
         fi
 
-        case "$target" in
-        all)
-            ShowInfo "Installing static library..."
-            InstallStatic
+        ShowInfo "Installing headers..."
+        InstallHeaders
+    fi
 
-            ShowInfo "Installing shared library..."
-            InstallShared
-            ;;
-        static)
-            ShowInfo "Installing static library..."
-            InstallStatic
-            ;;
-        shared)
-            ShowInfo "Installing shared library..."
-            InstallShared
-            ;;
-        esac
+    if [[ $installLibs = true ]]; then
+        if [[ -z "$target" ]]; then
+            ShowInfo "--install-libs: No target specified. nothing to do."
+        else
+            if [[ $EUID -ne 0 ]]; then
+                ShowError $ErrorExit "To make the installation option work run the script as root."
+            fi
+
+            case "$target" in
+            all)
+                ShowInfo "Installing static library..."
+                InstallStatic
+
+                ShowInfo "Installing shared library..."
+                InstallShared
+                ;;
+            static)
+                ShowInfo "Installing static library..."
+                InstallStatic
+                ;;
+            shared)
+                ShowInfo "Installing shared library..."
+                InstallShared
+                ;;
+            esac
+
+            ldconfig
+        fi
+    fi
+
+    if [[ $uninstallHeaders = true ]]; then
+        if [[ $EUID -ne 0 ]]; then
+            ShowError $ErrorExit "To make the uninstallation option work run the script as root."
+        fi
+
+        ShowInfo "Uninstalling headers..."
+        UninstallHeaders
+    fi
+
+    if [[ $uninstallLibs = true ]]; then
+        if [[ $EUID -ne 0 ]]; then
+            ShowError $ErrorExit "To make the uninstallation option work run the script as root."
+        fi
+
+        ShowInfo "Uninstalling libraries..."
+        UninstallStatic
+        UninstallShared
 
         ldconfig
     fi
-fi
+}
 
-if [[ $uninstallHeaders = true ]]; then
-    if [[ $EUID -ne 0 ]]; then
-        ShowError $ErrorExit "To make the uninstallation option work run the script as root."
-    fi
-
-    ShowInfo "Uninstalling headers..."
-    UninstallHeaders
-fi
-
-if [[ $uninstallLibs = true ]]; then
-    if [[ $EUID -ne 0 ]]; then
-        ShowError $ErrorExit "To make the uninstallation option work run the script as root."
-    fi
-
-    ShowInfo "Uninstalling libraries..."
-    UninstallStatic
-    UninstallShared
-
-    ldconfig
-fi
+Main "$@"
 
 ShowSuccess "Done!"
 exit $SuccessExit

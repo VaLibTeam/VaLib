@@ -45,8 +45,7 @@ class VaAny {
 
     template <typename T>
     static const VTable* makeVTable() {
-        static const VTable vt = {
-            // destroy
+        static const VTable vt = {// destroy
             [](void* ptr) { static_cast<T*>(ptr)->~T(); },
 
             // copy

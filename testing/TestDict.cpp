@@ -132,12 +132,12 @@ bool testDict(testing::Test& t) {
         return t.fail("set failed for existing key");
     }
 
-    for (const auto& [k, v] : orderedDict) {
+    for (const auto& [k, v]: orderedDict) {
         if (orderedDict.at(k) != v) {
             return t.fail("unexpected result");
         }
     }
-    for (auto&& [k, v] : orderedDict) {
+    for (auto&& [k, v]: orderedDict) {
         if (orderedDict.at(k) != v) {
             return t.fail("unexpected result");
         }

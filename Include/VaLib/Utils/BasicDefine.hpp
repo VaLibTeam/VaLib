@@ -3,10 +3,12 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#include <iostream>
-
 #include <VaLib/Types/BasicConcepts.hpp>
 #include <VaLib/Types/BasicTypedef.hpp>
+
+#define iterators
+#define operators
+#define friends
 
 #define CPP98 199711L
 #define CPP03 199711L
@@ -27,3 +29,5 @@
 
 #define TODO(username, info)
 TODO(test, "test!");
+
+#define COMPILE_ERROR(msg) static_assert(false, msg)

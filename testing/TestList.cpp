@@ -13,7 +13,7 @@
 
 std::ostream& operator<<(std::ostream& os, VaList<int> list) {
     os << "[";
-    for (const auto elm : list) {
+    for (const auto elm: list) {
         os << elm << ", ";
     }
     os << "]";

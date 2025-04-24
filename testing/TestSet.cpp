@@ -2,6 +2,7 @@
 // Licensed under GNU GPL v3 License. See LICENSE file.
 // (C) 2025 VaLibTeam
 
+#include "VaLib/Types/BasicConcepts.hpp"
 #include <lib/testing.hpp>
 
 #include <VaLib/Types.hpp>
@@ -17,16 +18,16 @@ bool testSet(testing::Test& t) {
     set.insert(4);
     set.insert(0);
 
-    std::vector<int> expected = {0, 1, 2, 3, 4};
-    size_t idx = 0;
+    VaList<int> expected = {0, 1, 2, 3, 4};
+    Size idx = 0;
     for (auto it = set.begin(); it != set.end(); ++it, ++idx) {
         if (*it != expected[idx]) {
-            return t.fail("Unexpected value in iteration: expected " +
-                          std::to_string(expected[idx]) + ", got " + std::to_string(*it));
+            return t.failf(
+                "Unexpected value in iteration: expected %d, got %d", expected[idx], *it);
         }
     }
 
-    if (idx != expected.size()) {
+    if (idx != len(expected)) {
         return t.fail("Incorrect number of elements after insertion");
     }
 
@@ -64,7 +65,7 @@ bool testSet(testing::Test& t) {
 
     VaList<int> finalExpected = {0, 1, 3, 4, 10, 20};
     idx = 0;
-    for (auto v : set) {
+    for (auto v: set) {
         if (v != finalExpected[idx++]) {
             return t.fail("Final content mismatch");
         }

@@ -10,20 +10,20 @@
 #include <VaLib/Types/Pair.hpp>
 
 template <typename K>
-struct DictHash {
+struct VaDictHash {
     Size operator()(const K& key) const { return std::hash<K>()(key); }
 };
 
 template <typename K, typename V>
-struct DictEntry {
+struct VaDictEntry {
     K key;
     V value;
 
-    DictEntry<K, V>* next;      ///< Next in hash bucket
-    DictEntry<K, V>* prevOrder; ///< Previous in insertion order
-    DictEntry<K, V>* nextOrder; ///< Next in insertion order
+    VaDictEntry<K, V>* next;      ///< Next in hash bucket
+    VaDictEntry<K, V>* prevOrder; ///< Previous in insertion order
+    VaDictEntry<K, V>* nextOrder; ///< Next in insertion order
 
-    DictEntry(const K& k, const V& v) : next(nullptr), prevOrder(nullptr), nextOrder(nullptr) {
+    VaDictEntry(const K& k, const V& v) : next(nullptr), prevOrder(nullptr), nextOrder(nullptr) {
         key = k;
         value = v;
     }
@@ -39,7 +39,7 @@ namespace std {
 
 template <typename K, typename V>
 
-struct tuple_size<DictKVRef<K, V>> : std::integral_constant<Size, 2> {};
+struct tuple_size<DictKVRef<K, V>>: std::integral_constant<Size, 2> {};
 
 template <typename K, typename V>
 struct tuple_element<0, DictKVRef<K, V>> {
@@ -50,42 +50,48 @@ struct tuple_element<1, DictKVRef<K, V>> {
     using type = V&;
 };
 
-}
+} // namespace std
 
 template <std::size_t N, typename K, typename V>
 decltype(auto) get(DictKVRef<K, V>& kv) {
-    if constexpr (N == 0) return (kv.key);
-    else if constexpr (N == 1) return (kv.value);
-    else static_assert(N < 2);
+    if constexpr (N == 0)
+        return (kv.key);
+    else if constexpr (N == 1)
+        return (kv.value);
+    else
+        static_assert(N < 2);
 }
 
 template <std::size_t N, typename K, typename V>
 decltype(auto) get(const DictKVRef<K, V>& kv) {
-    if constexpr (N == 0) return (kv.key);
-    else if constexpr (N == 1) return (kv.value);
-    else static_assert(N < 2);
+    if constexpr (N == 0)
+        return (kv.key);
+    else if constexpr (N == 1)
+        return (kv.value);
+    else
+        static_assert(N < 2);
 }
-
 
 /**
  * @class VaDict A hash-based dictionary (map) that maintains insertion order.
  * This class implements a dictionary (key-value store) using a hash table with separate chaining.
- * 
+ *
  * @tparam K The key type (must support equality comparison and hashing).
  * @tparam V The value type.
  * @tparam Hash The hash function type (defaults to `DictHash<K>`).
  *
  * @note it preserves the order in which elements were inserted.
  */
-template <typename K, typename V, typename Hash = DictHash<K>>
+template <typename K, typename V, typename Hash = VaDictHash<K>>
 class VaDict {
   protected:
-    using Entry = DictEntry<K, V>;
+    using Entry = VaDictEntry<K, V>;
 
     Size cap;  ///< Capacity of the hash table
     Size size; ///< Current number of entries stored in the hash table.
 
-    Entry** buckets; ///< Array of pointers to hash buckets (each bucket is a linked list of entries).
+    Entry**
+        buckets; ///< Array of pointers to hash buckets (each bucket is a linked list of entries).
 
     Entry* head;
     Entry* tail;
@@ -195,7 +201,7 @@ class VaDict {
     };
 
   public:
-    /** 
+    /**
      * @brief Constructs an empty dictionary with a given initial capacity.
      * @param initialCap Initial number of hash buckets (default is 16).
      */
@@ -208,7 +214,7 @@ class VaDict {
         }
     }
 
-    /** 
+    /**
      * @brief Copy constructor. Creates a deep copy of another dictionary.
      * @param other The dictionary to copy from.
      */
@@ -226,7 +232,7 @@ class VaDict {
         }
     }
 
-    /** 
+    /**
      * @brief Move constructor. Transfers ownership of internal data from another dictionary.
      * @param other The dictionary to move from.
      */
@@ -239,31 +245,33 @@ class VaDict {
         other.cap = 0;
     }
 
-    /** 
+    /**
      * @brief Constructs a dictionary from an initializer list of key-value pairs.
      * @param init Initializer list of key-value pairs.
      */
-    template <typename U1 = K, typename U2 = V, typename = std::enable_if_t<!std::is_reference_v<U2>>>
+    template <typename U1 = K, typename U2 = V,
+        typename = std::enable_if_t<!std::is_reference_v<U2>>>
     VaDict(std::initializer_list<VaPair<U1, U2>> init) : VaDict() {
         resize(init.size());
-        for (auto& [k, v] : init) {
+        for (auto& [k, v]: init) {
             put(k, v);
         }
     }
 
-    /** 
+    /**
      * @brief Constructs a dictionary from an initializer list of key-value pairs.
      * @param init Initializer list of key-value pairs.
      */
-    template <typename U1 = K, typename U2 = V, typename = std::enable_if_t<std::is_reference_v<U2>>>
+    template <typename U1 = K, typename U2 = V,
+        typename = std::enable_if_t<std::is_reference_v<U2>>>
     VaDict(std::initializer_list<VaPair<const U1, const U2>> init) : VaDict() {
         resize(init.size());
-        for (const auto& [k, v] : init) {
+        for (const auto& [k, v]: init) {
             put(k, v);
         }
     }
 
-    /** 
+    /**
      * @brief Destructor. Frees all allocated memory and clears the dictionary.
      */
     ~VaDict() {
@@ -278,7 +286,7 @@ class VaDict {
         delete[] buckets;
     }
 
-    /** 
+    /**
      * @brief Copy assignment operator. Replaces the contents with a copy of another dictionary.
      * @param other The dictionary to copy from.
      * @return Reference to this dictionary.
@@ -308,7 +316,7 @@ class VaDict {
         return *this;
     }
 
-    /** 
+    /**
      * @brief Move assignment operator. Transfers the contents of another dictionary.
      * @param other The dictionary to move from.
      * @return Reference to this dictionary.
@@ -367,7 +375,7 @@ class VaDict {
      * @brief Lexicographically compares two dictionaries in the opposite direction.
      * @param other The other dictionary to compare with.
      * @return `true` if this dictionary is lexicographically greater than the other.
-     * 
+     *
      * @note Equivalent to `!(this < other) && !(this == other)`.
      * @warning Requires both `K` and `V` to implement `operator<` or `operator>`.
      */
@@ -387,7 +395,7 @@ class VaDict {
      */
     bool operator>=(const VaDict<K, V>& other) const { return !(*this < other); }
 
-    /** 
+    /**
      * @brief Checks if this dictionary is equal to another, ignoring insertion order.
      * @param other The dictionary to compare with.
      * @return true if all key-value pairs are equal, false otherwise.
@@ -416,7 +424,7 @@ class VaDict {
         return true;
     }
 
-    /** 
+    /**
      * @brief Checks if this dictionary is not equal to another.
      * @param other The dictionary to compare with.
      * @return true if the dictionaries differ, false otherwise.
@@ -427,7 +435,7 @@ class VaDict {
      * @brief Compares two dictionaries for equality, preserving insertion order.
      * @param other Dictionary to compare with.
      * @return true if all key-value pairs and their insertion order match.
-     * 
+     *
      * @note Slower than unordered comparison; useful when order matters.
      */
     bool equalsOrdered(const VaDict<K, V>& other) const {
@@ -460,7 +468,7 @@ class VaDict {
     /**
      * @brief Ensures capacity is at least the specified amount.
      * @param minCap The minimum number of buckets to reserve.
-     * 
+     *
      * @note Triggers rehashing if current capacity is smaller.
      */
     void reserve(Size minCap) {
@@ -472,7 +480,7 @@ class VaDict {
      * @param index Position to insert at (0-based).
      * @param key The key to insert.
      * @param value The value to associate with the key.
-     * 
+     *
      * @throws IndexOutOfRangeError if index > size.
      * @note If the key already exists, it is first removed.
      * @note If index == size, the pair is appended to the end.
@@ -542,7 +550,7 @@ class VaDict {
      * @param key The key to search for.
      * @param value Output parameter for the value, if found.
      * @return true if key exists, false otherwise.
-     * 
+     *
      * @note Does not throw on missing key.
      */
     bool get(const K& key, V& value) const {
@@ -561,7 +569,7 @@ class VaDict {
 
     /**
      * @brief Removes all key-value pairs from the dictionary.
-     * 
+     *
      * @note Leaves the capacity unchanged.
      * @note After clearing, size is 0 and iteration is reset.
      */
@@ -584,7 +592,7 @@ class VaDict {
     /**
      * @brief Removes a key-value pair from the dictionary.
      * @param key The key to remove.
-     * 
+     *
      * @note Does nothing if key is not found.
      * @note Preserves order of remaining elements.
      */
@@ -634,7 +642,7 @@ class VaDict {
      * @brief Returns a reference to the value for the given key, inserting a default if missing.
      * @param key The key to retrieve or insert.
      * @return Reference to the existing or newly inserted value.
-     * 
+     *
      * @note Inserts default-constructed value if key is not present.
      * @note May cause rehash if load factor exceeds threshold.
      */
@@ -671,7 +679,7 @@ class VaDict {
      * @brief Returns a reference to the value for the given key.
      * @param key The key to search for.
      * @return Reference to the value associated with the key.
-     * 
+     *
      * @throws KeyNotFoundError if the key does not exist.
      */
     V& at(const K& key) {
@@ -692,7 +700,7 @@ class VaDict {
      * @brief Returns a const reference to the value for the given key.
      * @param key The key to search for.
      * @return Const reference to the value associated with the key.
-     * 
+     *
      * @throws KeyNotFoundError if the key is not present.
      * @note Read-only variant of the non-const overload.
      */
@@ -710,12 +718,11 @@ class VaDict {
         throw KeyNotFoundError();
     }
 
-    // --- atIndex
     /**
      * @brief Returns a reference to the value at a given insertion index.
      * @param index Index in insertion order (0-based).
      * @return Reference to the value at the specified index.
-     * 
+     *
      * @throws IndexOutOfRangeError if index >= size.
      * @note This is a linear-time operation.
      */
@@ -733,7 +740,7 @@ class VaDict {
      * @brief Returns a const reference to the value at a given insertion index.
      * @param index Index in insertion order (0-based).
      * @return Const reference to the value at the specified index.
-     * 
+     *
      * @throws IndexOutOfRangeError if index >= size
      */
     const V& atIndex(Size index) const {
@@ -750,7 +757,7 @@ class VaDict {
      * @brief Returns a mutable key-value pair reference at a given insertion index.
      * @param index Index of the entry to access.
      * @return A PairRef containing references to the key and value.
-     * 
+     *
      * @throws IndexOutOfRangeError if index is out of bounds.
      */
     PairRef pairAtIndex(Size index) {
@@ -767,7 +774,7 @@ class VaDict {
      * @brief Returns a const key-value pair reference at a given insertion index.
      * @param index Index of the entry to access.
      * @return A ConstPairRef with const references to key and value.
-     * 
+     *
      * @throws IndexOutOfRangeError if index is invalid.
      * @note Use when no modification is needed.
      */
@@ -781,54 +788,62 @@ class VaDict {
         return ConstPairRef{current->key, current->value};
     }
 
-    // --- iterator
+  public friends:
+    friend inline Size size(const VaDict& dict) { return dict.size; }
+    friend inline Size cap(const VaDict& dict) { return dict.cap; }
+
+  public iterators:
     class Iterator {
       protected:
         Entry* ptr;
 
       public:
-        Iterator(Entry* e) : ptr(e) {}
+        explicit Iterator(Entry* e) : ptr(e) {}
 
         bool operator!=(const Iterator& other) const { return ptr != other.ptr; }
         void operator++() {
             if (ptr) ptr = ptr->nextOrder;
         }
 
-        DictKVRef<K, V> operator*() {
-            return { ptr->key, ptr->value };
-        }
-        
-        DictKVRef<K, const V> operator*() const {
-            return { ptr->key, ptr->value };
-        }
+        DictKVRef<K, V> operator*() { return {ptr->key, ptr->value}; }
+        DictKVRef<K, const V> operator*() const { return {ptr->key, ptr->value}; }
     };
 
-    // --- const iterator
     class ConstIterator {
       protected:
         const Entry* ptr;
 
       public:
-        ConstIterator(const Entry* e) : ptr(e) {}
+        explicit ConstIterator(const Entry* e) : ptr(e) {}
 
         bool operator!=(const ConstIterator& other) const { return ptr != other.ptr; }
         void operator++() {
             if (ptr) ptr = ptr->nextOrder;
         }
-        
-        DictKVRef<K, const V> operator*() const {
-            return { ptr->key, ptr->value };
-        }
+
+        DictKVRef<K, const V> operator*() const { return {ptr->key, ptr->value}; }
     };
 
-    Iterator begin() { return Iterator(head); }
-    Iterator end() { return Iterator(nullptr); }
+    using ReverseIterator = std::reverse_iterator<Iterator>;
+    using ConstReverseIterator = std::reverse_iterator<ConstIterator>;
 
-    ConstIterator begin() const { return ConstIterator(head); }
-    ConstIterator end() const { return ConstIterator(nullptr); }
+    inline Iterator begin() { return Iterator(head); }
+    inline Iterator end() { return Iterator(nullptr); }
+
+    inline ConstIterator begin() const { return ConstIterator(head); }
+    inline ConstIterator end() const { return ConstIterator(nullptr); }
+
+    inline ConstIterator cbegin() const { return ConstIterator(head); }
+    inline ConstIterator cend() const { return ConstIterator(nullptr); }
+
+    inline ReverseIterator rbegin() { return ReverseIterator(end()); }
+    inline ReverseIterator rend() { return ReverseIterator(begin()); }
+
+    inline ConstReverseIterator rbegin() const { return ConstReverseIterator(end()); }
+    inline ConstReverseIterator rend() const { return ConstReverseIterator(begin()); }
+
+    inline ConstReverseIterator crbegin() const { return ConstReverseIterator(cend()); }
+    inline ConstReverseIterator crend() const { return ConstReverseIterator(cbegin()); }
 
     Entry* next(const Entry* current) const { return current ? current->nextOrder : nullptr; }
-
-    friend inline Size size(const VaDict& dict) { return dict.size; }
-    friend inline Size cap(const VaDict& dict) { return dict.cap; }
 };

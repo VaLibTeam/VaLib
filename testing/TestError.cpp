@@ -13,12 +13,13 @@ bool testError(testing::Test& t) {
     expect({
         r.throwErr();
         return t.fail("expected exception");
-    }) expect({
+    })
+    expect({
         r.unwrap();
         return t.fail("expected exception");
     })
 
-        r = 123;
+    r = 123;
     if (r.unwrap() != 123) {
         return t.fail("unexpected result");
     }
@@ -30,7 +31,7 @@ bool testError(testing::Test& t) {
         return t.fail("expected exception");
     })
 
-        r = new IndexError("Kaboom again");
+    r = new IndexError("Kaboom again");
     try {
         r.throwErr();
 

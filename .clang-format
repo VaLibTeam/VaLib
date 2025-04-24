@@ -1,17 +1,45 @@
+# VaLib - Vast Library
+# Licensed under GNU GPL v3 License. See LICENSE file.
+# (C) 2025 VaLibTeam
 BasedOnStyle: LLVM
 
+# Number of spaces for each indentation level
 IndentWidth: 4
 
-AllowShortIfStatementsOnASingleLine: true
-AllowShortLoopsOnASingleLine: true
-AllowShortCaseLabelsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: true       # Allow short if-statements on a single line
+AllowShortLoopsOnASingleLine: true              # Allow short loops (for, while) on a single line
+AllowShortCaseLabelsOnASingleLine: true         # Allow short case labels in switch statements on a single line
 
+# Pointers and references are aligned with the type
 PointerAlignment: Left
 
-SpaceBeforeInheritanceColon: False
+SpaceBeforeInheritanceColon: false         # No space before colon in inheritance (e.g., class Foo: public Bar)
+SpaceBeforeRangeBasedForLoopColon: false   # No space before colon in range-based for loops (e.g., for (auto x: y))
 
+# Maximum line length before wrapping
 ColumnLimit: 100
+
+# Always break template declarations onto a new line
 AlwaysBreakTemplateDeclarations: true
 
+# Do not reflow or wrap comments
 ReflowComments: false
 CommentPragmas: '^'
+
+# Macros treated as single statements (prevents formatting inside)
+StatementMacros: [
+  'expect',
+  'iterators',
+]
+
+# Style of brace placement: attach opening brace to control statement
+BreakBeforeBraces: Attach
+
+AlignAfterOpenBracket: DontAlign
+AllowAllArgumentsOnNextLine: true
+
+AttributeMacros:
+  - iterators
+
+KeepEmptyLinesAtTheStartOfBlocks: true
+# DisableFormat: true

@@ -3,18 +3,21 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
+#include "VaLib/Types/Tuple.hpp"
+#include <vector>
 #ifdef VaLib_USE_CONCEPTS
 #include <VaLib/Types/BasicConcepts.hpp>
 #endif
 
 #include <VaLib/Types/BasicTypedef.hpp>
-#include <VaLib/Types/Stringer.hpp>
-
-#include <ostream>
-#include <string>
 
 #include <VaLib/Types/ImmutableString.hpp>
 #include <VaLib/Types/String.hpp>
+#include <VaLib/Types/Stringer.hpp>
+
+#include <VaLib/Types/List.hpp>
+
+#include <string>
 
 namespace va {
 
@@ -32,6 +35,55 @@ constexpr int AUTO_PRECISION = -1;
 VaString toString(float64 num, int precision = AUTO_PRECISION);
 inline VaString toString(float32 num, int precision = AUTO_PRECISION) {
     return toString((float64)num, precision);
+}
+
+inline VaString toString(VaList<VaString> lst) {
+    return "[" + lst.join(", ") + "]";
+}
+
+inline VaString toString(std::vector<VaString> lst) {
+    if (lst.size() == 0) return "[]";
+
+    VaString result = lst[0];
+    for (Size i = 1; i < lst.size(); ++i) {
+        result += ", " + lst[i];
+    }
+
+    return "[" + result + "]";
+}
+
+template <typename T>
+inline VaString toString(VaList<T> lst) {
+    if (len(lst) == 0) return "[]";
+
+    VaString result = toString(lst[0]);
+    for (Size i = 1; i < len(lst); ++i) {
+        result += ", " + toString(lst[i]);
+    }
+
+    return "[" + result + "]";
+}
+
+template <typename T>
+inline VaString toString(std::vector<T> lst) {
+    if (lst.size() == 0) return "[]";
+
+    VaString result = toString(lst[0]);
+    for (Size i = 1; i < lst.size(); ++i) {
+        result += ", " + toString(lst[i]);
+    }
+
+    return "[" + result + "]";
+}
+
+template <typename... Ts>
+inline VaString toString(VaTuple<Ts...> tp) {
+    VaString result = toString(tp[0]);
+    tp.forEach([&](const auto& elm) {
+        result += ", " + toString(elm);
+    });
+
+    return "(" + result + ")";
 }
 
 inline VaString toString(VaImmutableString str) { return VaString(str); }

@@ -21,10 +21,10 @@ bool testFormat(testing::Test& t) {
         {0, "", 0.0, false, "n = 0, s = , f = 0.000000, b = false"},
         {-456, "Test", -3.14, true, "n = -456, s = Test, f = -3.140000, b = true"},
         {999999999, "LongStringWithWeirdChars!@#", 1.23e9, false,
-         "n = 999999999, s = LongStringWithWeirdChars!@#, f = 1230000000.000000, b = false"},
+            "n = 999999999, s = LongStringWithWeirdChars!@#, f = 1230000000.000000, b = false"},
     };
 
-    for (const auto& c : cases) {
+    for (const auto& c: cases) {
         VaString str = va::sprintf("n = %d, s = %s, f = %f, b = %t", c.n, c.s, c.f, c.b);
         if (str != c.expected) {
             return t.fail(VaString("sprintf failed for case: ") + c.expected);

@@ -72,6 +72,7 @@ class VaList {
         }
     }
 
+  protected friends:
     friend class VaSlice<T>;
 
   public:
@@ -87,7 +88,7 @@ class VaList {
     VaList(std::initializer_list<T> init) : len(init.size()), cap(init.size()) {
         data = static_cast<T*>(std::malloc(cap * sizeof(T)));
         Size i = 0;
-        for (const T& val : init) {
+        for (const T& val: init) {
             new (&data[i++]) T(val);
         }
     }
@@ -122,7 +123,7 @@ class VaList {
      * @param args Values to initialize the list with.
      */
     template <typename... Args,
-              typename = std::enable_if_t<(std::is_constructible_v<T, Args> && ...)>>
+        typename = std::enable_if_t<(std::is_constructible_v<T, Args> && ...)>>
     VaList(Args&&... args) : len(sizeof...(Args)), cap(sizeof...(Args)) {
         data = static_cast<T*>(std::malloc(cap * sizeof(T)));
         Size i = 0;
@@ -182,63 +183,6 @@ class VaList {
     }
 
     /**
-     * @brief Returns a new list that is the concatenation of this and another list.
-     * @param other The list to concatenate.
-     * @return New combined list.
-     */
-    VaList operator+(const VaList& other) const {
-        VaList result;
-        result.resize(len + other.len);
-        result.len = len + other.len;
-        for (Size i = 0; i < len; i++) {
-            result.data[i] = data[i];
-        }
-        for (Size i = 0; i < other.len; i++) {
-            result.data[len + i] = other.data[i];
-        }
-
-        return result;
-    }
-
-    /**
-     * @brief Appends another list to this one.
-     * @param other The list to append.
-     * @return Reference to this list.
-     */
-    VaList& operator+=(const VaList& other) {
-        resize(len + other.len);
-        for (Size i = 0; i < other.len; i++) {
-            data[len + i] = other.data[i];
-        }
-        len += other.len;
-        return *this;
-    }
-
-    /**
-     * @brief Compares two lists for equality.
-     * @param other The list to compare with.
-     * @return True if the lists are equal, false otherwise.
-     */
-    bool operator==(const VaList& other) const {
-        if (len != other.len) return false;
-        if constexpr (!va::HasEqualityOperatorV<T>) {
-            return std::memcmp(data, other.data, len * sizeof(T)) == 0;
-        } else {
-            for (Size i = 0; i < len; i++) {
-                if (data[i] != other.data[i]) return false;
-            }
-            return true;
-        }
-    }
-
-    /**
-     * @brief Compares two lists for inequality.
-     * @param other The list to compare with.
-     * @return True if the lists are not equal, false otherwise.
-     */
-    bool operator!=(const VaList& other) const { return !(*this == other); }
-
-    /**
      * @brief Ensures the internal capacity is at least the specified amount.
      * @param minCap Minimum required capacity.
      */
@@ -265,6 +209,27 @@ class VaList {
     }
 
     /**
+     * @brief Constructs an element in place at the end of the list.
+     * @tparam Args Types of constructor arguments.
+     * @param args Arguments to forward to the constructor.
+     * @return Reference to the newly added element.
+     */
+    template <typename... Args>
+    T& appendEmplace(Args&&... args) {
+        update();
+        new (&data[len]) T(std::forward<Args>(args)...);
+        return data[len++];
+    }
+
+    template <typename... Args>
+    [[ deprecated("Use appendEmplace") ]]
+    T& emplace(Args&&... args) {
+        update();
+        new (&data[len]) T(std::forward<Args>(args)...);
+        return data[len++];
+    }
+
+    /**
      * @brief Inserts an element at the beginning of the list.
      * @param elm The element to prepend.
      */
@@ -277,101 +242,21 @@ class VaList {
     void prepend(T&& elm) { insert(0, elm); }
 
     /**
-     * @brief Appends all elements from another list to the end.
-     * @param other The list to extend from.
-     */
-    void extend(const VaList& other) { *this += other; }
-
-    /**
-     * @brief Constructs an element in place at the end of the list.
+     * @brief Constructs an element in place at the beginning of the list.
      * @tparam Args Types of constructor arguments.
      * @param args Arguments to forward to the constructor.
      * @return Reference to the newly added element.
      */
     template <typename... Args>
-    T& emplace(Args&&... args) {
-        update();
-        new (&data[len]) T(std::forward<Args>(args)...);
-        return data[len++];
+    T& prependEmplace(Args&&... args) {
+        return insertEmplace(0, std::forward<Args>(args)...);
     }
 
     /**
-     * @brief Accesses an element by index (unchecked).
-     * @param index Index of the element.
-     * @return Reference to the element.
+     * @brief Appends all elements from another list to the end.
+     * @param other The list to extend from.
      */
-    T& operator[](Size index) { return data[index]; }
-
-    /**
-     * @brief Accesses an element by index (unchecked).
-     * @param index Index of the element.
-     * @return Const reference to the element.
-     */
-    const T& operator[](Size index) const { return data[index]; }
-
-    /**
-     * @brief Accesses an element by index with bounds checking.
-     * @param index Index of the element.
-     * @return Reference to the element.
-     *
-     * @throws IndexOutOfRangeError If index is out of bounds.
-     */
-    T& at(Size index) {
-        if (index >= len) throw IndexOutOfRangeError(len, index);
-        return data[index];
-    }
-
-    /**
-     * @brief Accesses an element by index with bounds checking.
-     * @param index Index of the element.
-     * @return Const reference to the element.
-     *
-     * @throws IndexOutOfRangeError If index is out of bounds.
-     */
-    const T& at(Size index) const {
-        if (index >= len) throw IndexOutOfRangeError(len, index);
-        return data[index];
-    }
-
-    /**
-     * @brief Returns a reference to the first element in the list.
-     * @return Reference to the first element.
-     * @throws IndexError If the list is empty.
-     */
-    T& front() {
-        if (len <= 0) throw IndexError("front() on empty list");
-        return data[0];
-    }
-
-    /**
-     * @brief Returns a const reference to the first element in the list.
-     * @return Const reference to the first element.
-     * @throws IndexError If the list is empty.
-     */
-    const T& front() const {
-        if (len <= 0) throw IndexError("front() on empty list");
-        return data[0];
-    }
-
-    /**
-     * @brief Returns a reference to the last element in the list.
-     * @return Reference to the last element.
-     * @throws IndexError If the list is empty.
-     */
-    T& back() {
-        if (len <= 0) throw IndexError("back() on empty list");
-        return data[len - 1];
-    }
-
-    /**
-     * @brief Returns a const reference to the last element in the list.
-     * @return Const reference to the last element.
-     * @throws IndexError If the list is empty.
-     */
-    const T& back() const {
-        if (len <= 0) throw IndexError("back() on empty list");
-        return data[len - 1];
-    }
+    inline void extend(const VaList& other) { *this += other; }
 
     /**
      * @brief Inserts an element at the specified index.
@@ -430,6 +315,136 @@ class VaList {
             data[i + 1].~T();
         }
         len--;
+    }
+
+    /**
+     * @brief Removes and returns the last element of the list.
+     * @return The removed element.
+     *
+     * @throws ValueError If the list is empty.
+     */
+    T pop() {
+        if (len == 0) {
+            throw ValueError("pop() on empty list");
+        }
+
+        T value = std::move(data[len - 1]);
+        data[len - 1].~T();
+        len--;
+        return value;
+    }
+
+    /**
+     * @brief Removes and returns the element at the specified index.
+     * @param index Index of the element to remove.
+     * @return The removed element.
+     *
+     * @throws IndexOutOfRangeError If index is out of bounds.
+     */
+    T pop(Size index) {
+        if (index >= len) throw IndexOutOfRangeError(len, index);
+        T value = std::move(data[index]);
+        data[index].~T();
+
+        for (Size i = index; i < len - 1; i++) {
+            new (&data[i]) T(std::move(data[i + 1]));
+            data[i + 1].~T();
+        }
+
+        len--;
+        return value;
+    }
+
+    /**
+     * @brief Accesses an element by index (unchecked).
+     * @param index Index of the element.
+     * @return Reference to the element.
+     */
+    inline T& get(Size index) { return data[index]; }
+
+    /**
+     * @brief Accesses an element by index (unchecked).
+     * @param index Index of the element.
+     * @return Const reference to the element.
+     */
+    inline const T& get(Size index) const { return data[index]; }
+
+    /**
+     * @brief Accesses an element by index (unchecked).
+     * @param index Index of the element.
+     * @return Reference to the element.
+     */
+    inline T& operator[](Size index) { return data[index]; }
+
+    /**
+     * @brief Accesses an element by index (unchecked).
+     * @param index Index of the element.
+     * @return Const reference to the element.
+     */
+    inline const T& operator[](Size index) const { return data[index]; }
+
+    /**
+     * @brief Accesses an element by index with bounds checking.
+     * @param index Index of the element.
+     * @return Reference to the element.
+     *
+     * @throws IndexOutOfRangeError If index is out of bounds.
+     */
+    inline T& at(Size index) {
+        if (index >= len) throw IndexOutOfRangeError(len, index);
+        return data[index];
+    }
+
+    /**
+     * @brief Accesses an element by index with bounds checking.
+     * @param index Index of the element.
+     * @return Const reference to the element.
+     *
+     * @throws IndexOutOfRangeError If index is out of bounds.
+     */
+    inline const T& at(Size index) const {
+        if (index >= len) throw IndexOutOfRangeError(len, index);
+        return data[index];
+    }
+
+    /**
+     * @brief Returns a reference to the first element in the list.
+     * @return Reference to the first element.
+     * @throws IndexError If the list is empty.
+     */
+    inline T& front() {
+        if (len <= 0) throw IndexError("front() on empty list");
+        return data[0];
+    }
+
+    /**
+     * @brief Returns a const reference to the first element in the list.
+     * @return Const reference to the first element.
+     * @throws IndexError If the list is empty.
+     */
+    inline const T& front() const {
+        if (len <= 0) throw IndexError("front() on empty list");
+        return data[0];
+    }
+
+    /**
+     * @brief Returns a reference to the last element in the list.
+     * @return Reference to the last element.
+     * @throws IndexError If the list is empty.
+     */
+    inline T& back() {
+        if (len <= 0) throw IndexError("back() on empty list");
+        return data[len - 1];
+    }
+
+    /**
+     * @brief Returns a const reference to the last element in the list.
+     * @return Const reference to the last element.
+     * @throws IndexError If the list is empty.
+     */
+    inline const T& back() const {
+        if (len <= 0) throw IndexError("back() on empty list");
+        return data[len - 1];
     }
 
     /**
@@ -497,30 +512,13 @@ class VaList {
         return result;
     }
 
-    /**
-     * @brief Removes and returns the last element of the list.
-     * @return The removed element.
-     *
-     * @throws ValueError If the list is empty.
-     */
-    T pop() {
-        if (len == 0) {
-            throw ValueError("pop() on empty list");
-        }
-
-        T value = std::move(data[len - 1]);
-        data[len - 1].~T();
-        len--;
-        return value;
-    }
-
 #ifdef VaLib_USE_CONCEPTS
     template <va::Addable A = T>
     A sum() const {
         if (len <= 0) return A{};
         A v = at(0);
         for (Size i = 1; i < len; i++) {
-            v += at(i);
+            v += data[i];
         }
         return v;
     }
@@ -597,11 +595,65 @@ class VaList {
         len = cap = 0;
     }
 
-    inline T* begin() { return data; }
-    inline T* end() { return data + len; }
-    inline const T* begin() const { return data; }
-    inline const T* end() const { return data + len; }
+  public operators:
+    /**
+     * @brief Returns a new list that is the concatenation of this and another list.
+     * @param other The list to concatenate.
+     * @return New combined list.
+     */
+    friend VaList operator+(const VaList& lhs, const VaList& rhs) {
+        VaList result;
+        result.resize(lhs.len + rhs.len);
+        result.len = lhs.len + rhs.len;
+        for (Size i = 0; i < lhs.len; i++) {
+            result.data[i] = lhs.data[i];
+        }
+        for (Size i = 0; i < rhs.len; i++) {
+            result.data[lhs.len + i] = rhs.data[i];
+        }
 
+        return result;
+    }
+
+    /**
+     * @brief Appends another list to this one.
+     * @param other The list to append.
+     * @return Reference to this list.
+     */
+    friend VaList& operator+=(VaList& lhs, const VaList& rhs) {
+        lhs.resize(lhs.len + rhs.len);
+        for (Size i = 0; i < rhs.len; i++) {
+            lhs.data[lhs.len + i] = rhs.data[i];
+        }
+        lhs.len += rhs.len;
+        return lhs;
+    }
+
+    /**
+     * @brief Compares two lists for equality.
+     * @param other The list to compare with.
+     * @return True if the lists are equal, false otherwise.
+     */
+    friend bool operator==(const VaList& lhs, const VaList& rhs) {
+        if (lhs.len != rhs.len) return false;
+        if constexpr (!va::HasEqualityOperatorV<T>) {
+            return std::memcmp(lhs.data, rhs.data, lhs.len * sizeof(T)) == 0;
+        } else {
+            for (Size i = 0; i < lhs.len; i++) {
+                if (lhs.data[i] != rhs.data[i]) return false;
+            }
+            return true;
+        }
+    }
+
+    /**
+     * @brief Compares two lists for inequality.
+     * @param other The list to compare with.
+     * @return True if the lists are not equal, false otherwise.
+     */
+    friend bool operator!=(const VaList& lhs, const VaList& rhs) { return !(lhs == rhs); }
+
+  public friends:
     /**
      * @brief Returns the number of elements in the list.
      * @param list The list to query.
@@ -615,6 +667,30 @@ class VaList {
      * @return Capacity of the list.
      */
     friend inline Size cap(const VaList& list) { return list.cap; }
+
+  public iterators:
+    using Iterator = T*;
+    using ConstIterator = const T*;
+    using ReverseIterator = std::reverse_iterator<Iterator>;
+    using ConstReverseIterator = std::reverse_iterator<ConstIterator>;
+
+    inline Iterator begin() { return data; }
+    inline Iterator end() { return data + len; }
+
+    inline ConstIterator begin() const { return data; }
+    inline ConstIterator end() const { return data + len; }
+
+    inline ConstIterator cbegin() const { return data; }
+    inline ConstIterator cend() const { return data + len; }
+
+    inline ReverseIterator rbegin() { return ReverseIterator(end()); }
+    inline ReverseIterator rend() { return ReverseIterator(begin()); }
+
+    inline ConstReverseIterator rbegin() const { return ConstReverseIterator(end()); }
+    inline ConstReverseIterator rend() const { return ConstReverseIterator(begin()); }
+
+    inline ConstReverseIterator crbegin() const { return ConstReverseIterator(cend()); }
+    inline ConstReverseIterator crend() const { return ConstReverseIterator(cbegin()); }
 };
 
 namespace va {
@@ -700,7 +776,7 @@ VaList<VaPair<Size, T>> enumerate(const VaList<T>& data) {
  * @param a First input list.
  * @param b Second input list.
  * @return A VaList of VaPair<T1, T2>.
- * 
+ *
  * @note Truncates to the shorter list.
  */
 template <typename T1, typename T2>

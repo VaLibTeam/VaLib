@@ -124,6 +124,26 @@ char VaImmutableString::operator[](Size index) const {
 
 bool VaImmutableString::isEmpty() const { return len == 0; }
 
+Size VaImmutableString::find(const VaImmutableString& str) const {
+    if (str.len > len) return npos;
+    if (str.len == 0) return 0;
+
+    for (Size i = 0; i <= len - str.len; i++) {
+        bool found = true;
+        for (Size j = 0; j < str.len; j++) {
+            if (data[i + j] != str.data[j]) {
+                found = false;
+                break;
+            }
+        }
+        if (found) return i;
+    }
+
+    return npos;
+}
+
+Size VaImmutableString::find(const char* str) const { return this->find(VaImmutableString(str)); }
+
 std::ostream& operator<<(std::ostream& os, VaImmutableString str) {
     os << str.toStdString();
     return os;

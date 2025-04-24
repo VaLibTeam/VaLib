@@ -8,6 +8,7 @@
 #include <VaLib/Types/Pair.hpp>
 #include <VaLib/Types/String.hpp>
 #include <VaLib/Types/Tuple.hpp>
+#include <list>
 
 namespace va {
 
@@ -32,7 +33,7 @@ inline auto mkPair(T1 first, T2 second) {
 }
 
 template <typename T, typename... Args,
-          typename = std::enable_if_t<(std::is_constructible_v<T, Args> && ...)>>
+    typename = std::enable_if_t<(std::is_constructible_v<T, Args> && ...)>>
 inline auto mkList(Args... args) {
     return VaList<Args...>(args...);
 }

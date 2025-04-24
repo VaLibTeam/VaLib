@@ -4,7 +4,13 @@
 
 #include <lib/testing.hpp>
 
+#include <VaLib/AutoEnable.hpp>
+
+#include <VaLib/Types/List.hpp>
+#include <VaLib/Types/LinkedList.hpp>
 #include <VaLib/Types/Stack.hpp>
+
+#include <vector>
 
 #define expect(code)                                                                               \
     try {                                                                                          \
@@ -41,18 +47,22 @@ bool testStackFor(testing::Test& t) {
         return t.fail("Expected exception on pop() from empty stack.");
     })
 
-        expect({
-            s.top();
-            return t.fail("Expected exception on top() from empty stack.");
-        })
+    expect({
+        s.top();
+        return t.fail("Expected exception on top() from empty stack.");
+    })
 
-            return t.success();
+    return t.success();
 }
 
 bool testStack(testing::Test& t) {
-    if (!t.helper(testStackFor<int, std::vector<int>>)) return false;
+    if (!t.helper(testStackFor<int, VaLinkedList<int>>)) return false;
     if (!t.helper(testStackFor<int, VaList<int>>)) return false;
     if (!t.helper(testStackFor<int, void>)) return false;
+
+    #ifdef VaLib_USE_CONCEPTS
+    if (!t.helper(testStackFor<int, std::vector<int>>)) return false;
+    #endif
 
     return t.success();
 }
