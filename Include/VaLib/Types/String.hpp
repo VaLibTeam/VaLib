@@ -396,6 +396,8 @@ class VaString {
         return VaString(lhs) == rhs;
     }
 
+    VaString& operator+=(VaString&& other) noexcept;
+
   public iterators:
     using Iterator = char*;
     using ConstIterator = const char*;

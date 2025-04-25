@@ -21,47 +21,52 @@ NotInstalled() {
     exitCode=$((exitCode | $1))
 }
 
-if [[ -f "/usr/lib/libvalib.a" || -f "/usr/local/lib/libvalib.a" ]]; then
-    ShowInfo "VaLib static library is installed."
-else
-    ShowWarn "VaLib static library is NOT installed."
-    NotInstalled $StaticNotInstalledExit
-fi
-
-if [[ -f "/usr/lib/libvalib.so" || -f "/usr/local/lib/libvalib.so" ]]; then
-    ShowInfo "VaLib shared library is installed."
-else
-    ShowWarn "VaLib shared library is NOT installed."
-    NotInstalled $SharedNotInstalledExit
-fi
-
-modules=(
-    "VaLib"
-    "VaLib/Types"
-    "VaLib/Utils"
-)
-
-allExists=true
-for module in "${modules[@]}"; do
-    if [[ ! -d "/usr/local/include/$module" ]]; then
-        allExists=false
+Main() {
+    if [[ -f "/usr/lib/libvalib.a" || -f "/usr/local/lib/libvalib.a" ]]; then
+        ShowInfo "VaLib static library is installed."
+    else
+        ShowWarn "VaLib static library is NOT installed."
+        NotInstalled $StaticNotInstalledExit
     fi
-done
 
-if [[ $allExists = true && -f "/usr/local/include/VaLib.hpp" ]]; then
-    ShowInfo "VaLib headers (devel version) is installed."
-else
-    ShowWarn "VaLib headers (devel version) is NOT installed."
-    NotInstalled $HeadersNotInstalledExit
-fi
+    if [[ -f "/usr/lib/libvalib.so" || -f "/usr/local/lib/libvalib.so" ]]; then
+        ShowInfo "VaLib shared library is installed."
+    else
+        ShowWarn "VaLib shared library is NOT installed."
+        NotInstalled $SharedNotInstalledExit
+    fi
 
-case $allInstalled in
-true)
-    ShowSuccess "VaLib is fully installed on your system!"
-    exit $AllInstalledExit
-    ;;
-false)
-    ShowWarn "Some VaLib components are not installed."
-    exit $exitCode
-    ;;
-esac
+    modules=(
+        "VaLib"
+        "VaLib/Types"
+        "VaLib/Utils"
+    )
+
+    allExists=true
+    for module in "${modules[@]}"; do
+        if [[ ! -d "/usr/local/include/$module" ]]; then
+            allExists=false
+        fi
+    done
+
+    if [[ $allExists = true && -f "/usr/local/include/VaLib.hpp" ]]; then
+        ShowInfo "VaLib headers (devel version) is installed."
+    else
+        ShowWarn "VaLib headers (devel version) is NOT installed."
+        NotInstalled $HeadersNotInstalledExit
+    fi
+
+    case $allInstalled in
+    true)
+        ShowSuccess "VaLib is fully installed on your system!"
+        exit $AllInstalledExit
+        ;;
+    false)
+        ShowWarn "Some VaLib components are not installed."
+        exit $exitCode
+        ;;
+    esac
+}
+
+Main "$@"
+exit "$?"

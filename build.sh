@@ -46,6 +46,8 @@ installHeaders=false
 uninstallLibs=false
 uninstallHeaders=false
 
+interactiveMode=true
+
 toCompile=()
 target=""
 
@@ -53,6 +55,11 @@ Help() {
     echo "Usage: $0 [options...]"
     echo
     echo "Options:"
+    echo "  --non--interactive           Disable interactive mode"
+    echo "  --interactive                Enable interactive mode"
+    echo "  --no-colors                  Disable color output"
+    echo "  --colors                     Enable color output"
+    echo
     echo "  --cxx=<compiler>             Specify the C++ compiler to use (default: g++)"
     echo "  --cxxflags=<flags>           Specify the compiler flags (default: -Wall -Wextra -std=c++20 -O2 -fPIC)"
     echo "  --ar=<archiver>              Specify the archiver to use (default: ar)"
@@ -96,7 +103,7 @@ CheckArgs() {
         if ! command -v "$cmd" > /dev/null 2>&1; then
             ShowError "$NotExit" "Tool '$cmd' is not installed."
 
-            if CanInstall "$cmd"; then
+            if CanInstall "$cmd" && $interactiveMode; then
                 read -n 1 -r -p "$(ShowYn 'Do you want to install it?')" ans
                 echo
 
@@ -130,59 +137,68 @@ CheckArgs() {
 ParseFlags() {
     for arg in "$@"; do
         case $arg in
-            --cxx=*)
+        --interactive)
+            interactiveMode=true ;;
+        --non-interactive)
+            interactiveMode=false ;;
+        --colors)
+            colors=true ;;
+        --no-colors)
+            colors=false ;;
+
+        --cxx=*)
             CXX="${arg#*=}" ;;
-            --cxxflags=*)
+        --cxxflags=*)
             CXXFLAGS="${arg#*=}" ;;
 
-            --ar=*)
+        --ar=*)
             AR="${arg#*=}" ;;
-            --arflags=*)
+        --arflags=*)
             ARFLAGS="${arg#*=}" ;;
 
-            --build-dir=*)
+        --build-dir=*)
             BUILD="${arg#*=}" ;;
-            --output=*)
+        --output=*)
             OUTPUT="${arg#*=}" ;;
-            --out-dir=*)
+        --out-dir=*)
             OUTDIR="${arg#*=}" ;;
 
-            --target=*)
+        --target=*)
             target=$(echo "$arg" | sed 's/--target=//') ;;
 
-            --install-libs)
+        --install-libs)
             installLibs=true
             ;;
-            --install-headers)
+        --install-headers)
             installHeaders=true
             ;;
-            --install | --install-all)
+        --install | --install-all)
             installLibs=true
             installHeaders=true
             ;;
 
-            --uninstall-libs)
+        --uninstall-libs)
             uninstallLibs=true
             ;;
-            --uninstall-headers)
+        --uninstall-headers)
             uninstallHeaders=true
             ;;
-            --uninstall | --uninstall-all)
+        --uninstall | --uninstall-all)
             uninstallHeaders=true
             uninstallLibs=true
             ;;
 
-            --clean)
+        --clean)
             Clean
             exit $SuccessExit
             ;;
 
-            --help)
+        --help)
             Help
             exit $SuccessExit
             ;;
 
-            *)
+        *)
             ShowError $ArgsErrorExit "Invalid argument: $arg" ;;
         esac
     done
@@ -212,7 +228,7 @@ CompileSources() {
         obj="$BUILD/$(basename "$file" .cpp).o"
         "$CXX" $CXXFLAGS "${includePath[@]/#/-I}" -c "$file" -o "$obj" || ShowError $CompilationErrorExit "Failed to compile $file"
         percent=$(( (compiled++ + 1) * 100 / total ))
-        ShowInfo "Progress: $percent% ($compiled/$total)"
+        ShowInfo "Progress: ${percent}% ($compiled/$total)"
     done
 }
 
@@ -248,10 +264,10 @@ InstallHeaders() {
             find "$dir" -type d | while read -r subdir; do
 
                 if [[ "$subdir" == "$dir" ]]; then relPath=""
-                else relPath="${subdir#"$dir"/}"; fi
+                else relPath="${subdir#"$dir"/}"
+                fi
 
                 targetDir="$sysIncludeDir/$relPath"
-
                 install -d "$targetDir"
 
                 headers=("$subdir"/*.{hpp,tpp,h})
@@ -388,9 +404,14 @@ Main() {
 
         ldconfig
     fi
+
+    if [[ -n $target || $uninstallHeaders = true || $uninstallLibs = true  || $installLibs = true || $installHeaders = true ]]; then
+        ShowSuccess "Done!"
+    else
+        ShowInfo "Nothing to do."
+    fi
+    return $SuccessExit
 }
 
 Main "$@"
-
-ShowSuccess "Done!"
-exit $SuccessExit
+exit $?

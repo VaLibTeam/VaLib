@@ -38,7 +38,6 @@ Time benchmarkStdList(benchmarking::Benchmark& b) {
         list.push_front(i);
     }
     for (int i = 0; i < 10'000; i++) {
-        // inserting an element in std::list is not as easy as in VaLinkedList, but well, VaLib specifically is designed that way 😉
         auto it = list.begin();
         std::advance(it, i);
         list.insert(it, i);

@@ -118,6 +118,19 @@ VaString& VaString::operator+=(const VaString& other) noexcept {
     return *this;
 }
 
+VaString& VaString::operator+=(VaString&& other) noexcept {
+    const Size newLen = len + other.len;
+    if (newLen > cap) {
+        resize(std::max(newLen, GROWTH_SEQ));
+    }
+    std::memcpy(data + len, other.data, other.len);
+    len = newLen;
+    other.data = nullptr;  // Move semantics: zero out other
+    other.len = 0;
+    other.cap = 0;
+    return *this;
+}
+
 VaString& VaString::append(const char* str, Size strLen) noexcept {
     const Size newLen = len + strLen;
     if (newLen > cap) {

@@ -17,7 +17,7 @@ Time benchmarkStringAppend(benchmarking::Benchmark& b) {
     T str;
     str.reserve(appendBenchmarkLimit * (13 * sizeof(char)));
 
-    for (int i = 0; i < appendBenchmarkLimit; i++) {
+    for (Size i = 0; i < appendBenchmarkLimit; i++) {
         str.append("Hello, world!", 13);
     }
     benchmarking::escape(str);
@@ -30,7 +30,7 @@ Time benchmarkRawStringAppend(benchmarking::Benchmark& b) {
 
     char* raw = static_cast<char*>(std::malloc(appendBenchmarkLimit * (13 * sizeof(char))));
     Size len = 0;
-    for (int i = 0; i < appendBenchmarkLimit; ++i) {
+    for (Size i = 0; i < appendBenchmarkLimit; ++i) {
         std::memcpy(raw + len, "Hello, world!", 13);
         len += 13;
     }
@@ -43,7 +43,7 @@ Time benchmarkVaStringModify(benchmarking::Benchmark& b) {
     b.start();
 
     VaString str(100000, ' ');
-    for (int i = 0; i < cap(str); i++) {
+    for (Size i = 0; i < cap(str); i++) {
         str[i] = i > 80000 ? 'c' : i > 40000 ? 'b' : i > 10000 ? 'a' : 'd';
     }
 
@@ -54,7 +54,7 @@ Time benchmarkStdStringModify(benchmarking::Benchmark& b) {
     b.start();
 
     std::string str(100000, ' ');
-    for (int i = 0; i < str.length(); i++) {
+    for (Size i = 0; i < str.length(); i++) {
         str[i] = i > 80000 ? 'c' : i > 40000 ? 'b' : i > 10000 ? 'a' : 'd';
     }
 

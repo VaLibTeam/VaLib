@@ -11,26 +11,17 @@
 namespace testing {
 
 class Test {
-  protected:
+protected:
     VaString name;
 
-  public:
-    inline void rename(VaString newName) { name = newName; }
+public:
+    void rename(VaString newName);
 
-    [[ deprecated("Deprecated") ]] void setState(VaString) {
-        // std::cout << "\033[33;1m" << "[ STATE ]: " << "\033[0m" << state << "\n";
-    }
+    [[ deprecated("Deprecated") ]]
+    void setState(VaString) {}
 
-    bool success(VaString msg = "") {
-        if (msg.isEmpty()) return true;
-        std::cout << "\033[32;1m" << "[ SUCCESS ]: " << "\033[0m" << msg << "\n";
-        return true;
-    }
-
-    bool fail(VaString msg) {
-        std::cerr << "\033[31;1m" << "[ FAIL ]: " << "\033[0m" << msg << "\n";
-        return false;
-    }
+    bool success(VaString msg = "");
+    bool fail(VaString msg);
 
     template <typename... Args>
     bool failf(VaString fmt, Args... args) {
@@ -38,12 +29,9 @@ class Test {
         return false;
     }
 
-    bool helper(Function<bool, Test&> testFunc) { return testFunc(*this); }
+    bool helper(Function<bool, Test&> testFunc);
 };
 
-int run(Function<bool, Test&> func) {
-    Test t;
-    return func(t) ? 0 : 1;
-}
+int run(Function<bool, Test&> func);
 
 } // namespace testing

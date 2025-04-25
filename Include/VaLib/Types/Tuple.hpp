@@ -3,11 +3,14 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
+#include <VaLib/Utils/BasicDefine.hpp>
 #include <VaLib/Types/BasicTypedef.hpp>
+
+#include <utility>
 
 /**
  * @class VaTuple Variadic tuple class template.
- * 
+ *
  * @note This class supports variadic storage and provides methods for element access,
  * iteration, and functional operations.
  */
@@ -16,7 +19,7 @@ class VaTuple;
 
 /**
  * @brief Specialization of VaTuple for an empty tuple.
- * 
+ *
  * @note This is the recursion base case used for inheritance chaining.
  */
 template <>
@@ -24,11 +27,11 @@ class VaTuple<> {
   public:
     /**
      * @brief Constructs a VaTuple from arguments.
-     * 
+     *
      * @tparam Args Argument types.
      * @param args Arguments to construct the tuple from.
      * @return VaTuple of decayed types.
-     * 
+     *
      * @note This method deduces and decays argument types to form a new tuple.
      */
     template <typename... Args>
@@ -38,10 +41,10 @@ class VaTuple<> {
 
     /**
      * @brief Applies a function to each element (no-op for empty tuple).
-     * 
+     *
      * @tparam Func Callable type.
      * @param func Function to apply.
-     * 
+     *
      * @note This overload is a no-op because the tuple is empty.
      */
     template <typename Func>
@@ -49,10 +52,10 @@ class VaTuple<> {
 
     /**
      * @brief Applies a function to each element (const version).
-     * 
+     *
      * @tparam Func Callable type.
      * @param func Function to apply.
-     * 
+     *
      * @note This overload is a no-op because the tuple is empty.
      */
     template <typename Func>
@@ -60,11 +63,11 @@ class VaTuple<> {
 
     /**
      * @brief Applies a function to each element with index (no-op for empty tuple).
-     * 
+     *
      * @tparam Func Callable type.
      * @tparam I Start index (default 0).
      * @param func Function to apply with index.
-     * 
+     *
      * @note This overload is a no-op because the tuple is empty.
      */
     template <typename Func, Size I = 0>
@@ -72,11 +75,11 @@ class VaTuple<> {
 
     /**
      * @brief Applies a function to each element with index (const version).
-     * 
+     *
      * @tparam Func Callable type.
      * @tparam I Start index (default 0).
      * @param func Function to apply with index.
-     * 
+     *
      * @note This overload is a no-op because the tuple is empty.
      */
     template <typename Func, Size I = 0>
@@ -87,7 +90,7 @@ class VaTuple<> {
  * @brief Variadic recursive tuple implementation.
  * @tparam Head Type of the current head element.
  * @tparam Tail Types of the remaining elements.
- * 
+ *
  * @note This implementation recursively inherits from VaTuple<Tail...>.
  */
 template <typename Head, typename... Tail>
@@ -137,7 +140,7 @@ class VaTuple<Head, Tail...>: protected VaTuple<Tail...> {
     /**
      * @brief Returns a reference to the second element.
      * @return Reference to the second element.
-     * 
+     *
      * @warning Asserts at compile time if the tuple has fewer than two elements.
      */
     auto& second() {
@@ -148,7 +151,7 @@ class VaTuple<Head, Tail...>: protected VaTuple<Tail...> {
     /**
      * @brief Returns a const reference to the second element.
      * @return Const reference to the second element.
-     * 
+     *
      * @warning Asserts at compile time if the tuple has fewer than two elements.
      */
     const auto& second() const {
@@ -159,7 +162,7 @@ class VaTuple<Head, Tail...>: protected VaTuple<Tail...> {
     /**
      * @brief Returns a reference to the third element.
      * @return Reference to the third element.
-     * 
+     *
      * @warning Asserts at compile time if the tuple has fewer than three elements.
      */
     auto& third() {
@@ -170,7 +173,7 @@ class VaTuple<Head, Tail...>: protected VaTuple<Tail...> {
     /**
      * @brief Returns a const reference to the third element.
      * @return Const reference to the third element.
-     * 
+     *
      * @warning Asserts at compile time if the tuple has fewer than three elements.
      */
     const auto& third() const {
@@ -228,7 +231,7 @@ class VaTuple<Head, Tail...>: protected VaTuple<Tail...> {
      * @brief Retrieves the element at index I.
      * @tparam I Index of the element.
      * @return Reference to the element at index I.
-     * 
+     *
      * @note This function uses recursion and constexpr evaluation.
      */
     template <Size I>

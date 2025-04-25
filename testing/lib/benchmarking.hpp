@@ -22,7 +22,7 @@ class Benchmark {
 
     inline int fail(const VaString m) {
         msg = m;
-        return -1;
+        return 1;
     }
 };
 
@@ -59,8 +59,7 @@ inline void escape(T&& value) {
 }
 
 inline int todo() {
-    va::printlnf("TODO");
-    return 1;
+    return 127;
 }
 
 } // namespace benchmarking

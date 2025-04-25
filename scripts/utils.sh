@@ -2,10 +2,15 @@
 
 NotExit=n
 
+colors=true
+
 ShowError() {
     local code="$1"
     local msg="${*:2}"
-    echo -e "\033[1;31m[ ERROR ]:\033[91m $msg\033[0m"
+
+    if [[ "$colors" == true ]]; then echo -e "\033[1;31m[ ERROR ]:\033[91m $msg\033[0m"
+    else echo "[ ERROR ]: $msg"
+    fi
 
     if [[ "$code" != "$NotExit" ]]; then
         exit "$code"
@@ -14,22 +19,34 @@ ShowError() {
 
 ShowSuccess() {
     local msg="${*}"
-    echo -e "\033[1;32m[ SUCCESS ]:\033[92m $msg\033[0m"
+
+    if [[ "$colors" == true ]]; then echo -e "\033[1;32m[ SUCCESS ]:\033[92m $msg\033[0m"
+    else echo "[ SUCCESS ]: $msg"
+    fi
 }
 
 ShowWarn() {
     local msg="${*}"
-    echo -e "\033[1;33m[ WARNING ]:\033[93m $msg\033[0m"
+
+    if [[ "$colors" == true ]]; then echo -e "\033[1;33m[ WARNING ]:\033[93m $msg\033[0m"
+    else echo "[ WARNING ]: $msg"
+    fi
 }
 
 ShowInfo() {
     local msg="${*}"
-    echo -e "\033[1;34m[ INFO ]:\033[94m $msg\033[0m"
+
+    if [[ "$colors" == true ]]; then echo -e "\033[1;34m[ INFO ]:\033[94m $msg\033[0m"
+    else echo "[ INFO ]: $msg"
+    fi
 }
 
 ShowYn() {
     local msg="${*}"
-    echo -e "[\033[1;32mY\033[m/\033[31mn\033[0m] $msg: "
+
+    if [[ "$colors" == true ]]; then echo -e "[\033[1;32mY\033[m/\033[31mn\033[0m] $msg: "
+    else echo "[Y/n] $msg: "
+    fi
 }
 
 UnsupportedPm=2
