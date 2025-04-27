@@ -43,6 +43,8 @@
 /.idea/
 /.nvim/
 /Include/.nvim/
+/.zed/
+/.ropeproject/
 
 /docs/
 
