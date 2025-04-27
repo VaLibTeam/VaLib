@@ -4,3 +4,5 @@
 ### Added
 - Refactored build.sh and added new functions like building archives and improved flags support.
 - Added CHANGELOG.md, and scripts/new.py.
+### Changed
+- Updated Doxyfile, for displaying README.md as main page.

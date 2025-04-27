@@ -88,9 +88,8 @@ def updateChangelog(changeType: str, msg: str):
         with open(CHANGELOG_PATH, "w") as f:
             f.write("\n".join(lines))
 
-def gitCommit(msg: str):
-    subprocess.call(["git", "add", CHANGELOG_PATH])
-    subprocess.call(["git", "commit", "-m", msg])
+def gitCommit(msg: str): subprocess.run(["git", "commit", "-m", msg])
+def gitAdd():            subprocess.run(["git", "add", "."])
 
 # -------- Main --------- #
 def main() -> int:
@@ -105,6 +104,8 @@ def main() -> int:
         showError(ErrorExit, "No message provided, aborting.")
 
     updateChangelog(changeType, msg)
+
+    gitAdd()
     gitCommit(msg)
 
     return SuccessExit

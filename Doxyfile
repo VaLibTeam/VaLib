@@ -990,7 +990,7 @@ INPUT_FILE_ENCODING    =
 # *.f18, *.f, *.for, *.vhd, *.vhdl, *.ucf, *.qsf and *.ice.
 
 FILE_PATTERNS          = *.hpp \
-                         *.cpp 
+                         *.cpp
 
 # The RECURSIVE tag can be used to specify whether or not subdirectories should
 # be searched for input files as well.
@@ -1093,14 +1093,12 @@ INPUT_FILTER           =
 # Note that for custom extensions or not directly supported extensions you also
 # need to set EXTENSION_MAPPING for the extension otherwise the files are not
 # properly processed by doxygen.
-
 FILTER_PATTERNS        =
 
 # If the FILTER_SOURCE_FILES tag is set to YES, the input filter (if set using
 # INPUT_FILTER) will also be used to filter the input files that are used for
 # producing the source files to browse (i.e. when SOURCE_BROWSER is set to YES).
 # The default value is: NO.
-
 FILTER_SOURCE_FILES    = NO
 
 # The FILTER_SOURCE_PATTERNS tag can be used to specify source filters per file
@@ -1108,15 +1106,13 @@ FILTER_SOURCE_FILES    = NO
 # it is also possible to disable source filtering for a specific pattern using
 # *.ext= (so without naming a filter).
 # This tag requires that the tag FILTER_SOURCE_FILES is set to YES.
-
 FILTER_SOURCE_PATTERNS =
 
 # If the USE_MDFILE_AS_MAINPAGE tag refers to the name of a markdown file that
 # is part of the input, its contents will be placed on the main page
 # (index.html). This can be useful if you have a project on for instance GitHub
 # and want to reuse the introduction page also for the doxygen output.
-
-USE_MDFILE_AS_MAINPAGE =
+USE_MDFILE_AS_MAINPAGE = README.md
 
 # The Fortran standard specifies that for fixed formatted Fortran code all
 # characters from position 72 are to be considered as comment. A common
