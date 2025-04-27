@@ -20,7 +20,7 @@ bool operator==(const VaString& lhs, const VaString& rhs) noexcept;
 bool operator!=(const VaString& lhs, const VaString& rhs) noexcept;
 
 /**
- * @class VaString string implementation for VaLib
+ * @brief String implementation for VaLib
  * A dynamic string class for managing and manipulating character strings.
  *
  * @ingroup string

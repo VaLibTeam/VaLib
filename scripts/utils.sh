@@ -44,7 +44,7 @@ ShowInfo() {
 ShowOk() {
     local msg="${*}"
 
-    if [[ "$colors" == true ]]; then echo -e "\033[1;36m[ OK ]:\033[96m $msg\033[0m"
+    if [[ "$colors" == true ]]; then echo -e "\033[1;92m[ OK ]:\033[38;5;36m $msg\033[0m"
     else echo "[ OK ]: $msg"
     fi
 }
@@ -54,6 +54,14 @@ ShowTip() {
 
     if [[ "$colors" == true ]]; then echo -e "\033[1;35m[ TIP ]:\033[95m $msg\033[0m"
     else echo "[ TIP ]: $msg"
+    fi
+}
+
+ShowProgress() {
+    local msg="${*}"
+
+    if [[ "$colors" == true ]]; then echo -e "\033[1;36m[ PROGRESS ]:\033[96m $msg\033[0m"
+    else echo "[ PROGRESS ]: $msg"
     fi
 }
 

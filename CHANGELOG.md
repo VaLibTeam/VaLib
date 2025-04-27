@@ -6,3 +6,5 @@
 - Added CHANGELOG.md, and scripts/new.py.
 ### Changed
 - Updated Doxyfile, for displaying README.md as main page.
+### Fixed
+- Fixed --build-all in build.sh.

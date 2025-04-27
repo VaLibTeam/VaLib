@@ -7,9 +7,12 @@
 #include <VaLib/Types/Error.hpp>
 #include <VaLib/Types/List.hpp>
 
+#include <compare>
+#include <type_traits>
+
 namespace va::detail {
 /**
- * @class VaArray Basic array implementation
+ * @brief Basic array implementation
  * @tparam T Type of elements stored in array
  * @tparam N Size of array
  *
@@ -141,7 +144,13 @@ class __BasicArray {
      * @note Overwrites all existing elements
      */
     constexpr void fill(const T& value) {
-        for (Size i = 0; i < N; i++) data[i] = value;
+        if constexpr (std::is_trivially_copyable_v<T>) {
+            std::memset(data, value, sizeof(T) * N);
+        } else {
+            for (Size i = 0; i < N; i++) {
+                data[i] = value;
+            }
+        }
     }
 
     /**

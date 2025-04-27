@@ -63,15 +63,16 @@ To install the header files and make VaLib available for use in your own project
 > The `--install-libs` and `--install-headers` options require root privileges. Use `sudo` or switch to the root account to perform installation.
 
 ## Usage
-To learn how to use VaLib, check out our documentation, available online at [VaLib Documentation](https://VaLibTeam.github.io) under the **Docs** section.
+To learn how to use VaLib, check out our documentation, available online at [VaLib Documentation Page](https://VaLibTeam.github.io/docs).
 
 If you prefer having the documentation locally, you can generate it using **Doxygen**:
-
 ```sh
 doxygen Doxyfile
 ```
 
 The documentation will be generated in HTML format under `docs/html/index.html`.
+
+You can also find usage examples at [VaLib Examples](https://VaLibTeam.github.io#examples).
 
 ## Contributing
 We welcome contributions! If you'd like to contribute to VaLib, please read our [contributing guidelines](CONTRIBUTING.md) and feel free to open issues or pull requests.
@@ -88,7 +89,7 @@ VaLib leverages the power of modern C++ standards like [C++20](https://en.cppref
 ### High Performance
 VaLib is designed from the ground up with performance in mind. Your applications can remain lightweight and fast, even when using advanced features.
 
-> [!TIP] 
+> [!TIP]
 > You can run our benchmark suite using the `test.sh` script to evaluate VaLib’s performance.
 
 ## License

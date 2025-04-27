@@ -11,7 +11,7 @@
 class VaString;
 
 /**
- * @class VaImmutableString string implementation for VaLib.
+ * @brief Immutable String implementation for VaLib.
  * @ingroup String.
  *
  * @note VaImmutableString is immutable, meaning it is not a good choice if you perform many string operations.

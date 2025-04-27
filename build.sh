@@ -219,8 +219,6 @@ ParseFlags() {
             targets+=("shared" "static") ;;
         --build-object)
             targets+=("object") ;;
-        --build-all)
-            targets+=("all") ;;
 
         --build-src-archive)
             targets+=("src-archive") ;;
@@ -230,6 +228,10 @@ ParseFlags() {
             targets+=("objects-archive") ;;
         --build-full-archive)
             targets+=("full-archive") ;;
+
+        --build-all)
+            all=("static" "shared" "object" "src-archive" "devel-archive" "objects-archive" "full-archive")
+            targets+=(${all[@]}) ;;
 
         --target=* | --build-target=*)
             tg="${arg#*=}"
@@ -296,47 +298,41 @@ CompileSources() {
         return
     fi
 
+    ShowInfo "Compiling $total sources..."
     compiled=0
     for file in "${toCompile[@]}"; do
         obj="$BUILD/$(basename "$file" .cpp).o"
         "$CXX" "${CXXFLAGS[@]}" "${includePath[@]/#/-I}" -c "$file" -o "$obj" || ShowError $CompilationErrorExit "Failed to compile $file"
         percent=$(( (compiled++ + 1) * 100 / total ))
-        ShowInfo "Progress: ${percent}% ($compiled/$total)"
+        ShowProgress "Compiled: ${percent}% ($compiled/$total)"
     done
 }
 
 BuildStatic() {
-    ShowInfo "Creating static library (.a)..."
     "$AR" rcs "${ARFLAGS[@]}" "$OUTDIR/$OUTPUT.a" "${objFiles[@]}" || ShowError $LinkingErrorExit "Failed to link."
 }
 
 BuildShared() {
-    ShowInfo "Creating shared library (.so)..."
     "$CXX" -shared -o "$OUTDIR/$OUTPUT.so" "${objFiles[@]}" || ShowError $LinkingErrorExit "Failed to link."
 }
 
 BuildObject() {
-    ShowInfo "Merging object files into one .o..."
     ld -r "${objFiles[@]}" -o "$OUTDIR/$OUTPUT.o" || ShowError $LinkingErrorExit "Failed to link."
 }
 
 BuildSrcArchive() {
-    ShowInfo "Creating source archive (.tar.xz)..."
     "$TAR" -cJf "$OUTDIR/$srcArchiveName.tar.xz" "$SRC/" || ShowError $ErrorExit "Failed to create source archive."
 }
 
 BuildDevelArchive() {
-    ShowInfo "Creating development archive (.tar.xz)..."
     "$TAR" -cJf "$OUTDIR/$develArchiveName.tar.xz" "${includePath[@]}" || ShowError $ErrorExit "Failed to create development archive."
 }
 
 BuildObjectArchive() {
-    ShowInfo "Creating object archive (.tar.xz)..."
     "$TAR" -cJf "$OUTDIR/$objArchiveName.tar.xz" "$BUILD/" || ShowError $ErrorExit "Failed to create object archive."
 }
 
 BuildFullArchive() {
-    ShowInfo "Creating full archive (.tar.xz)..."
     "$TAR" -cJf "$OUTDIR/$fullArchiveName.tar.xz" "${includePath[@]}" "$BUILD/" "$SRC/" "$OUTDIR/" || ShowError $ErrorExit "Failed to create full archive."
 }
 
@@ -373,12 +369,10 @@ InstallHeaders() {
 }
 
 UninstallStatic() {
-    ShowInfo "Uninstalling static library..."
     rm -f "/usr/local/lib/$OUTPUT.a" || ShowError $ErrorExit "Failed to uninstall static library."
 }
 
 UninstallShared() {
-    ShowInfo "Uninstalling shared library..."
     rm -f "/usr/local/lib/$OUTPUT.so" || ShowError $ErrorExit "Failed to uninstall shared library."
 }
 
@@ -421,25 +415,33 @@ Main() {
 
         for target in "${targets[@]}"; do
             case "$target" in
-            all)
+            static)
+                ShowInfo "Creating static library (.a)..."
                 BuildStatic
+                ;;
+            shared)
+                ShowInfo "Creating shared library (.so)..."
                 BuildShared
+                ;;
+            object)
+                ShowInfo "Merging object files into one .o..."
                 BuildObject
                 ;;
-            static)
-                BuildStatic ;;
-            shared)
-                BuildShared ;;
-            object)
-                BuildObject ;;
             src-archive)
-                BuildSrcArchive ;;
+                ShowInfo "Creating source archive (.tar.xz)..."
+                BuildSrcArchive
+                ;;
             devel-archive)
-                BuildDevelArchive ;;
-            object-archive)
-                BuildObjectArchive ;;
+                ShowInfo "Creating development archive (.tar.xz)..."
+                BuildDevelArchive
+                ;;
+            objects-archive)
+                ShowInfo "Creating objects archive (.tar.xz)..."
+                BuildObjectArchive
+                ;;
             full-archive)
-                fullArchiveRequested=true ;;
+                fullArchiveRequested=true
+                ;;
             *)
                 ShowError $ArgsErrorExit "Not correct target: $target"
                 ;;
@@ -447,6 +449,7 @@ Main() {
         done
 
         if [[ $fullArchiveRequested = true ]]; then
+            ShowInfo "Creating full archive (.tar.xz)..."
             BuildFullArchive
         fi
     fi
@@ -462,7 +465,7 @@ Main() {
 
     if [[ $installLibs = true ]]; then
         if [[ ${#targets[@]} -eq 0 ]]; then
-            ShowInfo "--install-libs: No target specified. nothing to do."
+            ShowWarn "--install-libs: No target specified. nothing to do."
         else
             if [[ $EUID -ne 0 ]]; then
                 ShowError $ErrorExit "To make the installation option work run the script as root."
@@ -470,13 +473,6 @@ Main() {
 
             for target in "${targets[@]}"; do
                 case "$target" in
-                all)
-                    ShowInfo "Installing static library..."
-                    InstallStatic
-
-                    ShowInfo "Installing shared library..."
-                    InstallShared
-                    ;;
                 static)
                     ShowInfo "Installing static library..."
                     InstallStatic
@@ -516,7 +512,7 @@ Main() {
     if [[ ${#targets[@]} -gt 0 || $uninstallHeaders = true || $uninstallLibs = true  || $installLibs = true || $installHeaders = true ]]; then
         ShowSuccess "Done!"
     else
-        ShowInfo "Nothing to do."
+        ShowOk "Nothing to do."
         ShowTip "Run the script with the -h option for usage information."
     fi
     return $SuccessExit
