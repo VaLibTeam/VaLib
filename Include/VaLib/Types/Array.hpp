@@ -3,6 +3,7 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
+#include "VaLib/Types/TypeTraits.hpp"
 #include <VaLib/Types/BasicTypedef.hpp>
 #include <VaLib/Types/Error.hpp>
 #include <VaLib/Types/List.hpp>
@@ -203,13 +204,18 @@ class __BasicArray {
      * @note Uses memcmp for trivially copyable types for optimization
      */
     friend bool operator==(const __BasicArray& lhs, const __BasicArray& rhs) {
-        if constexpr (std::is_trivially_copyable_v<T>) {
-            return std::memcmp(lhs.data, rhs.data, N * sizeof(T)) == 0;
-        } else {
+        if constexpr (!va::HasEqualityOperatorV<T> && !va::HasInequalityOperatorV<T>) {
+            for (Size i = 0; i < N; i++) {
+                if (!(lhs[i] == rhs[i])) return false;
+            }
+            return true;
+        } else if constexpr (va::HasInequalityOperatorV<T>) {
             for (Size i = 0; i < N; i++) {
                 if (lhs[i] != rhs[i]) return false;
             }
             return true;
+        } else {
+            return std::memcmp(lhs.data, rhs.data, N * sizeof(T)) == 0;
         }
     }
 
@@ -230,7 +236,7 @@ class __BasicArray {
      * @return true if equal
      */
     friend bool operator==(const __BasicArray<T, N>& lhs, const VaList<T>& rhs) {
-        if (N != len(rhs)) {
+        if (len(rhs) != N) {
             return false;
         }
 

@@ -73,10 +73,12 @@ Help() {
         printf "\n${BOLD}%s:${RESET}\n" "$1"
     }
 
-    echo -e "Usage: $0 [options...]\n"
+    echo -en "Usage: $0 [options...]"
 
     # --- Options ---
     PrintSection "Options"
+    PrintOption "--default"                    "Use default options"
+    PrintOption "--default-devel"              "Use default options for development"
     PrintOption "--non-interactive"            "Disable interactive mode"
     PrintOption "--interactive"                "Enable interactive mode"
     PrintOption "--no-colors"                  "Disable color output"
@@ -90,6 +92,8 @@ Help() {
     PrintOption "--build-dir=<dir>"             "Specify the build directory (default: build)"
     PrintOption "--output=<name>"               "Specify the output library name (default: libvalib)"
     PrintOption "--out-dir=<dir>"               "Specify the output directory (default: out)"
+    Sep
+    PrintOption "--compile-sources/--compile"   "Compile source files to object files (.o)"
     Sep
     PrintOption "--build-static"                "Build static library (.a)"
     PrintOption "--build-shared"                "Build shared library (.so)"
@@ -111,6 +115,7 @@ Help() {
     PrintOption "--uninstall-libs"              "Uninstall the libraries"
     PrintOption "--uninstall-all/--uninstall"   "Uninstall the libraries and headers"
     Sep
+    PrintOption "--clean"                       "Clean the build directory"
     PrintOption "--help/-h"                     "Show this help message"
 
     # --- Targets ---
@@ -173,6 +178,35 @@ CheckArgs() {
 ParseFlags() {
     for arg in "$@"; do
         case $arg in
+        --default)
+            if [[ -t 0 ]]; then
+                interactiveMode=true
+                colors=true
+            fi
+
+            targets=("static" "shared")
+
+            if [[ "$EUID" -eq 0 ]]; then
+                installLibs=true
+            fi
+
+            ShowTip "Using default settings: build static and shared libraries, install libs, no headers"
+            ;;
+        --default-devel)
+            if [[ -t 0 ]]; then
+                interactiveMode=true
+                colors=true
+            fi
+
+            targets=("static" "shared")
+
+            if [[ "$EUID" -eq 0 ]]; then
+                installLibs=true
+                installHeaders=true
+            fi
+
+            ShowTip "Using default settings for development: build static and shared libraries, install libs and headers"
+            ;;
         --interactive)
             interactiveMode=true ;;
         --non-interactive)
@@ -211,6 +245,9 @@ ParseFlags() {
         --full-archive-name=*)
             fullArchiveName="${arg#*=}" ;;
 
+        --compile | --compile-sources)
+            targets+=("compile") ;;
+
         --build-static)
             targets+=("static") ;;
         --build-shared)
@@ -229,9 +266,9 @@ ParseFlags() {
         --build-full-archive)
             targets+=("full-archive") ;;
 
-        --build-all)
+        --build-all | --target=all | --build-target=all)
             all=("static" "shared" "object" "src-archive" "devel-archive" "objects-archive" "full-archive")
-            targets+=(${all[@]}) ;;
+            targets+=( ${all[@]} ) ;;
 
         --target=* | --build-target=*)
             tg="${arg#*=}"
@@ -408,7 +445,7 @@ Main() {
     mkdir -p "$OUTDIR"
     mkdir -p "$BUILD"
 
-    if [[ ${#targets[@]} -gt 0 ]]; then
+    if [[ ${#targets[@]} -gt 0 ]] || (printf "%s\n" "${targets[@]}" | grep -q "^compile$"); then
         CompileSources
 
         fullArchiveRequested=false
@@ -441,6 +478,8 @@ Main() {
                 ;;
             full-archive)
                 fullArchiveRequested=true
+                ;;
+            compile | compile-sources)
                 ;;
             *)
                 ShowError $ArgsErrorExit "Not correct target: $target"

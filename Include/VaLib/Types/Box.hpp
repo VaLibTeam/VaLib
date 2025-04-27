@@ -9,11 +9,11 @@ template <typename T>
 inline constexpr std::type_identity<T> Type{};
 
 template <typename... Types>
-struct Box {
+struct VaBox {
     VaTuple<Types...> values{};
 
     template <typename T>
-    Box& operator=(T&& v) {
+    VaBox& operator=(T&& v) {
         // Find the matching type in tuple and assign
         std::get<std::remove_cv_t<std::remove_reference_t<T>>>(values) = std::forward<T>(v);
         return *this;

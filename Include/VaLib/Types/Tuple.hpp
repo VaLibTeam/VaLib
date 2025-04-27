@@ -303,6 +303,12 @@ class VaTuple<Head, Tail...>: protected VaTuple<Tail...> {
     friend auto operator+(const VaTuple<Types1...>&, const VaTuple<Types2...>&);
 };
 
+#if __cplusplus >= CPP17
+template<typename T>
+VaTuple(T) -> VaTuple<T>;
+#endif
+
+namespace va::detail {
 /**
  * @brief Concatenates two VaTuples into one.
  * @tparam Types1 Types of the first tuple.
@@ -314,9 +320,10 @@ class VaTuple<Head, Tail...>: protected VaTuple<Tail...> {
  * @return New VaTuple with all elements from both.
  */
 template <typename... Types1, typename... Types2, Size... I1, Size... I2>
-inline auto concatenate(const VaTuple<Types1...>& lhs, const VaTuple<Types2...>& rhs,
+inline auto tuplecat(const VaTuple<Types1...>& lhs, const VaTuple<Types2...>& rhs,
     std::index_sequence<I1...>, std::index_sequence<I2...>) {
     return VaTuple<Types1..., Types2...>(lhs.template get<I1>()..., rhs.template get<I2>()...);
+}
 }
 
 /**
@@ -327,7 +334,7 @@ inline auto concatenate(const VaTuple<Types1...>& lhs, const VaTuple<Types2...>&
  */
 template <typename... Types1, typename... Types2>
 inline auto operator+(const VaTuple<Types1...>& lhs, const VaTuple<Types2...>& rhs) {
-    return concatenate(lhs, rhs, std::make_index_sequence<sizeof...(Types1)>{},
+    return va::detail::tuplecat(lhs, rhs, std::make_index_sequence<sizeof...(Types1)>{},
         std::make_index_sequence<sizeof...(Types2)>{});
 }
 
