@@ -3,7 +3,10 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
+#ifdef VaLib_USE_CONCEPTS
 #include <VaLib/Types/BasicConcepts.hpp>
+#endif
+
 #include <VaLib/Types/BasicTypedef.hpp>
 #include <VaLib/Utils/BasicDefine.hpp>
 
@@ -263,6 +266,10 @@ class VaList {
      * @param index Position to insert the element at.
      * @param value The element to insert (moved).
      *
+     * @note This operation has O(n) time complexity as it requires shifting all elements after
+     *       the insertion point. For performance critical code, consider using append() instead
+     *       if possible, or batch insert operations together (@ref insertList).
+     *
      * @throws IndexOutOfRangeError If index is out of bounds.
      */
     void insert(Size index, T value) {
@@ -274,6 +281,32 @@ class VaList {
         }
         new (&data[index]) T(std::move(value));
         len++;
+    }
+
+    /**
+     * @brief Inserts all elements from another list at the specified index.
+     * @param index Position to insert the elements at.
+     * @param other The list to insert.
+     *
+     * @throws IndexOutOfRangeError If index is out of bounds.
+     */
+    void insertList(Size index, const VaList& other) {
+        if (index > len) throw IndexOutOfRangeError(len, index);
+        if (other.len == 0) return;
+
+        Size newLen = len + other.len;
+        if (newLen > cap) resize(newLen);
+
+        for (Size i = len - 1; i >= index && i != (Size)-1; i--) {
+            new (&data[i + other.len]) T(std::move(data[i]));
+            data[i].~T();
+        }
+
+        for (Size i = 0; i < other.len; i++) {
+            new (&data[index + i]) T(other.data[i]);
+        }
+
+        len = newLen;
     }
 
     /**

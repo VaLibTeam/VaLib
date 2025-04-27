@@ -8,7 +8,7 @@
 #include <iostream>
 
 #define THROWIT                                                                                    \
-    void throwIt() const override { throw *this; }
+    virtual void throwIt() const override { throw *this; }
 
 template <typename T, typename = void>
 struct hasThrowIt: std::false_type {};
@@ -20,12 +20,10 @@ template <typename T>
 constexpr bool hasThrowItV = hasThrowIt<T>::value;
 
 #ifdef VaLib_USE_CONCEPTS
-
 template <typename T>
 concept Error = requires(T err) {
     { err.what() } -> std::same_as<VaString>;
 };
-
 #endif
 
 /**
@@ -67,6 +65,15 @@ class VaBaseError {
 class ValueError: public VaBaseError {
   public:
     using VaBaseError::VaBaseError;
+    THROWIT;
+};
+
+/**
+ * @brief Error class for arguments-related errors.
+ */
+class InvalidArgsError: public ValueError {
+  public:
+    using ValueError::ValueError;
     THROWIT;
 };
 

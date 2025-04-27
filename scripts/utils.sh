@@ -41,12 +41,40 @@ ShowInfo() {
     fi
 }
 
+ShowOk() {
+    local msg="${*}"
+
+    if [[ "$colors" == true ]]; then echo -e "\033[1;36m[ OK ]:\033[96m $msg\033[0m"
+    else echo "[ OK ]: $msg"
+    fi
+}
+
+ShowTip() {
+    local msg="${*}"
+
+    if [[ "$colors" == true ]]; then echo -e "\033[1;35m[ TIP ]:\033[95m $msg\033[0m"
+    else echo "[ TIP ]: $msg"
+    fi
+}
+
 ShowYn() {
     local msg="${*}"
 
-    if [[ "$colors" == true ]]; then echo -e "[\033[1;32mY\033[m/\033[31mn\033[0m] $msg: "
-    else echo "[Y/n] $msg: "
+    if [[ "$colors" == true ]]; then
+        echo -e "\033[1;36m[ QUESTION ]\033[0m \033[1m$msg\033[0m [\033[1;32mY\033[0m/\033[1;31mn\033[0m]: "
+    else
+        echo "[ QUESTION ] $msg [Y/n]: "
     fi
+}
+
+ReadYn() {
+    local var="$1"
+    local msg="${*:2}"
+    local answer=""
+
+    read -n 1 -rp "$(ShowYn "$msg")" answer
+    echo
+    printf -v "$var" "%s" "$answer"
 }
 
 UnsupportedPm=2

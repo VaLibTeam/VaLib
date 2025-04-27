@@ -8,7 +8,7 @@ source "scripts/utils.sh" || exit 1
 set -e || exit 1
 shopt -s nullglob || exit 1
 
-alias pass=':'
+VER="1.8.0"
 
 SRC="src"
 BUILD="build"
@@ -16,19 +16,27 @@ OUTPUT="libvalib"
 OUTDIR="out"
 
 CXX="${CXX:-g++}"
-CXXFLAGS="${CXXFLAGS:-"-Wall -Wextra -std=c++20 -O2 -fPIC"}"
+CXXFLAGS=( -Wall -Wextra -std="c++20" -O2 -fPIC )
+
+AR="ar"
+ARFLAGS=()
+
+TAR="tar"
+TARFLAGS=()
+
+srcArchiveName="VaLib-Source-$VER"
+develArchiveName="VaLib-Devel-$VER"
+objArchiveName="VaLib-ObjFiles-$VER"
+fullArchiveName="VaLib-Full-$VER"
 
 if [ -f "compile_flags.txt" ]; then
     readFlags=$(tr '\n' ' ' < compile_flags.txt)
     if [ -n "$readFlags" ]; then
-        CXXFLAGS="$readFlags"
+        read -ra CXXFLAGS <<< "$readFlags"
     else
-        CXXFLAGS="${CXXFLAGS:-"-Wall -Wextra -std=c++20 -O2 -fPIC"}"
+        CXXFLAGS=( -Wall -Wextra -std="c++20" -O2 -fPIC )
     fi
 fi
-
-AR="ar"
-ARFLAGS=""
 
 SuccessExit=0
 CompilationErrorExit=1
@@ -49,42 +57,70 @@ uninstallHeaders=false
 interactiveMode=true
 
 toCompile=()
-target=""
+targets=()
 
 Help() {
-    echo "Usage: $0 [options...]"
-    echo
-    echo "Options:"
-    echo "  --non--interactive           Disable interactive mode"
-    echo "  --interactive                Enable interactive mode"
-    echo "  --no-colors                  Disable color output"
-    echo "  --colors                     Enable color output"
-    echo
-    echo "  --cxx=<compiler>             Specify the C++ compiler to use (default: g++)"
-    echo "  --cxxflags=<flags>           Specify the compiler flags (default: -Wall -Wextra -std=c++20 -O2 -fPIC)"
-    echo "  --ar=<archiver>              Specify the archiver to use (default: ar)"
-    echo "  --arflags=<flags>            Specify the archiver flags"
-    echo
-    echo "  --build-dir=<dir>            Specify the build directory (default: build)"
-    echo "  --output=<name>              Specify the output library name (default: libvalib)"
-    echo "  --out-dir=<dir>              Specify the output directory (default: out)"
-    echo "  --target=<type>              Specify the build target"
-    echo
-    echo "  --install-headers            Install the headers"
-    echo "  --install-libs               Install the built library"
-    echo "  --install-all/--install      Install the built library and headers"
-    echo
-    echo "  --uninstall-headers          Uninstall the headers"
-    echo "  --uninstall-libs             Uninstall the libraries"
-    echo "  --uninstall-all/--uninstall  Uninstall the libraries and headers"
-    echo
-    echo "  --help                       Show this help message"
-    echo
-    echo "Targets:"
-    echo "  all                          Build all targets (static, shared, and object)"
-    echo "  static                       Build the static library (.a)"
-    echo "  shared                       Build the shared library (.so)"
-    echo "  object                       Build a single merged object file (.o)"
+    Sep() { echo; }
+
+    PrintOption() {
+        printf "  ${BOLD}%-30s${RESET} %s\n" "$1" "$2"
+    }
+    PrintTarget() {
+        printf "  ${BOLD}%-30s${RESET} %s\n" "$1" "$2"
+    }
+    PrintSection() {
+        Sep
+        printf "\n${BOLD}%s:${RESET}\n" "$1"
+    }
+
+    echo -e "Usage: $0 [options...]\n"
+
+    # --- Options ---
+    PrintSection "Options"
+    PrintOption "--non-interactive"            "Disable interactive mode"
+    PrintOption "--interactive"                "Enable interactive mode"
+    PrintOption "--no-colors"                  "Disable color output"
+    PrintOption "--colors"                     "Enable color output"
+    Sep
+    PrintOption "--cxx=<compiler>"              "Specify the C++ compiler to use (default: g++)"
+    PrintOption "--cxxflags=<flags>"            "Specify the compiler flags (default: -Wall -Wextra -std=c++20 -O2 -fPIC)"
+    PrintOption "--ar=<archiver>"               "Specify the archiver to use (default: ar)"
+    PrintOption "--arflags=<flags>"             "Specify the archiver flags"
+    Sep
+    PrintOption "--build-dir=<dir>"             "Specify the build directory (default: build)"
+    PrintOption "--output=<name>"               "Specify the output library name (default: libvalib)"
+    PrintOption "--out-dir=<dir>"               "Specify the output directory (default: out)"
+    Sep
+    PrintOption "--build-static"                "Build static library (.a)"
+    PrintOption "--build-shared"                "Build shared library (.so)"
+    PrintOption "--build-object"                "Build merged object file (.o)"
+    PrintOption "--build-all"                   "Build all targets"
+    PrintOption "--build-src-archive"           "Build source archive (.tar.xz)"
+    PrintOption "--build-devel-archive"         "Build development archive with headers (.tar.xz)"
+    PrintOption "--build-obj-archive"           "Build object files archive (.tar.xz)"
+    PrintOption "--build-full-archive"          "Build full archive with headers, object files, and source code (.tar.xz)"
+    Sep
+    PrintOption "--build-target=<target>"       "Specify the target to build"
+    PrintOption "--target=<target>"             "Specify the target to build [ deprecated ]"
+    Sep
+    PrintOption "--install-headers"             "Install the headers"
+    PrintOption "--install-libs"                "Install the built library"
+    PrintOption "--install-all/--install"       "Install the built library and headers"
+    Sep
+    PrintOption "--uninstall-headers"           "Uninstall the headers"
+    PrintOption "--uninstall-libs"              "Uninstall the libraries"
+    PrintOption "--uninstall-all/--uninstall"   "Uninstall the libraries and headers"
+    Sep
+    PrintOption "--help/-h"                     "Show this help message"
+
+    # --- Targets ---
+    PrintSection "Targets"
+    PrintTarget "all"           "Build all targets (static, shared, and object)"
+    PrintTarget "static"        "Build the static library (.a)"
+    PrintTarget "shared"        "Build the shared library (.so)"
+    PrintTarget "object"        "Build a single merged object file (.o)"
+    PrintTarget "src-archive"   "Build the archive (tar.gz) containing the source code"
+    PrintTarget "libs-archive"  "Build the archive (tar.gz) containing the static and shared libraries"
 }
 
 Clean() {
@@ -149,12 +185,18 @@ ParseFlags() {
         --cxx=*)
             CXX="${arg#*=}" ;;
         --cxxflags=*)
-            CXXFLAGS="${arg#*=}" ;;
+            read -ra CXXFLAGS <<< "${arg#*=}" ;;
 
         --ar=*)
             AR="${arg#*=}" ;;
         --arflags=*)
-            ARFLAGS="${arg#*=}" ;;
+            read -ra ARFLAGS <<< "${arg#*=}" ;;
+
+        --tar=*)
+            TAR="${arg#*=}" ;;
+
+        --tar-flags=*)
+            read -ra TARFLAGS <<< "${arg#*=}" ;;
 
         --build-dir=*)
             BUILD="${arg#*=}" ;;
@@ -162,9 +204,40 @@ ParseFlags() {
             OUTPUT="${arg#*=}" ;;
         --out-dir=*)
             OUTDIR="${arg#*=}" ;;
+        --src-archive-name=*)
+            srcArchiveName="${arg#*=}" ;;
+        --devel-archive-name=*)
+            develArchiveName="${arg#*=}" ;;
+        --full-archive-name=*)
+            fullArchiveName="${arg#*=}" ;;
 
-        --target=*)
-            target=$(echo "$arg" | sed 's/--target=//') ;;
+        --build-static)
+            targets+=("static") ;;
+        --build-shared)
+            targets+=("shared") ;;
+        --build-libs)
+            targets+=("shared" "static") ;;
+        --build-object)
+            targets+=("object") ;;
+        --build-all)
+            targets+=("all") ;;
+
+        --build-src-archive)
+            targets+=("src-archive") ;;
+        --build-devel-archive)
+            targets+=("devel-archive") ;;
+        --build-objects-archive)
+            targets+=("objects-archive") ;;
+        --build-full-archive)
+            targets+=("full-archive") ;;
+
+        --target=* | --build-target=*)
+            tg="${arg#*=}"
+            if [[ -z "$tg" ]]; then
+                ShowError $ArgsErrorExit "Invalid target: $tg"
+            fi
+
+            targets+=("$tg") ;;
 
         --install-libs)
             installLibs=true
@@ -193,7 +266,7 @@ ParseFlags() {
             exit $SuccessExit
             ;;
 
-        --help)
+        --help | -h)
             Help
             exit $SuccessExit
             ;;
@@ -226,7 +299,7 @@ CompileSources() {
     compiled=0
     for file in "${toCompile[@]}"; do
         obj="$BUILD/$(basename "$file" .cpp).o"
-        "$CXX" $CXXFLAGS "${includePath[@]/#/-I}" -c "$file" -o "$obj" || ShowError $CompilationErrorExit "Failed to compile $file"
+        "$CXX" "${CXXFLAGS[@]}" "${includePath[@]/#/-I}" -c "$file" -o "$obj" || ShowError $CompilationErrorExit "Failed to compile $file"
         percent=$(( (compiled++ + 1) * 100 / total ))
         ShowInfo "Progress: ${percent}% ($compiled/$total)"
     done
@@ -234,7 +307,7 @@ CompileSources() {
 
 BuildStatic() {
     ShowInfo "Creating static library (.a)..."
-    "$AR" rcs $ARFLAGS "$OUTDIR/$OUTPUT.a" "${objFiles[@]}" || ShowError $LinkingErrorExit "Failed to link."
+    "$AR" rcs "${ARFLAGS[@]}" "$OUTDIR/$OUTPUT.a" "${objFiles[@]}" || ShowError $LinkingErrorExit "Failed to link."
 }
 
 BuildShared() {
@@ -245,6 +318,26 @@ BuildShared() {
 BuildObject() {
     ShowInfo "Merging object files into one .o..."
     ld -r "${objFiles[@]}" -o "$OUTDIR/$OUTPUT.o" || ShowError $LinkingErrorExit "Failed to link."
+}
+
+BuildSrcArchive() {
+    ShowInfo "Creating source archive (.tar.xz)..."
+    "$TAR" -cJf "$OUTDIR/$srcArchiveName.tar.xz" "$SRC/" || ShowError $ErrorExit "Failed to create source archive."
+}
+
+BuildDevelArchive() {
+    ShowInfo "Creating development archive (.tar.xz)..."
+    "$TAR" -cJf "$OUTDIR/$develArchiveName.tar.xz" "${includePath[@]}" || ShowError $ErrorExit "Failed to create development archive."
+}
+
+BuildObjectArchive() {
+    ShowInfo "Creating object archive (.tar.xz)..."
+    "$TAR" -cJf "$OUTDIR/$objArchiveName.tar.xz" "$BUILD/" || ShowError $ErrorExit "Failed to create object archive."
+}
+
+BuildFullArchive() {
+    ShowInfo "Creating full archive (.tar.xz)..."
+    "$TAR" -cJf "$OUTDIR/$fullArchiveName.tar.xz" "${includePath[@]}" "$BUILD/" "$SRC/" "$OUTDIR/" || ShowError $ErrorExit "Failed to create full archive."
 }
 
 InstallStatic() {
@@ -321,28 +414,41 @@ Main() {
     mkdir -p "$OUTDIR"
     mkdir -p "$BUILD"
 
-    if [[ -n "$target" ]]; then
+    if [[ ${#targets[@]} -gt 0 ]]; then
         CompileSources
 
-        case "$target" in
-        all)
-            BuildStatic
-            BuildShared
-            BuildObject
-            ;;
-        static)
-            BuildStatic
-            ;;
-        shared)
-            BuildShared
-            ;;
-        object)
-            BuildObject
-            ;;
-        *)
-            ShowError $ArgsErrorExit "Not correct target: $target"
-            ;;
-        esac
+        fullArchiveRequested=false
+
+        for target in "${targets[@]}"; do
+            case "$target" in
+            all)
+                BuildStatic
+                BuildShared
+                BuildObject
+                ;;
+            static)
+                BuildStatic ;;
+            shared)
+                BuildShared ;;
+            object)
+                BuildObject ;;
+            src-archive)
+                BuildSrcArchive ;;
+            devel-archive)
+                BuildDevelArchive ;;
+            object-archive)
+                BuildObjectArchive ;;
+            full-archive)
+                fullArchiveRequested=true ;;
+            *)
+                ShowError $ArgsErrorExit "Not correct target: $target"
+                ;;
+            esac
+        done
+
+        if [[ $fullArchiveRequested = true ]]; then
+            BuildFullArchive
+        fi
     fi
 
     if [[ $installHeaders = true ]]; then
@@ -355,30 +461,32 @@ Main() {
     fi
 
     if [[ $installLibs = true ]]; then
-        if [[ -z "$target" ]]; then
+        if [[ ${#targets[@]} -eq 0 ]]; then
             ShowInfo "--install-libs: No target specified. nothing to do."
         else
             if [[ $EUID -ne 0 ]]; then
                 ShowError $ErrorExit "To make the installation option work run the script as root."
             fi
 
-            case "$target" in
-            all)
-                ShowInfo "Installing static library..."
-                InstallStatic
+            for target in "${targets[@]}"; do
+                case "$target" in
+                all)
+                    ShowInfo "Installing static library..."
+                    InstallStatic
 
-                ShowInfo "Installing shared library..."
-                InstallShared
-                ;;
-            static)
-                ShowInfo "Installing static library..."
-                InstallStatic
-                ;;
-            shared)
-                ShowInfo "Installing shared library..."
-                InstallShared
-                ;;
-            esac
+                    ShowInfo "Installing shared library..."
+                    InstallShared
+                    ;;
+                static)
+                    ShowInfo "Installing static library..."
+                    InstallStatic
+                    ;;
+                shared)
+                    ShowInfo "Installing shared library..."
+                    InstallShared
+                    ;;
+                esac
+            done
 
             ldconfig
         fi
@@ -405,10 +513,11 @@ Main() {
         ldconfig
     fi
 
-    if [[ -n $target || $uninstallHeaders = true || $uninstallLibs = true  || $installLibs = true || $installHeaders = true ]]; then
+    if [[ ${#targets[@]} -gt 0 || $uninstallHeaders = true || $uninstallLibs = true  || $installLibs = true || $installHeaders = true ]]; then
         ShowSuccess "Done!"
     else
         ShowInfo "Nothing to do."
+        ShowTip "Run the script with the -h option for usage information."
     fi
     return $SuccessExit
 }

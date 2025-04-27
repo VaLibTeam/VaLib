@@ -19,7 +19,7 @@ Time Benchmark::done() {
     return duration.count();
 }
 
-int run(Function<Time, Benchmark&> func, int repeat) {
+int run(VaFunc<Time(Benchmark&)> func, int repeat) {
     Benchmark b;
     Time total = 0;
     for (int i = 0; i < repeat; i++) {

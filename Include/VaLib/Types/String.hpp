@@ -14,6 +14,10 @@
 #endif
 
 class VaImmutableString;
+class VaString;
+
+bool operator==(const VaString& lhs, const VaString& rhs) noexcept;
+bool operator!=(const VaString& lhs, const VaString& rhs) noexcept;
 
 /**
  * @class VaString string implementation for VaLib
@@ -41,6 +45,7 @@ class VaString {
      */
     void resize(Size newCap);
 
+  protected friends:
     friend class VaImmutableString;
 
   public:
@@ -373,28 +378,41 @@ class VaString {
      * @param other The VaString to compare with.
      * @return True if the strings are equal, false otherwise.
      */
-    bool operator==(const VaString& other) const noexcept;
+    friend bool operator==(const VaString& lhs, const VaString& rhs) noexcept;
+
+    bool operator==(const VaImmutableString& other) const noexcept;
+
+    friend inline VaString operator+(const std::string& lhs, const VaString& rhs) { return VaString(lhs) + rhs; }
+    friend inline bool operator==(const VaString& lhs, const std::string& rhs) {
+        if (lhs.len != rhs.size()) return false;
+
+        return std::memcmp(lhs.data, rhs.data(), lhs.len) == 0;
+    }
+    friend inline bool operator==(const std::string& lhs, const VaString& rhs) { return rhs == lhs; }
+
+    friend inline VaString operator+(const char* lhs, const VaString& rhs) { return VaString(lhs) + rhs; }
+    friend inline bool operator==(VaString lhs, const char* rhs) { return lhs == VaString(rhs); }
+    friend inline bool operator==(const char* lhs, const VaString& rhs) { return VaString(lhs) == rhs; }
 
     /**
      * @brief Compares two VaStrings for inequality.
      * @param other The VaString to compare with.
      * @return True if the strings are not equal, false otherwise.
      */
-    bool operator!=(const VaString& other) const noexcept;
-
-    bool operator<(const VaString& other) const;
-
-    inline bool operator>(const VaString other) const { return other < *this; }
-    inline bool operator<=(const VaString other) const { return !(*this > other); }
-    inline bool operator>=(const VaString& other) const { return !(*this < other); }
-
-    friend inline VaString operator+(const char* lhs, const VaString& rhs) {
-        return VaString(lhs) + rhs;
+    friend inline bool operator!=(const VaString& lhs, const VaString& rhs) noexcept {
+        return !(lhs == rhs);
     }
 
-    friend inline bool operator==(const char* lhs, const VaString& rhs) {
-        return VaString(lhs) == rhs;
-    }
+    /**
+     * @brief Compares two VaStrings for less than.
+     * @param other The VaString to compare with.
+     * @return True if the lhs is less than rhs, false otherwise.
+     */
+    friend bool operator<(const VaString& lhs, const VaString& rhs);
+
+    friend inline bool operator>(const VaString& lhs, const VaString& rhs) { return rhs < lhs; }
+    friend inline bool operator<=(const VaString& lhs, const VaString& rhs) { return !(lhs > rhs); }
+    friend inline bool operator>=(const VaString& lhs, const VaString& rhs) { return !(lhs < rhs); }
 
     VaString& operator+=(VaString&& other) noexcept;
 

@@ -8,12 +8,12 @@
 
 #include <VaLib.hpp>
 #include <VaLib/Types/List.hpp>
+#include <VaLib/FuncTools/Func.hpp>
 
 #include <VaLib/Utils/sort.hpp>
 
 bool testSort(testing::Test& t) {
     try {
-
         VaList<Function<void, VaSlice<int>&>> sorts = {
             va::sort::bubble<int>,
             va::sort::merge<int>,
@@ -21,7 +21,7 @@ bool testSort(testing::Test& t) {
         };
 
         VaList<int> testData;
-        for (int i = 0; i < len(sorts); i++) {
+        for (Size i = 0; i < len(sorts); i++) {
             testData = {1, 4, 5, 2, 5, 6, 2, 5, 7, 2, 5, 9, 2};
             VaSlice<int> slice = testData;
             sorts[i](slice);
@@ -29,7 +29,7 @@ bool testSort(testing::Test& t) {
             if (testData != VaList<int>{1, 2, 2, 2, 2, 4, 5, 5, 5, 5, 6, 7, 9}) {
                 VaList<VaString> strArr;
                 for (auto& n: testData) {
-                    strArr.append(VaString(std::to_string(n)));
+                    strArr.append(va::toString(n));
                 }
 
                 VaString msg = VaString("sort failed. expected: {1, 2, 2, 2, 2, 4, ...}, got: {") +
@@ -47,7 +47,7 @@ bool testSort(testing::Test& t) {
         // }
 
         return t.success();
-    } catch (ValueError err) {
+    } catch (ValueError& err) {
         std::cout << err.what() + "\n";
         return false;
     }

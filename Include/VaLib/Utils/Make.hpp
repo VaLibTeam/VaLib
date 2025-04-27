@@ -8,13 +8,14 @@
 #include <VaLib/Types/Pair.hpp>
 #include <VaLib/Types/String.hpp>
 #include <VaLib/Types/Tuple.hpp>
-#include <list>
+
+#include <VaLib/FuncTools/Func.hpp>
 
 namespace va {
 
-template <typename... Args>
-inline auto mkTuple(Args&&... args) {
-    return VaTuple<Args...>::Make(args...);
+template<typename... Args>
+auto mkTuple(Args&&... args) {
+    return VaTuple<std::decay_t<Args>...>(std::forward<Args>(args)...);
 }
 
 template <Size N>
@@ -36,6 +37,11 @@ template <typename T, typename... Args,
     typename = std::enable_if_t<(std::is_constructible_v<T, Args> && ...)>>
 inline auto mkList(Args... args) {
     return VaList<Args...>(args...);
+}
+
+template <typename R, typename... Args>
+inline auto mkFunc(R (*func)(Args...)) {
+    return VaFunc<R(Args...)>(func);
 }
 
 } // namespace va

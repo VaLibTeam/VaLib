@@ -3,8 +3,10 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#include <VaLib/Types.hpp>
-#include <VaLib/Utils.hpp>
+#include <VaLib/FuncTools/Func.hpp>
+
+#include <VaLib/Types/String.hpp>
+#include <VaLib/Types/List.hpp>
 
 #include <chrono>
 
@@ -26,12 +28,12 @@ class Benchmark {
     }
 };
 
-int run(Function<Time, Benchmark&> func, int repeat = 1);
+int run(VaFunc<Time(Benchmark&)> func, int repeat = 1);
 
 class BenchmarkGroup {
     struct Entry {
         VaString name;
-        Function<Time, Benchmark&> func;
+        VaFunc<Time(Benchmark&)> func;
         Time result;
     };
 
@@ -43,7 +45,7 @@ class BenchmarkGroup {
     inline BenchmarkGroup(const VaString& name, int repeat = 1)
         : groupName(name), repeatCount(repeat) {}
 
-    inline void add(const VaString& name, Function<Time, Benchmark&> f) {
+    inline void add(const VaString& name, VaFunc<Time(Benchmark&)> f) {
         entries.append({name, f, 0});
     }
 
@@ -58,8 +60,9 @@ inline void escape(T&& value) {
     asm volatile("" : : "g"(value) : "memory");
 }
 
+constexpr int TODO_EXIT = 127;
 inline int todo() {
-    return 127;
+    return TODO_EXIT;
 }
 
 } // namespace benchmarking

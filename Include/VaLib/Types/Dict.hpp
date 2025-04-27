@@ -8,6 +8,7 @@
 
 #include <VaLib/Types/Error.hpp>
 #include <VaLib/Types/Pair.hpp>
+#include <VaLib/Types/List.hpp>
 
 template <typename K>
 struct VaDictHash {
@@ -29,49 +30,6 @@ struct VaDictEntry {
     }
 };
 
-template <typename K, typename V>
-struct DictKVRef {
-    K& key;
-    V& value;
-};
-
-namespace std {
-
-template <typename K, typename V>
-
-struct tuple_size<DictKVRef<K, V>>: std::integral_constant<Size, 2> {};
-
-template <typename K, typename V>
-struct tuple_element<0, DictKVRef<K, V>> {
-    using type = K&;
-};
-template <typename K, typename V>
-struct tuple_element<1, DictKVRef<K, V>> {
-    using type = V&;
-};
-
-} // namespace std
-
-template <std::size_t N, typename K, typename V>
-decltype(auto) get(DictKVRef<K, V>& kv) {
-    if constexpr (N == 0)
-        return (kv.key);
-    else if constexpr (N == 1)
-        return (kv.value);
-    else
-        static_assert(N < 2);
-}
-
-template <std::size_t N, typename K, typename V>
-decltype(auto) get(const DictKVRef<K, V>& kv) {
-    if constexpr (N == 0)
-        return (kv.key);
-    else if constexpr (N == 1)
-        return (kv.value);
-    else
-        static_assert(N < 2);
-}
-
 /**
  * @class VaDict A hash-based dictionary (map) that maintains insertion order.
  * This class implements a dictionary (key-value store) using a hash table with separate chaining.
@@ -90,8 +48,7 @@ class VaDict {
     Size cap;  ///< Capacity of the hash table
     Size size; ///< Current number of entries stored in the hash table.
 
-    Entry**
-        buckets; ///< Array of pointers to hash buckets (each bucket is a linked list of entries).
+    Entry** buckets; ///< Array of pointers to hash buckets (each bucket is a linked list of entries).
 
     Entry* head;
     Entry* tail;
@@ -249,8 +206,10 @@ class VaDict {
      * @brief Constructs a dictionary from an initializer list of key-value pairs.
      * @param init Initializer list of key-value pairs.
      */
-    template <typename U1 = K, typename U2 = V,
-        typename = std::enable_if_t<!std::is_reference_v<U2>>>
+    template <
+        typename U1 = K, typename U2 = V,
+        typename = std::enable_if_t<!std::is_reference_v<U2>>
+    >
     VaDict(std::initializer_list<VaPair<U1, U2>> init) : VaDict() {
         resize(init.size());
         for (auto& [k, v]: init) {
@@ -262,9 +221,41 @@ class VaDict {
      * @brief Constructs a dictionary from an initializer list of key-value pairs.
      * @param init Initializer list of key-value pairs.
      */
-    template <typename U1 = K, typename U2 = V,
-        typename = std::enable_if_t<std::is_reference_v<U2>>>
+    template <
+        typename U1 = K, typename U2 = V,
+        typename = std::enable_if_t<!std::is_reference_v<U2>>
+    >
     VaDict(std::initializer_list<VaPair<const U1, const U2>> init) : VaDict() {
+        resize(init.size());
+        for (const auto& [k, v]: init) {
+            put(k, v);
+        }
+    }
+
+    /**
+     * @brief Constructs a dictionary from an initializer list of key-value pairs.
+     * @param init Initializer list of key-value pairs.
+     */
+    template <
+        typename U1 = K, typename U2 = V,
+        typename = std::enable_if_t<!std::is_reference_v<U2>>
+    >
+    VaDict(VaList<VaPair<U1, U2>> init) : VaDict() {
+        resize(init.size());
+        for (auto& [k, v]: init) {
+            put(k, v);
+        }
+    }
+
+    /**
+     * @brief Constructs a dictionary from an initializer list of key-value pairs.
+     * @param init Initializer list of key-value pairs.
+     */
+    template <
+        typename U1 = K, typename U2 = V,
+        typename = std::enable_if_t<!std::is_reference_v<U2>>
+    >
+    VaDict(VaList<VaPair<const U1, const U2>> init) : VaDict() {
         resize(init.size());
         for (const auto& [k, v]: init) {
             put(k, v);
@@ -805,8 +796,8 @@ class VaDict {
             if (ptr) ptr = ptr->nextOrder;
         }
 
-        DictKVRef<K, V> operator*() { return {ptr->key, ptr->value}; }
-        DictKVRef<K, const V> operator*() const { return {ptr->key, ptr->value}; }
+        PairRef operator*() { return {ptr->key, ptr->value}; }
+        ConstPairRef operator*() const { return {ptr->key, ptr->value}; }
     };
 
     class ConstIterator {
@@ -821,7 +812,7 @@ class VaDict {
             if (ptr) ptr = ptr->nextOrder;
         }
 
-        DictKVRef<K, const V> operator*() const { return {ptr->key, ptr->value}; }
+        ConstPairRef operator*() const { return {ptr->key, ptr->value}; }
     };
 
     using ReverseIterator = std::reverse_iterator<Iterator>;

@@ -42,4 +42,4 @@ AttributeMacros:
   - iterators
 
 KeepEmptyLinesAtTheStartOfBlocks: true
-# DisableFormat: true
+DisableFormat: false

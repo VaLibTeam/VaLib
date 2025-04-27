@@ -6,6 +6,8 @@
 #include <VaLib/Types/BasicTypedef.hpp>
 #include <VaLib/Utils/BasicDefine.hpp>
 
+#include <iterator>
+
 class VaString;
 
 /**
@@ -29,6 +31,7 @@ class VaImmutableString {
      */
     char* data;
 
+  protected friends:
     friend class VaString;
 
   public:
@@ -43,10 +46,10 @@ class VaImmutableString {
     ~VaImmutableString();
 
     /**
-     * @brief Creates a VaString object from a given C-style string.
+     * @brief Creates a VaImmutableString object from a given C-style string.
      * @tparam N The size of the input C-style string.
      * @param str A reference to a constant C-style string array.
-     * @return VaString An instance of VaString initialized with the input string and its size.
+     * @return VaImmutableString An instance of VaImmutableString initialized with the input string and its size.
      *
      * @note The input string must be a null-terminated C-style string.
      */

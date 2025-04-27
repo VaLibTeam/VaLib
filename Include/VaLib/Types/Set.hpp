@@ -37,10 +37,11 @@ class VaSet {
 
   public:
     class NodeHandle {
-        friend class VaSet;
-
       protected:
         Node* node;
+
+      protected friends:
+        friend class VaSet;
 
       public:
         NodeHandle(Node* n = nullptr) : node(n) {}
@@ -70,6 +71,7 @@ class VaSet {
       protected:
         Node* current;
 
+      protected friends:
         friend class VaSet;
 
       public:
@@ -110,6 +112,7 @@ class VaSet {
         }
     };
 
+  protected friends:
     friend class NodeHandle;
     friend class Iterator;
 
@@ -124,12 +127,14 @@ class VaSet {
         x->right = y->left;
         if (y->left) y->left->parent = x;
         y->parent = x->parent;
-        if (!x->parent)
+        if (x->parent == nullptr) {
             root = y;
-        else if (x == x->parent->left)
+        } else if (x == x->parent->left) {
             x->parent->left = y;
-        else
+        } else {
             x->parent->right = y;
+        }
+
         y->left = x;
         x->parent = y;
     }
@@ -139,12 +144,14 @@ class VaSet {
         x->left = y->right;
         if (y->right) y->right->parent = x;
         y->parent = x->parent;
-        if (!x->parent)
+        if (!x->parent) {
             root = y;
-        else if (x == x->parent->right)
+        } else if (x == x->parent->right) {
             x->parent->right = y;
-        else
+        } else {
             x->parent->left = y;
+        }
+
         y->right = x;
         x->parent = y;
     }
@@ -305,7 +312,7 @@ class VaSet {
     VaSet() : root(nullptr), len(0) {}
     VaSet(std::initializer_list<T> init) : VaSet() {
         for (const T& val: init) {
-            insert(val);
+            add(val);
         }
     }
 
@@ -330,7 +337,7 @@ class VaSet {
             } else if (comp(x->key, key)) {
                 x = x->right;
             } else {
-                return {Iterator(x), false};
+                return VaPair{Iterator(x), false};
             }
         }
 
@@ -345,7 +352,35 @@ class VaSet {
 
         insertFixup(z);
         len++;
-        return {Iterator(z), true};
+        return VaPair{Iterator(z), true};
+    }
+
+    void add(const T& key) {
+        Node* y = nullptr;
+        Node* x = root;
+        while (x) {
+            y = x;
+
+            if (comp(key, x->key)) {
+                x = x->left;
+            } else if (comp(x->key, key)) {
+                x = x->right;
+            } else {
+                return;
+            }
+        }
+
+        Node* z = new Node(key, y);
+        if (!y) {
+            root = z;
+        } else if (comp(z->key, y->key)) {
+            y->left = z;
+        } else {
+            y->right = z;
+        }
+
+        insertFixup(z);
+        len++;
     }
 
     VaPair<Iterator, bool> insert(NodeHandle&& nh) {
@@ -370,12 +405,13 @@ class VaSet {
         }
 
         z->parent = y;
-        if (!y)
+        if (!y) {
             root = z;
-        else if (comp(z->key, y->key))
+        } else if (comp(z->key, y->key)) {
             y->left = z;
-        else
+        } else {
             y->right = z;
+        }
 
         insertFixup(z);
         nh.node = nullptr;
@@ -394,6 +430,7 @@ class VaSet {
                 return Iterator(x);
             }
         }
+
         return end();
     }
 
@@ -410,7 +447,7 @@ class VaSet {
 
             if (!insert(std::move(nh)).second) {
                 /// insert failed, so we keep the element in @ref other
-                other.insert(std::move(nh));
+                other.add(std::move(nh));
             }
         }
     }

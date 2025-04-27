@@ -3,7 +3,6 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#include <VaLib/Types/BasicConcepts.hpp>
 #include <VaLib/Types/BasicTypedef.hpp>
 
 #define iterators

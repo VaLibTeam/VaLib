@@ -7,6 +7,7 @@
 #include <VaLib/Types/BasicTypedef.hpp>
 
 #include <utility>
+#include <functional>
 
 /**
  * @class VaTuple Variadic tuple class template.
@@ -258,6 +259,36 @@ class VaTuple<Head, Tail...>: protected VaTuple<Tail...> {
     }
 
     /**
+     * @brief Retrieves the first element of type T in the tuple.
+     * @tparam T Type to search for.
+     * @return Reference to the element of type T.
+     *
+     * @note This function will return the first occurrence of type T.
+     */
+    template <typename T>
+    T& get() {
+        if constexpr (std::is_same_v<T, Head>) {
+            return head;
+        } else {
+            return VaTuple<Tail...>::template get<T>();
+        }
+    }
+
+    /**
+     * @brief Retrieves the first element of type T in the tuple (const version).
+     * @tparam T Type to search for.
+     * @return Const reference to the element of type T.
+     */
+    template <typename T>
+    const T& get() const {
+        if constexpr (std::is_same_v<T, Head>) {
+            return head;
+        } else {
+            return VaTuple<Tail...>::template get<T>();
+        }
+    }
+
+    /**
      * @brief Alias for the type of the I-th element.
      * @tparam I Index of the element.
      */
@@ -340,3 +371,62 @@ decltype(auto) get(const VaTuple<Types...>&& tuple) {
 }
 
 } // namespace std
+
+namespace va {
+
+/**
+ * @brief Applies a function to all elements of a const tuple
+ * @tparam Fn Function type to apply
+ * @tparam Types Parameter pack of tuple element types
+ * @param f Function to apply
+ * @param t Const reference to tuple
+ * @return Result of function application
+ */
+template <typename Fn, typename... Types>
+constexpr decltype(auto) apply(Fn&& f, const VaTuple<Types...>& t) {
+    return [&]<Size... I>(std::index_sequence<I...>) {
+        return std::invoke(
+            std::forward<Fn>(f),
+            t.template get<I>()...
+        );
+    }(std::make_index_sequence<sizeof...(Types)>());
+}
+
+/**
+ * @brief Applies a function to all elements of an rvalue tuple
+ * @tparam Fn Function type to apply
+ * @tparam Types Parameter pack of tuple element types
+ * @param f Function to apply
+ * @param t Rvalue reference to tuple
+ * @return Result of function application
+ */
+template <typename Fn, typename... Types>
+constexpr decltype(auto) apply(Fn&& f, VaTuple<Types...>&& t) {
+    using Tuple = VaTuple<Types...>;
+    return [&]<Size... I>(std::index_sequence<I...>) {
+        return std::invoke(
+            std::forward<Fn>(f),
+            std::forward<typename Tuple::template Element<I>>(t.template get<I>())...
+        );
+    }(std::make_index_sequence<sizeof...(Types)>());
+}
+
+/**
+ * @brief Applies a function to all elements of a mutable tuple
+ * @tparam Fn Function type to apply
+ * @tparam Types Parameter pack of tuple element types
+ * @param f Function to apply
+ * @param t Reference to tuple
+ * @return Result of function application
+ */
+template <typename Fn, typename... Types>
+constexpr decltype(auto) apply(Fn&& f, VaTuple<Types...>& t) {
+    return [&]<Size... I>(std::index_sequence<I...>) {
+        return std::invoke(
+            std::forward<Fn>(f),
+            t.template get<I>()...
+        );
+    }(std::make_index_sequence<sizeof...(Types)>());
+}
+
+}

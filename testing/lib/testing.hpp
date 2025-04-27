@@ -3,8 +3,10 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#include <VaLib/Utils/format.hpp>
+#include <VaLib/FuncTools/Func.hpp>
 #include <VaLib/Types/String.hpp>
+
+#include <VaLib/Utils/format.hpp>
 
 #include <iostream>
 
@@ -29,9 +31,9 @@ public:
         return false;
     }
 
-    bool helper(Function<bool, Test&> testFunc);
+    bool helper(VaFunc<bool(Test&)> testFunc);
 };
 
-int run(Function<bool, Test&> func);
+int run(VaFunc<bool(Test&)> func);
 
 } // namespace testing

@@ -4,6 +4,8 @@
 
 #include <lib/testing.hpp>
 
+#include <VaLib/FuncTools/Func.hpp>
+
 namespace testing {
 
 void Test::rename(VaString newName) {
@@ -21,11 +23,11 @@ bool Test::fail(VaString msg) {
     return false;
 }
 
-bool Test::helper(Function<bool, Test&> testFunc) {
+bool Test::helper(VaFunc<bool(Test&)> testFunc) {
     return testFunc(*this);
 }
 
-int run(Function<bool, Test&> func) {
+int run(VaFunc<bool(Test&)> func) {
     Test t;
     return func(t) ? 0 : 1;
 }

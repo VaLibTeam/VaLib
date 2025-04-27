@@ -36,6 +36,8 @@
 /testing/build/
 /build/
 
+/out/
+
 # IDEs
 /.vscode/
 /.idea/

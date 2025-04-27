@@ -151,24 +151,29 @@ VaString& VaString::operator+=(char ch) noexcept {
     return *this;
 }
 
-bool VaString::operator==(const VaString& other) const noexcept {
-    return len == other.len && std::memcmp(data, other.data, len) == 0;
+bool VaString::operator==(const VaImmutableString& other) const noexcept {
+    if (this->len != other.len) return false;
+    return std::memcmp(this->data, other.data, this->len) == 0;
 }
 
-bool VaString::operator!=(const VaString& other) const noexcept { return !(*this == other); }
+bool operator==(const VaString& lhs, const VaString& rhs) noexcept {
+    if (&lhs == &rhs) return true;
+    if (lhs.len != rhs.len) return false;
 
-bool VaString::operator<(const VaString& other) const {
-    Size minLen = len < other.len ? len : other.len;
+    return std::memcmp(lhs.data, rhs.data, lhs.len) == 0;
+}
+
+bool operator<(const VaString& lhs, const VaString& rhs) {
+    Size minLen = lhs.len < rhs.len ? lhs.len : rhs.len;
 
     for (Size i = 0; i < minLen; i++) {
-        if (data[i] < other.data[i]) return true;
-        if (data[i] > other.data[i]) return false;
+        if (lhs.data[i] < rhs.data[i]) return true;
+        if (lhs.data[i] > rhs.data[i]) return false;
     }
-    return len < other.len;
+    return lhs.len < rhs.len;
 }
 
 char& VaString::operator[](Size index) noexcept { return data[index]; }
-
 const char& VaString::operator[](Size index) const noexcept { return data[index]; }
 
 char& VaString::at(Size index) {
@@ -239,6 +244,5 @@ VaString& VaString::insert(Size pos, const char* str, Size strLen) {
 }
 
 std::ostream& operator<<(std::ostream& os, const VaString& str) {
-    os << str.toStdString();
-    return os;
+    return os.write(str.getData(), len(str));
 }

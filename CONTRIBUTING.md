@@ -13,7 +13,7 @@ Please read the following guidelines before submitting pull requests or patches.
    - Use `camelCase` for everything else, including variables, non-static methods, function names, parameters.
 
 2. **Control Structures**
-   - Omit braces (`{}`) in conditional statements and loops only if the body is simple and clearly readable, such as a single `x++`, `break`, or a function call like `myFunction()`.
+   - Omit braces (`{}`) in conditional statements and loops only if the body is simple and clearly readable, such as a single `x++`, `break`, or a function call.
 
 3. **Indentation**
    - Use 4 spaces per indentation level. Do not use tabs.
@@ -22,21 +22,22 @@ Please read the following guidelines before submitting pull requests or patches.
    - Prefer `protected` over `private` when possible to encourage extensible class designs.
 
 5. **Namespaces**
-   - Avoid `using namespace std;` entirely. Always use explicit namespace prefixes to prevent naming conflicts.
+   - Avoid `using namespace std;` or `using namespace va;` entirely. Always use explicit namespace prefixes to prevent naming conflicts.
 
 6. **Namespace and Class Prefixes**
    - All code should reside in the `va` namespace.
    - Alternatively, classes may be prefixed with `Va`, for example: `VaMyClassName`.
    - Exceptions are allowed if justified, but the default should follow this rule.
 
-7. **Code Formatting**
-   - Always use `clang-format` with the configuration provided in the `.clang-format` file included in the repository.
-   - Please avoid modifying `.clang-format` unless there's a strong documented reason.
-
-8. **Testing and Benchmarking**
-   - After adding a new class or functionality, always include a corresponding test in the `testing/` directory.
+7. **Testing and Benchmarking**
+   - After adding a new class or functionality, include a corresponding test in the `testing/` directory.
    - Optionally, add a benchmark if performance is a concern.
    - Small utility functions or trivial changes may be exempt from this rule, but use discretion.
+
+8. **Operators**
+   - Modifying operators (`operator=`, `operator+=`, etc.) should be implemented as member functions.
+   - Non-modifying operators (`operator==`, `operator+`, `operator<`, etc.) should be implemented as friend functions.
+   - For non-modifying operators, use parameter names `lhs` and `rhs` for clarity.
 
 ## Bash Script Style Guide
 1. **Naming Conventions**
@@ -64,6 +65,11 @@ Please read the following guidelines before submitting pull requests or patches.
 
 8. **Function Syntax**
    - Define functions using the syntax `Name() { code... }`, with parentheses `()` but without the `function` keyword.
+
+9. **User Interface**
+   - Scripts should be simple and intuitive to use.
+   - Always implement the `--help` option to display usage information and available options.
+   - Help messages should be clear and concise, explaining the script's purpose and basic usage pattern.
 
 ## Submitting Contributions
 - When submitting a pull request, provide a clear and concise description of the change and its purpose.

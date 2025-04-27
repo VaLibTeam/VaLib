@@ -9,6 +9,7 @@
 #include <VaLib/Utils/ToString.hpp>
 
 #include <cstring>
+#include <string>
 
 bool testString(testing::Test& t) {
     VaString str = "Hello, ";
@@ -57,6 +58,20 @@ bool testString(testing::Test& t) {
         strWithNullTerminator[0] != '\0') {
         return t.fail("Unexpected result when creating a string with zero bytes");
     }
+
+    _ = (const char*)"" == VaString();
+    _ = VaString() == (const char*)"";
+    _ = VaImmutableString() == VaString();
+    _ = VaString() == VaImmutableString();
+    _ = VaString() == std::string();
+    _ = std::string() == VaString();
+
+    _ = (const char*)"" != VaString();
+    _ = VaString() != (const char*)"";
+    _ = VaImmutableString() != VaString();
+    _ = VaString() != VaImmutableString();
+    _ = VaString() != std::string();
+    _ = std::string() != VaString();
 
     return t.success();
 }

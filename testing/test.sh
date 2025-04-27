@@ -18,12 +18,15 @@ SuccessExit=0
 CompilationErrorExit=1
 LinkingErrorExit=2
 EnvironmentErrorExit=3
-ErrorExit=4
+InvalidFlagExit=4
+ErrorExit=5
 
 OUTDIR="build"
 if [[ -z "$OUTDIR" ]]; then
     OUTDIR="build"
 fi
+
+LIBSDIR="libs"
 
 buildMode="-L./"
 
@@ -96,18 +99,12 @@ ParseFlags() {
 
         --outdir=*)
             OUTDIR="${arg#*=}" ;;
+
+        *)
+            ShowError $InvalidFlagExit "Invalid flag: $arg"
+            ;;
         esac
     done
-}
-
-RunTarget() {
-    target="$1"
-    if [[ $verbose = true ]]; then
-        "$target"
-    else
-        "$target" > /dev/null
-    fi
-    return $?
 }
 
 CheckEnvironment() {
@@ -125,42 +122,70 @@ CheckLibraries() {
     fi
 
     if [[ -r "./libvalib.so" || -r "build/libvalib.so" ]]; then
-        buildMode="-L./ -L./build/ -lvalib"
-        export LD_LIBRARY_PATH="./build:$LD_LIBRARY_PATH"
-    elif [[ -r "./libvalib.a" || -r "build/libvalib.a" ]]; then
-        buildMode="-L./ -L./build/ -lvalib"
+        buildMode="-L./ -L./$LIBSDIR/ -lvalib"
+        export LD_LIBRARY_PATH="./:$LIBSDIR:$LD_LIBRARY_PATH"
+    elif [[ -r "./libvalib.a" || -r "$LIBSDIR/libvalib.a" ]]; then
+        buildMode="-L./ -L./$LIBSDIR/ -lvalib"
     elif [[ -r "./libvalib.o" ]]; then
         buildMode="./libvalib.o"
-    elif [[ -r "build/libvalib.o" ]]; then
-        buildMode="build/libvalib.o"
+    elif [[ -r "$LIBSDIR/libvalib.o" ]]; then
+        buildMode="$LIBSDIR/libvalib.o"
     else
         ../build.sh --target=shared --output="libvalib" || ShowError $ErrorExit "failed to compile valib."
         mv ../libvalib.so build/libvalib.so
-        buildMode="-L./ -L./build/ -lvalib"
-        export LD_LIBRARY_PATH="./build:$LD_LIBRARY_PATH"
+        buildMode="-L./ -L./$LIBSDIR/ -lvalib"
+        export LD_LIBRARY_PATH="./:$LIBSDIR:$LD_LIBRARY_PATH"
     fi
+}
+
+RunTarget() {
+    local target="$1"
+    chmod +x "$target"
+
+    if [[ $verbose = true ]]; then
+        "$target"
+    else
+        "$target" > /dev/null
+    fi
+    return $?
+}
+
+NeedsCompile() {
+    local target="$1"
+    local dependency="$2"
+    [[ ! -f "$target" ]] || [[ "$dependency" -nt "$target" ]]
+    return $?
+}
+
+NameObj() {
+    echo "$OUTDIR/$1.o"
+}
+
+NameOut() {
+    echo "$OUTDIR/$1"
+    # echo "$OUTDIR/$1.elf"
+    # echo "$OUTDIR/$1.out"
 }
 
 CompileTest() {
     local testFile="$1"
-    local obj="$OUTDIR/$testFile.o"
-    local out="$OUTDIR/$testFile"
+    local obj="$(NameObj "$testFile")"
+    local out="$(NameOut "$testFile")"
 
     # Check if object file needs to be recompiled
-    if [[ ! -f "$obj" ]] || [[ "$testFile.cpp" -nt "$obj" ]]; then
+    if NeedsCompile "$obj" "$testFile.cpp"; then
         "$CXX" $CXXFLAGS "$testFile.cpp" "${includePath[@]/#/-I}" -c -o "$obj" || ShowError $CompilationErrorExit "Test \"$testFile\" failed to compile."
     fi
 
-    if [[ ! -f "$out" ]] || [[ "$obj" -nt "$out" ]] || [[ "build/testing.o" -nt "$out" ]]; then
+    if NeedsCompile "$out" "$obj" || [[ "build/testing.o" -nt "$out" ]]; then
         "$CXX" $CXXFLAGS $buildMode "$obj" "build/testing.o" -o "$out" || ShowError $LinkingErrorExit "Test \"$testFile\" failed to link."
     fi
 }
 
 Test() {
     local testFile="$1"
-
-    local obj="$OUTDIR/$testFile.o"
-    local out="$OUTDIR/$testFile"
+    local obj="$(NameObj "$testFile")"
+    local out="$(NameOut "$testFile")"
 
     echo -e "\033[34;1m" "Testing $testFile..." "\033[0m"
     CompileTest "$testFile"
@@ -182,23 +207,22 @@ Test() {
 
 CompileBenchmark() {
     local benchFile="$1"
-    local obj="$OUTDIR/$benchFile.o"
-    local out="$OUTDIR/$benchFile"
+    local obj="$(NameObj "$benchFile")"
+    local out="$(NameOut "$benchFile")"
 
-    # Check if object file needs to be recompiled
-    if [[ ! -f "$obj" ]] || [[ "$benchFile.cpp" -nt "$obj" ]]; then
+    if NeedsCompile "$out" "$obj"; then
         "$CXX" $CXXFLAGS "$benchFile.cpp" "${includePath[@]/#/-I}" -c -o "$obj" || ShowError $CompilationErrorExit "Benchmark \"$benchFile\" failed to compile."
     fi
 
-    if [[ ! -f "$out" ]] || [[ "$obj" -nt "$out" ]] || [[ "build/benchmarking.o" -nt "$out" ]]; then
+    if NeedsCompile "$out" "$obj" || [[ "build/benchmarking.o" -nt "$out" ]]; then
         "$CXX" $CXXFLAGS $buildMode "$obj" "build/benchmarking.o" -o "$out" || ShowError $LinkingErrorExit "Benchmark \"$benchFile\" failed to link."
     fi
 }
 
 Benchmark() {
     benchFile="$1"
-    obj="$OUTDIR/$benchFile.o"
-    out="$OUTDIR/$benchFile"
+    obj="$(NameObj "$benchFile")"
+    out="$(NameOut "$benchFile")"
 
     echo -e "\033[35;1m" "Benchmarking $benchFile..." "\033[0m"
     CompileBenchmark "$benchFile"
@@ -226,6 +250,27 @@ CompileLib() {
 
     if [[ ! -f "build/testing.o" ]] || [[ "lib/testing.cpp" -nt "build/testing.o" ]]; then
         "$CXX" $CXXFLAGS "lib/testing.cpp" "${includePath[@]/#/-I}" -c -o "build/testing.o" || ShowError $CompilationErrorExit "Failed to compile testing.cpp."
+    fi
+}
+
+PrintAll() {
+    local targets=("$@")
+
+    local obj=""
+    local out=""
+
+    if [[ $verbose = true ]]; then
+        for tg in "${targets[@]}"; do
+            obj="$(NameObj "$tg")"
+            out="$(NameOut "$tg")"
+            if NeedsCompile "$obj" "$tg.cpp" && NeedsCompile "$out" "$obj"; then
+                echo -e "${tg}"
+            elif NeedsCompile "$obj" "$tg.cpp"; then
+                echo -e "${BOLD}${YELLOW}${tg}${RESET}"
+            else
+                echo -e "${BOLD}${tg}${RESET}"
+            fi
+        done
     fi
 }
 
@@ -262,6 +307,8 @@ Main() {
         failed=0
 
         ShowInfo "Running tests..."
+        PrintAll "${tests[@]}"
+
         for test in "${tests[@]}"; do
             if Test "$test"; then
                 ((passed++))
@@ -277,14 +324,13 @@ Main() {
         else
             ShowWarn "Some tests failed (failed $failed/$totalTests)"
         fi
-
-        echo
     fi
 
     if [[ $totalBenchmarks -gt 0 ]]; then
         passed=0
         failed=0
 
+        [[ $totalTests -gt 0 ]] && echo
         ShowInfo "Running benchmarks..."
         for bench in "${benchmarks[@]}"; do
             if Benchmark "$bench"; then

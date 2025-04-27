@@ -3,14 +3,14 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#include "VaLib/Utils/BasicDefine.hpp"
+#include <VaLib/Utils/BasicDefine.hpp>
 #include <VaLib/Types/BasicTypedef.hpp>
+
 #include <VaLib/Types/Error.hpp>
 #include <VaLib/Types/List.hpp>
 
 /**
  * @class VaSlice A lightweight view into a contiguous sequence of elements.
- *
  * @tparam T Type of elements in the slice
  *
  * @note VaSlice doesn't own the data it points to - it's just a view.
@@ -40,7 +40,7 @@ class VaSlice {
      * @param begin Pointer to the first element
      * @param end Pointer to one past the last element
      *
-     * @note The range is [begin, end] - end is not included
+     * @note The range is [begin, end) - end is not included
      * @warning Undefined behavior if end comes before begin
      */
     VaSlice(T* begin, T* end) : data(begin), len(end - begin) {}
@@ -58,7 +58,7 @@ class VaSlice {
       * @tparam C Container type
       * @param container Container to create view of
       *
-      * @note Works with std::vector, std::array, and similar containers
+      * @note Works with std::vector, std::array, and similar STL containers
       */
     template <typename C>
     VaSlice(C& container) : data(container.data()), len(container.size()) {}
@@ -146,7 +146,6 @@ class VaSlice {
 
     /**
      * @brief Access const element with bounds checking
-     *
      * @param index Position of the element
      * @return Const reference to the element
      * @throw IndexOutOfRangeError if index is out of bounds

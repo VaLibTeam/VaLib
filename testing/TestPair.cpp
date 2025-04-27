@@ -17,7 +17,6 @@ bool testPair(testing::Test& t) {
     p.get<1>() = "Goodbye mars?";
 
     auto [num, str] = p;
-
     if (num != 123 || str != "Goodbye mars?") {
         return t.fail("unexpected result");
     }
