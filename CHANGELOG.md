@@ -23,3 +23,4 @@
 ### Added
 - **[ Types: List.hpp ]** Added UnsafeTake method into VaList class.
 - **( scripts: new.py )** Added new options and formatting to new.py
+- **( Types: LinkedList.hpp )** Added doxygen documentation in `VaLinkedList`.

@@ -37,3 +37,4 @@ typedef uint64_t uint64;
 // #define VaLib_NOT_DEFINE_TRUE_FALSE_TYPES  // TrueType, FalseType
 // #define VaLib_NOT_DEFINE_NONETYPE_NIL      // NoneType, nil
 // #define VaLib_NOT_DEFINE_SIZE              // Size
+// #define VaLib_NOT_DEFINE_BYTE_WORDS        // Byte, Word, DWord, QWord

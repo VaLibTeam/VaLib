@@ -8,6 +8,10 @@
 #include <VaLib/Utils/Make.hpp>
 
 #include <functional>
+#include <utility>
+
+// @file FuncCat.hpp
+// @warning STILL UNDER DEVELOPEMENT
 
 namespace va {
 
@@ -15,14 +19,14 @@ namespace detail {
 
 /// @brief select first N args from tuple
 template<Size... Is, typename Tuple>
-auto tuple_take(Tuple&& tpl, std::index_sequence<Is...>) {
-    return std::make_tuple(std::get<Is>(std::forward<Tuple>(tpl))...);
+auto tupleTake(Tuple&& tpl, std::index_sequence<Is...>) {
+    return va::mkTuple(std::get<Is>(std::forward<Tuple>(tpl))...);
 }
 
 /// @brief drop first N args from tuple
 template<Size Offset, Size... Is, typename Tuple>
 auto tupleDrop(Tuple&& tpl, std::index_sequence<Is...>) {
-    return std::make_tuple(std::get<Offset + Is>(std::forward<Tuple>(tpl))...);
+    return va::mkTuple(std::get<Offset + Is>(std::forward<Tuple>(tpl))...);
 }
 
 // get arity of a function pointer
@@ -45,15 +49,14 @@ auto fncat(F1 f1, F2 f2) {
     return [f1, f2](auto&&... allArgs) {
         static_assert(sizeof...(allArgs) == N1 + N2, "Wrong number of arguments");
 
-        auto all = std::make_tuple(std::forward<decltype(allArgs)>(allArgs)...);
-
-        auto args1 = tuple_take(all, std::make_index_sequence<N1>{});
+        auto all = va::mkTuple(std::forward<decltype(allArgs)>(allArgs)...);
+        auto args1 = detail::tupleTake(all, std::make_index_sequence<N1>{});
         auto args2 = detail::tupleDrop<N1>(all, std::make_index_sequence<N2>{});
 
-        auto r1 = std::apply(f1, args1);
-        auto r2 = std::apply(f2, args2);
+        auto r1 = va::apply(f1, args1);
+        auto r2 = va::apply(f2, args2);
 
-        return std::make_tuple(r1, r2);
+        return va::mkTuple(r1, r2);
     };
 }
 

@@ -3,45 +3,54 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#include <type_traits>
 #ifdef VaLib_USE_CONCEPTS
 #include <VaLib/Types/BasicConcepts.hpp>
+#endif
+
+#if __cplusplus >= CPP20
+#include <stdfloat>
 #endif
 
 #include <VaLib/Types/TypeTraits.hpp>
 
 #include <stddef.h>
 #include <stdint.h>
+#include <time.h>
 
-#include <ctime>
-
-#ifndef VaLib_NOT_DEFINE_UINTS
-    typedef uint8_t uint8;
-    typedef uint16_t uint16;
-    typedef uint32_t uint32;
-    typedef uint64_t uint64;
+#ifndef VaLib_NOT_DEFINE_INTS
+    typedef int8_t int8;    /// @brief 8-bit signed integer
+    typedef int16_t int16;  /// @brief 16-bit signed integer
+    typedef int32_t int32;  /// @brief 32-bit signed integer
+    typedef int64_t int64;  /// @brief 64-bit signed integer
 
     #ifdef VaLib_USE_INT128
-        typedef __uint128_t uint128;
+        typedef __int128_t int128; /// @brief 128-bit signed integer
+    #endif
+#endif
+
+#ifndef VaLib_NOT_DEFINE_UINTS
+    typedef uint8_t uint8;    /// @brief 8-bit unsigned integer
+    typedef uint16_t uint16;  /// @brief 16-bit unsigned integer
+    typedef uint32_t uint32;  /// @brief 32-bit unsigned integer
+    typedef uint64_t uint64;  /// @brief 64-bit unsigned integer
+
+    #ifdef VaLib_USE_INT128
+        typedef __uint128_t uint128; /// @brief 128-bit unsigned integer
     #endif
 
     typedef unsigned int uint;
 #endif
 
-#ifndef VaLib_NOT_DEFINE_INTS
-    typedef int8_t int8;
-    typedef int16_t int16;
-    typedef int32_t int32;
-    typedef int64_t int64;
-
-    #ifdef VaLib_USE_INT128
-        typedef __int128_t int128;
-    #endif
-#endif
-
 #ifndef VaLib_NOT_DEFINE_FLOATS
-    typedef float float32;
-    typedef double float64;
+    #if __cplusplus >= CPP20
+        typedef std::float32_t float32;
+        typedef std::float64_t float64;
+    #else
+        typedef float float32;   // likely 32-bit, but not guaranteed
+        typedef double float64;  // likely 64-bit, but not guaranteed
+    #endif
+
+    typedef long double floatExt;
 #endif
 
 typedef int32_t rune;
