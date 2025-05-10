@@ -12,6 +12,7 @@ public:
     int multiply(int a, int b) const { return a * b; }
 
     VaString greet() const { return "hi!"; }
+    void noReturn() const {}
 };
 
 bool testMethod(testing::Test& t) {
@@ -22,12 +23,12 @@ bool testMethod(testing::Test& t) {
         return t.fail("unexpected result (non-const method call)");
     }
 
-    VaMethod<const MethodTestObj, int(int, int)> m2(&MethodTestObj::multiply);
+    VaMethod<const MethodTestObj, int(int, int)> m2 = &MethodTestObj::multiply;
     if (m2(obj, 4, 5) != 20) {
         return t.fail("unexpected result (const method call)");
     }
 
-    VaMethod<const MethodTestObj, VaString()> m3(&MethodTestObj::greet);
+    VaMethod<const MethodTestObj, VaString()> m3 = &MethodTestObj::greet;
     if (m3(obj) != "hi!") {
         return t.fail("unexpected result (const method returning class call)");
     }
@@ -48,6 +49,12 @@ bool testMethod(testing::Test& t) {
     if (f3() != "hi!") {
         return t.fail("unexpected result (bind const string method)");
     }
+
+    VaMethod<const MethodTestObj, void()> m4 = &MethodTestObj::noReturn;
+    m4(obj);
+
+    auto f4 = m4.bind(obj);
+    f4();
 
     return t.success();
 }
