@@ -17,7 +17,6 @@ public:
 
 bool testMethod(testing::Test& t) {
     MethodTestObj obj;
-
     VaMethod<MethodTestObj, int(int, int)> m1(&MethodTestObj::add);
     if (m1(obj, 2, 3) != 5) {
         return t.fail("unexpected result (non-const method call)");

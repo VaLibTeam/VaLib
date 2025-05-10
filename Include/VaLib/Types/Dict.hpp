@@ -31,7 +31,7 @@ struct VaDictEntry {
  *
  * @tparam K The key type (must support equality comparison and hashing).
  * @tparam V The value type.
- * @tparam Hash The hash function type (defaults to `DictHash<K>`).
+ * @tparam Hash The hash function type (defaults to `VaHash<K>`).
  *
  * @note it preserves the order in which elements were inserted.
  */

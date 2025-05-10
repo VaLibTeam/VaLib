@@ -28,7 +28,6 @@ class VaTuple<> {
   public:
     /**
      * @brief Constructs a VaTuple from arguments.
-     *
      * @tparam Args Argument types.
      * @param args Arguments to construct the tuple from.
      * @return VaTuple of decayed types.
@@ -42,7 +41,6 @@ class VaTuple<> {
 
     /**
      * @brief Applies a function to each element (no-op for empty tuple).
-     *
      * @tparam Func Callable type.
      * @param func Function to apply.
      *
@@ -53,7 +51,6 @@ class VaTuple<> {
 
     /**
      * @brief Applies a function to each element (const version).
-     *
      * @tparam Func Callable type.
      * @param func Function to apply.
      *
@@ -64,7 +61,6 @@ class VaTuple<> {
 
     /**
      * @brief Applies a function to each element with index (no-op for empty tuple).
-     *
      * @tparam Func Callable type.
      * @tparam I Start index (default 0).
      * @param func Function to apply with index.

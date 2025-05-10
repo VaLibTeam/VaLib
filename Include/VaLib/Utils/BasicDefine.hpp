@@ -24,6 +24,7 @@
     }
 
 #define stringify(expr) #expr
+#define stringify_expanded(expr) stringify(expr)
 #define dbg(expr) VaString(stringify(expr)) + ": " + std::to_string(expr)
 
 #define TODO(username, info)

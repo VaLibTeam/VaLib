@@ -182,6 +182,50 @@ class VaList {
     }
 
     /**
+     * @brief Constructs a VaList from a raw pointer and manual length/capacity.
+     *
+     * This function *adopts* an existing raw buffer and treats it as a valid VaList.
+     * No memory is copied, so this is a zero-cost operation.
+     *
+     * **UNSAFE: You are fully responsible for ensuring all invariants are correct.**
+     *
+     * @param raw A pointer to a buffer of T elements.
+     * @param len The number of initialized elements in the buffer.
+     * @param cap The total capacity of the buffer (must be >= len).
+     * @return A VaList that assumes ownership of the provided memory.
+     *
+     * @warning
+     * - The buffer **must** have been allocated with the same allocator used by VaList.
+     * - If the list grows past `cap`, it will reallocate internally.
+     *   - In such case, the original memory will be **unused**.
+     *   - If it was dynamically allocated, you must free it manually (e.g. `delete[] raw`).
+     * - You can detect whether the original buffer is still in use via:
+     *   ```cpp
+     *   if (list.dataPtr() == raw) { /* buffer still valid *\/ }
+     *   ```
+     * - If you provide an invalid @ref cap (less than @ref len), the behavior is undefined.
+     * - If you provide an invalid `len`, accessors like @ref at may throw an exception,
+     *      but destruction will still behave correctly (unless cap is wrong).
+     * - If the memory was not dynamically allocated, calling the destructor or deallocating
+     *      the memory will result in undefined behavior.
+     *
+     * @note This is intended for expert users who need full control over allocation. For a safe alternative, use the constructor that copies the data.
+     */
+    // @{
+    static VaList UnsafeTake(T* raw, Size len, Size cap) {
+        VaList result;
+        result.data = raw;
+        result.len = len;
+        result.cap = cap;
+        return result;
+    }
+
+    static VaList UnsafeTake(T* raw, Size len) {
+        return UnsafeTake(raw, len, len);
+    }
+    // @}
+
+    /**
      * @brief Copy assignment operator.
      * @param other The list to copy from.
      * @return Reference to this list.
@@ -648,13 +692,25 @@ class VaList {
      * @brief Returns a pointer to the internal data array.
      * @return Pointer to the data.
      */
-    inline T* getData() { return data; }
+    [[ deprecated("Use dataPtr() instanted") ]] inline T* getData() { return data; }
 
     /**
      * @brief Returns a const pointer to the internal data array.
      * @return Const pointer to the data.
      */
-    inline const T* getData() const { return data; }
+    [[ deprecated("Use dataPtr() instanted") ]] inline const T* getData() const { return data; }
+
+    /**
+     * @brief Returns a pointer to the internal data array.
+     * @return Pointer to the data.
+     */
+    inline T* dataPtr() { return data; }
+
+    /**
+     * @brief Returns a const pointer to the internal data array.
+     * @return Const pointer to the data.
+     */
+    inline const T* dataPtr() const { return data; }
 
     /**
      * @brief Checks if the list is empty.

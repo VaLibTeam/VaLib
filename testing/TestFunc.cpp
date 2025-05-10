@@ -6,7 +6,7 @@
 
 #include <VaLib/Types/String.hpp>
 
-#include <VaLib/FuncTools/Func.hpp>
+#include <VaLib/FuncTools.hpp>
 #include <VaLib/FuncTools/TypeWrapper.hpp>
 #include <VaLib/FuncTools/Partial.hpp>
 

@@ -2,17 +2,24 @@
 
 ## [1.8.0] - 2025-04-27
 ### Added
-- Refactored build.sh and added new functions like building archives and improved flags support.
-- Added CHANGELOG.md, and scripts/new.py.
-- Fix '--build-all' in build.sh and --default, --default-devel flags.
+- **( scripts: build.sh )** Refactored build.sh and added new functions like building archives and improved flags support.
+- **( repo )** Added CHANGELOG.md, and scripts/new.py.
+- **( scripts: build.sh )** Fix `--build-all` in build.sh and `--default`, `--default-devel` flags.
 ### Changed
-- Updated Doxyfile, for displaying README.md as main page.
+- **( doxygen: Doxyfile )** Updated Doxyfile, for displaying README.md as main page.
 ### Fixed
-- Fixed --build-all in build.sh.
+- **( scripts: build.sh )** Fixed `--build-all` in build.sh.
+
 ## [1.8.0] - 2025-05-10
 ### Fixed
-- Improved the VaAny and VaFunc classes to no longer use the C++23-deprecated std::aligned_storage.
+- **[ Types: Any.hpp ]** Improved the VaAny class to no longer use the C++23-deprecated std::aligned_storage.
+- **[ FuncTools: Func.hpp ]** Improved the VaFunc class to no longer use the C++23-deprecated std::aligned_storage.
 ### Added
-- Added a new `VaMethod` class for storing class methods. Minor fixes in `VaFunc`.
-- Added VaTypeWrapper that wraps a function into a struct with operator().
-- Added unwrapFunc.
+- **[ FuncTools: Method.hpp ]** Added a new `VaMethod` class for storing class methods. Minor fixes in `VaFunc`.
+- **[ FuncTools: TypeWrapper.hpp ]** Added VaTypeWrapper that wraps a function into a struct with `operator()`.
+- **[ FuncTools: TypeWrapper.hpp ]** Added unwrapFunc.
+
+## [1.9.0] - 2025-05-10
+### Added
+- **[ Types: List.hpp ]** Added UnsafeTake method into VaList class.
+- **( scripts: new.py )** Added new options and formatting to new.py

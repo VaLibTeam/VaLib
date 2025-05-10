@@ -3,8 +3,9 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#include <VaLib/FuncTools/Func.hpp>
+#include <VaLib/AutoEnable.hpp>
 
+#include <VaLib/FuncTools/Func.hpp>
 #include <VaLib/Types/String.hpp>
 #include <VaLib/Types/List.hpp>
 

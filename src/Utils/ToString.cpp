@@ -1,7 +1,10 @@
+// VaLib - Vast Library
+// Licensed under GNU GPL v3 License. See LICENSE file.
+// (C) 2025 VaLibTeam
+
 #include <VaLib/Utils/ToString.hpp>
 
 #include <VaLib/Types/BasicTypedef.hpp>
-
 #include <VaLib/Types/ImmutableString.hpp>
 #include <VaLib/Types/String.hpp>
 

@@ -13,7 +13,7 @@ InvalidArgErrorExit = 1
 ErrorExit = 2
 
 CHANGELOG_PATH: str = 'CHANGELOG.md'
-VERSION: str = '1.8.0'
+VERSION: str = '1.9.0'
 
 CHANGE_TYPES: dict[str, str] = {
     "add": "Added",
@@ -21,6 +21,10 @@ CHANGE_TYPES: dict[str, str] = {
     "change": "Changed",
     "remove": "Removed",
 }
+
+MODULES: tuple[str, ...] = (
+    "Types", "Utils", "FuncTools"
+)
 
 defaultEditor: str = "nvim"
 if EDITOR := os.getenv("EDITOR"):
@@ -48,7 +52,7 @@ def ensureChangelogExists() -> str:
     with open(CHANGELOG_PATH, "r") as f:
         return f.read()
 
-def updateChangelog(changeType: str, msg: str):
+def updateChangelog(changeType: str, module: str, msg: str):
     today: str = datetime.now().strftime("%Y-%m-%d")
     sectionHeader: str = f"## [{VERSION}] - {today}"
     changeHeading: str = f"### {CHANGE_TYPES[changeType]}"
@@ -56,8 +60,10 @@ def updateChangelog(changeType: str, msg: str):
     content: str = ensureChangelogExists()
     lines = content.splitlines()
 
+    total: str = f"{f'**[ {module} ]**' if (module in MODULES) else f'**( {module} )**'} {msg}"
+
     if sectionHeader not in content:
-        newSection: str = f"\n{sectionHeader}\n{changeHeading}\n- {msg}\n"
+        newSection: str = f"\n{sectionHeader}\n{changeHeading}\n- {total}\n"
         with open(CHANGELOG_PATH, "a") as f:
             f.write(newSection)
         pass
@@ -79,10 +85,10 @@ def updateChangelog(changeType: str, msg: str):
             headingIdx: int = insertionPoint + 1
             while headingIdx < len(lines) and (lines[headingIdx].strip().startswith("- ") or lines[headingIdx].strip() == ""):
                 headingIdx += 1
-            lines.insert(headingIdx, f"- {msg}")
+            lines.insert(headingIdx, f"- {total}")
         else:
             insertionPoint += 1
-            lines.insert(insertionPoint, f"{changeHeading}\n- {msg}")
+            lines.insert(insertionPoint, f"{changeHeading}\n- {total}")
         pass
 
         with open(CHANGELOG_PATH, "w") as f:
@@ -94,16 +100,18 @@ def gitAdd():            subprocess.run(["git", "add", "."])
 # -------- Main --------- #
 def main() -> int:
     import sys
-    if len(sys.argv) != 2 or sys.argv[1] not in CHANGE_TYPES:
-        showError(InvalidArgErrorExit, f"Usage: {sys.argv[0]} {'|'.join(CHANGE_TYPES.keys())}")
+    if len(sys.argv) < 3 or sys.argv[1] not in CHANGE_TYPES:
+        showError(InvalidArgErrorExit, f"Usage: {sys.argv[0]} {'|'.join(CHANGE_TYPES.keys())} {{module}} {{files...}}")
         return ErrorExit
 
     changeType: str = sys.argv[1]
+    module: str = (sys.argv[2] + ": " + ", ".join(sys.argv[3:])) if len(sys.argv) > 2 else sys.argv[2]
+
     msg: str = openEditor()
-    if msg == "":
+    if not msg:
         showError(ErrorExit, "No message provided, aborting.")
 
-    updateChangelog(changeType, msg)
+    updateChangelog(changeType, module, msg)
 
     gitAdd()
     gitCommit(msg)

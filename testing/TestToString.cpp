@@ -1,10 +1,14 @@
-#include "VaLib/Types/BasicTypedef.hpp"
-#include "VaLib/Types/Tuple.hpp"
+// VaLib - Vast Library
+// Licensed under GNU GPL v3 License. See LICENSE file.
+// (C) 2025 VaLibTeam
+
 #include <lib/testing.hpp>
 
-#include <VaLib/Types/String.hpp>
+#include <VaLib/Types/BasicTypedef.hpp>
 #include <VaLib/Utils/ToString.hpp>
 
+#include <VaLib/Types/String.hpp>
+#include <VaLib/Types/Tuple.hpp>
 #include <VaLib/Types/Dict.hpp>
 
 bool testToString(testing::Test& t) {
