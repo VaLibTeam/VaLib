@@ -12,3 +12,5 @@
 ## [1.8.0] - 2025-05-10
 ### Fixed
 - Improved the VaAny and VaFunc classes to no longer use the C++23-deprecated std::aligned_storage.
+### Added
+- Added a new `VaMethod` class for storing class methods. Minor fixes in `VaFunc`.

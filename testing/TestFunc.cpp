@@ -49,17 +49,17 @@ bool testPartial(testing::Test& t) {
 bool testFunc(testing::Test& t) {
     VaFunc<int(int, int)> add = [](int a, int b) { return a + b; };
     if (add(2, 3) != 5) {
-        return t.fail("unexpected result");
+        return t.fail("unexpected result (lambda)");
     }
 
     VaFunc<int()> fn = return123;
     if (fn() != 123) {
-        return t.fail("unexpected result");
+        return t.fail("unexpected result (function pointer)");
     }
 
     VaFunc<VaString()> fn2 = MyCallableCls();
     if (fn2() != "Hello!") {
-        return t.fail("unexpected result");
+        return t.fail("unexpected result (other callable class)");
     }
 
     if (!t.helper(testPartial)) return false;

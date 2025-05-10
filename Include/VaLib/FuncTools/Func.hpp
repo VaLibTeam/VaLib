@@ -10,7 +10,7 @@
 #include <type_traits>
 #include <utility>
 
-template <typename>
+template <typename Signature>
 class VaFunc;
 
 template <typename R, typename... Args>
@@ -26,7 +26,7 @@ protected:
         virtual R invoke(Args&&...) = 0;
         virtual CallableBase* clone(Buffer& buffer) const = 0;
         virtual CallableBase* move(Buffer& buffer) = 0;
-        virtual void destroy(bool inBuffer) noexcept = 0;
+        virtual void destroy(bool inBuffer) = 0;
         virtual ~CallableBase() = default;
     };
 
@@ -57,7 +57,7 @@ protected:
             }
         }
 
-        void destroy(bool inBuffer) noexcept override {
+        void destroy(bool inBuffer) noexcept(std::is_nothrow_destructible_v<F>) override {
             if (inBuffer) {
                 this->~CallableImpl();
             } else {
@@ -127,21 +127,38 @@ public:
         return *this;
     }
 
+    void swap(VaFunc& other) noexcept {
+        if (this == &other) return;
+
+        VaFunc tmp = std::move(other);
+        other = std::move(*this);
+        *this = std::move(tmp);
+    }
+
     void reset() {
-        if (callable) {
-            callable->destroy(inBuffer);
-            callable = nullptr;
-        }
+        if (!callable) return;
+
+        callable->destroy(inBuffer);
+        callable = nullptr;
     }
 
     inline R call(Args... args) const {
-        if (!callable) throw ValueError();
+        if (!callable) throw ValueError("call a null function");
         return callable->invoke(std::forward<Args>(args)...);
     }
 
     inline R operator()(Args... args) const {
-        if (!callable) throw ValueError();
+        if (!callable) throw ValueError("call a null function");
         return callable->invoke(std::forward<Args>(args)...);
+    }
+
+  public operators:
+    friend bool operator==(const VaFunc& lhs, std::nullptr_t rhs) noexcept {
+        return lhs.callable == nullptr;
+    }
+
+    friend bool operator!=(const VaFunc& lhs, std::nullptr_t rhs) noexcept {
+        return lhs.callable != nullptr;
     }
 
     inline explicit operator bool() const noexcept {
