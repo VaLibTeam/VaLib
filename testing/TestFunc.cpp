@@ -59,10 +59,15 @@ bool testTypeWrapper(testing::Test& t) {
     using VoidFuncWrapper = VaTypeWrapper<noReturnFunction>;
     VoidFuncWrapper{}();
 
+    auto unwrappedAdd = va::unwrapFunc<AddWrapper>();
+    if (unwrappedAdd(10, 20) != 30) {
+        return t.fail("unexpected result");
+    }
+
     return t.success();
 }
 #else
-bool testTypeWrapper(testing::Test&) {}
+bool testTypeWrapper(testing::Test&) { return t.success(); }
 #endif
 
 bool testFunc(testing::Test& t) {

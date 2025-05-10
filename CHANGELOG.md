@@ -15,3 +15,4 @@
 ### Added
 - Added a new `VaMethod` class for storing class methods. Minor fixes in `VaFunc`.
 - Added VaTypeWrapper that wraps a function into a struct with operator().
+- Added unwrapFunc.
