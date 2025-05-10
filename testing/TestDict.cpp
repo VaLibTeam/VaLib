@@ -2,6 +2,7 @@
 // Licensed under GNU GPL v3 License. See LICENSE file.
 // (C) 2025 VaLibTeam
 
+#include "VaLib/Types/List.hpp"
 #include <lib/testing.hpp>
 
 #include <VaLib/Types.hpp>
@@ -141,6 +142,7 @@ bool testDict(testing::Test& t) {
         if (orderedDict.at(k) != v) {
             return t.fail("unexpected result");
         }
+
         orderedDict[k] = 123;
         if (orderedDict.at(k) != 123) {
             return t.fail("unexpected result");

@@ -15,9 +15,12 @@ class VaFunc;
 
 template <typename R, typename... Args>
 class VaFunc<R(Args...)> {
-  protected:
-    static constexpr Size bufSize = sizeof(void*) * 8;
-    using Buffer = std::aligned_storage_t<bufSize, alignof(std::max_align_t)>;
+protected:
+    static constexpr Size bufSize = sizeof(void (*)()) * 8;
+
+    struct alignas(std::max_align_t) Buffer {
+        byte data[bufSize];
+    };
 
     struct CallableBase {
         virtual R invoke(Args&&...) = 0;
@@ -28,27 +31,29 @@ class VaFunc<R(Args...)> {
     };
 
     template <typename F>
-    struct CallableImpl: CallableBase {
-        F VaFunc;
+    struct CallableImpl : CallableBase {
+        F func;
 
         template <typename U>
-        CallableImpl(U&& f) : VaFunc(std::forward<U>(f)) {}
+        CallableImpl(U&& f) : func(std::forward<U>(f)) {}
 
-        R invoke(Args&&... args) override { return VaFunc(std::forward<Args>(args)...); }
+        R invoke(Args&&... args) override {
+            return func(std::forward<Args>(args)...);
+        }
 
         CallableBase* clone(Buffer& buffer) const override {
             if (sizeof(CallableImpl) <= bufSize) {
-                return new (&buffer) CallableImpl(VaFunc);
+                return new (&buffer) CallableImpl(func);
             } else {
-                return new CallableImpl(VaFunc);
+                return new CallableImpl(func);
             }
         }
 
         CallableBase* move(Buffer& buffer) override {
             if (sizeof(CallableImpl) <= bufSize) {
-                return new (&buffer) CallableImpl(std::move(VaFunc));
+                return new (&buffer) CallableImpl(std::move(func));
             } else {
-                return new CallableImpl(std::move(VaFunc));
+                return new CallableImpl(std::move(func));
             }
         }
 
@@ -62,14 +67,15 @@ class VaFunc<R(Args...)> {
     };
 
     CallableBase* callable = nullptr;
+
     bool inBuffer = false;
     Buffer buffer;
 
-  public:
+public:
     VaFunc() noexcept = default;
     VaFunc(std::nullptr_t) noexcept : VaFunc() {}
 
-    template <typename F, typename = std::enable_if_t<!std::is_same_v<std::decay_t<F>, VaFunc>>>
+    template <typename F, typename = std::enable_if_t< !std::is_same_v<std::decay_t<F>, VaFunc> >>
     VaFunc(F&& f) {
         using Impl = CallableImpl<std::decay_t<F>>;
         if (sizeof(Impl) <= bufSize) {
@@ -128,10 +134,17 @@ class VaFunc<R(Args...)> {
         }
     }
 
-    R operator()(Args... args) const {
+    inline R call(Args... args) const {
         if (!callable) throw ValueError();
         return callable->invoke(std::forward<Args>(args)...);
     }
 
-    explicit operator bool() const noexcept { return callable != nullptr; }
+    inline R operator()(Args... args) const {
+        if (!callable) throw ValueError();
+        return callable->invoke(std::forward<Args>(args)...);
+    }
+
+    inline explicit operator bool() const noexcept {
+        return callable != nullptr;
+    }
 };

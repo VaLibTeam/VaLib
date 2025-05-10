@@ -7,6 +7,7 @@
 #include <VaLib/Types/BasicTypedef.hpp>
 
 #include <cstring>
+#include <istream>
 #include <iterator>
 
 #if __cplusplus >= 202002L
@@ -18,6 +19,9 @@ class VaString;
 
 bool operator==(const VaString& lhs, const VaString& rhs) noexcept;
 bool operator!=(const VaString& lhs, const VaString& rhs) noexcept;
+
+template <typename>
+class VaSlice;
 
 /**
  * @brief String implementation for VaLib
@@ -47,6 +51,7 @@ class VaString {
 
   protected friends:
     friend class VaImmutableString;
+    friend class VaSlice<char>;
 
   public:
     /**
@@ -74,6 +79,7 @@ class VaString {
     VaString(const char* str, Size size) noexcept;
 
     VaString(Size count, char c) noexcept;
+    VaString(char ch) noexcept;
 
     /**
      * @brief Copy constructor. Creates a copy of another VaString
@@ -280,7 +286,7 @@ class VaString {
      */
     char* getData() noexcept;
 
-    inline operator std::string() const { return this->toStdString(); }
+    inline explicit operator std::string() const { return this->toStdString(); }
 
     /**
      * @brief  Provides access to the internal C-style string representation.
@@ -291,8 +297,8 @@ class VaString {
     const char* getData() const noexcept;
 
 #if __cplusplus >= 202002L
-    inline std::span<char> span() noexcept { return std::span<char>(data, len); }
-    inline std::span<const char> span() const noexcept { return std::span<const char>(data, len); }
+    [[ deprecated ]] inline std::span<char> span() noexcept { return std::span<char>(data, len); }
+    [[ deprecated ]] inline std::span<const char> span() const noexcept { return std::span<const char>(data, len); }
 #endif
 
     /**
@@ -315,6 +321,17 @@ class VaString {
      * @return A VaString containing the extracted substring.
      */
     VaString substr(Size start, Size length = npos) const;
+
+    /**
+     * @brief Clears the content of the string.
+     *
+     * @note this function resets the length of the string to zero and resizes
+     * the internal buffer to zero capacity, effectively clearing the string.
+     */
+    inline void clear() {
+        len = 0;
+        resize(0);
+    }
 
     /**
      * @brief Inserts a substring into the current VaString object at a specified position.
@@ -441,15 +458,7 @@ class VaString {
     inline ConstReverseIterator crend() const { return ConstReverseIterator(cbegin()); }
 };
 
-namespace std {
-
-template <>
-struct hash<VaString> {
-    Size operator()(const VaString& str) { return str.hash(); }
-};
-
-} // namespace std
-
 inline VaString operator"" _Vs(const char* str, Size size) { return VaString(str, size); }
 
 std::ostream& operator<<(std::ostream& os, const VaString& str);
+std::istream& operator>>(std::istream& os, const VaString& str);

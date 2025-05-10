@@ -114,7 +114,7 @@ void BenchmarkGroup::showResults() const {
 }
 
 void BenchmarkGroup::exportToMarkdown(const VaString& filename) const {
-    std::ofstream file(filename);
+    std::ofstream file(filename.toStdString());
     if (!file.good() || !file.is_open()) {
         std::cerr << "Failed to open file for Markdown export: " << filename << "\n";
         return;

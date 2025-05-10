@@ -3,6 +3,7 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
+#include <type_traits>
 #ifdef VaLib_USE_CONCEPTS
 #include <VaLib/Types/BasicConcepts.hpp>
 #endif
@@ -28,11 +29,20 @@ typedef float float32;
 typedef double float64;
 
 typedef int32 rune;
+typedef unsigned char byte;
 typedef unsigned int uint;
 
 typedef void FuncType();
 typedef void (*FuncPtr)();
 
+/**
+ * @brief Alias for a function pointer type.
+ * @tparam R The return type of the function.
+ * @tparam Args The parameter types of the function.
+ *
+ * @note This alias is specifically for raw function pointers.
+ * If you need to store lambdas, functors, or other callable objects, consider using @ref VaFunc from `FuncTools/Func.hpp` instead.
+ */
 template <typename R, typename... Args>
 using Function = R (*)(Args...);
 
@@ -48,29 +58,11 @@ typedef __int128_t int128;
 typedef __uint128_t uint128;
 #endif
 
+using TrueType = std::true_type;
+using FalseType = std::false_type;
+
 typedef size_t Size;
 
-// nothing. 🙏
+// nothing.
 struct NoneType {};
 constexpr NoneType nil{};
-
-namespace va::detail {
-class Blank {
-public:
-    constexpr Blank() noexcept = default;
-    constexpr Blank(const Blank&) noexcept = default;
-    constexpr Blank(Blank&&) noexcept = default;
-    constexpr Blank& operator=(const Blank&) noexcept = default;
-    constexpr Blank& operator=(Blank&&) noexcept = default;
-
-    template <typename T>
-    constexpr Blank& operator=(T&&) noexcept { return *this; }
-
-    template <typename T>
-    constexpr const Blank& operator=(T&&) const noexcept { return *this; }
-
-    explicit operator bool() const noexcept { return false; }
-};
-}
-
-constexpr va::detail::Blank _;

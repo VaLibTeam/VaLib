@@ -12,6 +12,7 @@
 
 #include <VaLib/Types/ImmutableString.hpp>
 #include <VaLib/Types/String.hpp>
+#include <VaLib/Utils/Strings.hpp>
 
 #include <VaLib/Types/List.hpp>
 #include <VaLib/Types/Tuple.hpp>
@@ -20,6 +21,44 @@
 #include <string>
 
 namespace va {
+
+#ifdef VaLib_USE_CONCEPTS
+
+template <typename T>
+VaString toString(T value) {
+    if constexpr (VaStringer<T>) {
+        return value.toString();
+    } else if constexpr (StdStringer<T>) {
+        return VaString(value.toStdString());
+    } else if constexpr (VaImmutableStringer<T>) {
+        return VaString(value.toImmutableString());
+    } else {
+        static_assert(sizeof(T) == 0, "Unsupported type for toString");
+    }
+}
+
+#endif
+
+inline VaString quote(const VaString& str) {
+    return "\"" + strings::escape(str) + "\"";
+}
+
+inline VaString toString(const VaString& str, bool needQuote = false) {
+    return needQuote ? quote(str) : str;
+}
+inline VaString toString(const VaImmutableString& str, bool needQuote = false) {
+    return needQuote ? quote(str) : VaString(str);
+}
+inline VaString toString(const std::string& str, bool needQuote = false) {
+    return needQuote ? quote(VaString(str)) : VaString(str);
+}
+inline VaString toString(const char* str, bool needQuote = false) {
+    return needQuote ? quote(VaString(str)) : VaString(str);
+}
+
+inline VaString toString(char ch, bool needQuote = false) {
+    return needQuote ? "\'" + VaString(ch) + '\'' : VaString(ch);
+}
 
 VaString toString(int64 num);
 inline VaString toString(int32 num) { return toString((int64)num); }
@@ -78,17 +117,17 @@ inline VaString toString(std::vector<T> lst) {
 
 template <typename... Ts>
 inline VaString toString(VaTuple<Ts...> tp) {
-    VaString result = toString(tp[0]);
-    tp.forEach([&](const auto& elm) {
-        result += ", " + toString(elm);
+    VaString result;
+    tp.forEachIndexed([&](auto index, const auto& elm) {
+        if (index > 0) {
+            result += ", ";
+        }
+
+        result += toString(elm);
     });
 
     return "(" + result + ")";
 }
-
-inline VaString toString(VaImmutableString str) { return VaString(str); }
-inline VaString toString(std::string str) { return VaString(str); }
-inline VaString toString(const char* str) { return VaString(str); }
 
 } // namespace va
 

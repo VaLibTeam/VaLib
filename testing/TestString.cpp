@@ -4,6 +4,7 @@
 
 #include <lib/testing.hpp>
 
+#include <VaLib/Types/Blank.hpp>
 #include <VaLib/Types/ImmutableString.hpp>
 #include <VaLib/Types/String.hpp>
 #include <VaLib/Utils/ToString.hpp>

@@ -304,8 +304,8 @@ class VaTuple<Head, Tail...>: protected VaTuple<Tail...> {
 };
 
 #if __cplusplus >= CPP17
-template<typename T>
-VaTuple(T) -> VaTuple<T>;
+template<typename... Ts>
+VaTuple(Ts...) -> VaTuple<Ts...>;
 #endif
 
 namespace va::detail {

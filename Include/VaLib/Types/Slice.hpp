@@ -8,6 +8,7 @@
 
 #include <VaLib/Types/Error.hpp>
 #include <VaLib/Types/List.hpp>
+#include <type_traits>
 
 /**
  * @class VaSlice A lightweight view into a contiguous sequence of elements.
@@ -23,6 +24,7 @@ class VaSlice {
     Size len; ///< Number of elements in the slice
 
     friend class VaList<T>;
+    friend class VaString;
 
   public:
     /**
@@ -52,6 +54,9 @@ class VaSlice {
      * @note This creates a view of the entire VaList
      */
     VaSlice(VaList<T>& list) : data(list.data), len(list.len) {}
+
+    template <typename U = T, typename = std::enable_if<std::same_as<U, char>>>
+    VaSlice(VaString& str) : len(str.len), data(str.data) {}
 
     /**
       * @brief Construct from any container with data() and size() methods
@@ -120,7 +125,7 @@ class VaSlice {
      *
      * @warning No bounds checking is performed - UB if index is invalid
      */
-    T& operator[](Size index) { return get(index); }
+    inline T& operator[](Size index) { return get(index); }
 
     /**
      * @brief Access const element without bounds checking
@@ -129,7 +134,7 @@ class VaSlice {
      *
      * @warning No bounds checking is performed - UB if index is invalid
      */
-    const T& operator[](Size index) const { return get(index); }
+    inline const T& operator[](Size index) const { return get(index); }
 
     /**
      * @brief Access element with bounds checking
@@ -139,7 +144,7 @@ class VaSlice {
      *
      * @note Safer but slower than operator[]
      */
-    T& at(Size index) {
+    inline T& at(Size index) {
         if (index >= len) throw IndexOutOfRangeError(len, index);
         return get(index);
     }
@@ -152,7 +157,7 @@ class VaSlice {
      *
      * @note Safer but slower than operator[]
      */
-    const T& at(Size index) const {
+    inline const T& at(Size index) const {
         if (index >= len) throw IndexOutOfRangeError(len, index);
         return get(index);
     }

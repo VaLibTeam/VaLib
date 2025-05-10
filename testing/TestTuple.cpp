@@ -18,8 +18,6 @@ bool testTuple(testing::Test& t) {
     auto tuple2 = va::mkTuple(VaString("Hello"), 3, nullptr, 2.34);
     auto tuple3 = tuple2;
 
-    auto test = VaTuple::Make(1, 2, 3);
-
     auto [str, num, ptr, flt] = tuple3;
     if (str != "Hello" || num != 3 || ptr != nullptr || flt != 2.34) {
         return t.fail("unexpected result");

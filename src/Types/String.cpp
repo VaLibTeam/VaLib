@@ -9,7 +9,7 @@
 
 #include <algorithm>
 #include <cstring>
-#include <stdexcept>
+#include <istream>
 #include <string>
 
 #define GROWTH_SEQ ((Size)(cap * 2))
@@ -39,6 +39,11 @@ VaString::VaString(const char* str, Size size) noexcept : len(size), cap(size) {
 VaString::VaString(Size count, char c) noexcept : len(count), cap(count) {
     data = new char[cap];
     std::memset(data, c, len);
+}
+
+VaString::VaString(char ch) noexcept : len(1), cap(1) {
+    data = new char[cap];
+    data[0] = ch;
 }
 
 VaString::VaString(const VaString& other) noexcept : len(other.len), cap(other.cap) {
@@ -125,7 +130,7 @@ VaString& VaString::operator+=(VaString&& other) noexcept {
     }
     std::memcpy(data + len, other.data, other.len);
     len = newLen;
-    other.data = nullptr;  // Move semantics: zero out other
+    other.data = nullptr;
     other.len = 0;
     other.cap = 0;
     return *this;
@@ -234,7 +239,7 @@ VaString VaString::substr(Size start, Size length) const {
 
 VaString& VaString::insert(Size pos, const char* str, Size strLen) {
     if (pos > len) {
-        throw IndexOutOfRangeError("Insert position is out of range.");
+        throw IndexOutOfRangeError("insert position is out of range.");
     }
     reserve(len + strLen);
     std::memmove(data + pos + strLen, data + pos, len - pos);
@@ -245,4 +250,29 @@ VaString& VaString::insert(Size pos, const char* str, Size strLen) {
 
 std::ostream& operator<<(std::ostream& os, const VaString& str) {
     return os.write(str.getData(), len(str));
+}
+
+std::istream& operator>>(std::istream& is, VaString& str) {
+    str.clear();
+
+    std::istream::sentry s(is, true);
+    if (!s) return is;
+
+    std::streambuf* sb = is.rdbuf();
+    while (true) {
+        int c = sb->sbumpc();
+        if (c == EOF) {
+            is.setstate(std::ios::eofbit);
+            break;
+        }
+        if (std::isspace(c)) {
+            if (sb->sputbackc(static_cast<char>(c)) == EOF)
+                is.setstate(std::ios::failbit);
+            break;
+        }
+
+        str += static_cast<char>(c);
+    }
+
+    return is;
 }

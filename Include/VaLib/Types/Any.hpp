@@ -4,25 +4,22 @@
 #pragma once
 
 #include <VaLib/Types/BasicTypedef.hpp>
-
 #include <VaLib/Types/Error.hpp>
 
-#include <memory>
-#include <type_traits>
-#include <utility>
-
-#include <new>
-#include <stdexcept>
-#include <type_traits>
 #include <typeinfo>
-#include <utility>
+#include <type_traits>
+#include <stdexcept>
+#include <new>
+#include <memory>
 
 class VaAny {
   protected:
     using TypeID = const std::type_info;
 
-    static constexpr std::size_t SBO_SIZE = 24;
-    using Storage = std::aligned_storage_t<SBO_SIZE, alignof(std::max_align_t)>;
+    static constexpr Size SBO_SIZE = 24;
+    struct alignas(std::max_align_t) AlignedBuffer {
+        byte data[SBO_SIZE];
+    };
 
     struct VTable {
         void (*destroy)(void*);
@@ -37,7 +34,7 @@ class VaAny {
 
     union {
         void* heapPtr;
-        Storage sboBuf;
+        AlignedBuffer sboBuf;
     };
 
     void* dataPtr() { return onHeap ? heapPtr : static_cast<void*>(&sboBuf); }
@@ -53,7 +50,7 @@ class VaAny {
                 if constexpr (std::is_copy_constructible_v<T>) {
                     new (dest) T(*static_cast<const T*>(src));
                 } else {
-                    throw std::runtime_error("Type is not copyable");
+                    throw TypeError("Type is not copyable");
                 }
             },
 
@@ -67,7 +64,7 @@ class VaAny {
                     new (mem) T(*static_cast<const T*>(src));
                     return mem;
                 } else {
-                    throw std::runtime_error("Type is not copyable");
+                    throw TypeError("Type is not copyable");
                 }
             }};
         return &vt;
@@ -90,11 +87,7 @@ class VaAny {
             if (onHeap) {
                 heapPtr = vtable->clone(other.dataPtr());
             } else {
-                if (vtable->copy) {
-                    vtable->copy(other.dataPtr(), &sboBuf);
-                } else {
-                    throw std::runtime_error("Type is not copyable");
-                }
+                vtable->copy(other.dataPtr(), &sboBuf);
             }
         }
     }
@@ -130,11 +123,7 @@ class VaAny {
                 if (onHeap) {
                     heapPtr = vtable->clone(other.dataPtr());
                 } else {
-                    if (vtable->copy) {
-                        vtable->copy(other.dataPtr(), &sboBuf);
-                    } else {
-                        throw std::runtime_error("Type is not copyable");
-                    }
+                    vtable->copy(other.dataPtr(), &sboBuf);
                 }
             }
         }
@@ -172,7 +161,7 @@ class VaAny {
         type = &typeid(U);
         vtable = vt;
 
-        if (sizeof(U) <= SBO_SIZE && alignof(U) <= alignof(Storage)) {
+        if (sizeof(U) <= SBO_SIZE && alignof(U) <= alignof(AlignedBuffer)) {
             onHeap = false;
             new (&sboBuf) U(std::forward<T>(value));
         } else {

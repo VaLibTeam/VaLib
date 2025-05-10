@@ -1,3 +1,5 @@
+#include "VaLib/Types/BasicTypedef.hpp"
+#include "VaLib/Types/Tuple.hpp"
 #include <lib/testing.hpp>
 
 #include <VaLib/Types/String.hpp>
@@ -10,11 +12,8 @@ bool testToString(testing::Test& t) {
 
     // int
     VaDict<int, VaString> intTests = {
-        {0, "0"},
-        {1, "1"},
-        {-1, "-1"},
-        {818, "818"},
-        {-123, "-123"},
+        {0, "0"}, {1, "1"}, {-1, "-1"},
+        {818, "818"}, {-123, "-123"},
         {1000000, "1000000"},
     };
 
@@ -26,8 +25,7 @@ bool testToString(testing::Test& t) {
 
     // uint
     VaDict<uint, VaString> uintTests = {
-        {0, "0"},
-        {1, "1"},
+        {0, "0"}, {1, "1"},
         {123, "123"},
         {4294967295, "4294967295"},
     };
@@ -105,6 +103,32 @@ bool testToString(testing::Test& t) {
             return t.fail("std::string toString failed: " + toString(val));
         }
     }
+
+    VaTuple<int, VaString, float64> tt1(10, "Hello", 3.14);
+    if (va::toString(tt1) != "(10, Hello, 3.14)") {
+        return t.fail("VaTuple toString failed: " + va::toString(tt1));
+    }
+
+    VaTuple<float32, float64, int> tt3(1.5f, 2.718, 100);
+    if (va::toString(tt3) != "(1.5, 2.718, 100)") {
+        return t.fail("VaTuple toString failed: " + va::toString(tt3));
+    }
+
+    VaTuple<int, int, int, int> tt5(1, 2, 3, 4);
+    if (va::toString(tt5) != "(1, 2, 3, 4)") {
+        return t.fail("VaTuple toString failed: " + va::toString(tt5));
+    }
+
+    // VaDict<VaDict<VaString, int>, VaString> dictTests = {
+    //     {{{"hello", 1}, {"world", 2}}, "{hello: 1, world: 2}"},
+    //     {{{"Goodbye", 100}, {"mars?", -50}}, "{Goodbye: 100, mars?: -50}"},
+    // };
+
+    // for (const auto& [val, expected]: dictTests) {
+    //     if (va::toString(val) != expected) {
+    //         return t.fail("VaDict toString failed: " + va::toString(val));
+    //     }
+    // }
 
     return t.success();
 }

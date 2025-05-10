@@ -125,8 +125,10 @@ class VaList {
      * @tparam Args Types of the arguments.
      * @param args Values to initialize the list with.
      */
-    template <typename... Args,
-        typename = std::enable_if_t<(std::is_constructible_v<T, Args> && ...)>>
+    template <
+        typename... Args,
+        typename = std::enable_if_t<(std::is_constructible_v<T, Args> && ...)>
+    >
     VaList(Args&&... args) : len(sizeof...(Args)), cap(sizeof...(Args)) {
         data = static_cast<T*>(std::malloc(cap * sizeof(T)));
         Size i = 0;
@@ -141,6 +143,42 @@ class VaList {
             deleteObjects();
             std::free(data);
         }
+    }
+
+    /**
+     * @brief Constructs the list from a variadic list of arguments.
+     * @tparam Args Types of the arguments.
+     * @param args Values to initialize the list with.
+     */
+    template <
+        typename... Args,
+        typename = std::enable_if_t<(std::is_constructible_v<T, Args> && ...)>
+    >
+    static VaList From(Args&&... args) {
+        VaList list;
+        list.len = list.cap = (sizeof...(Args));
+        list.data = static_cast<T*>(std::malloc(list.cap * sizeof(T)));
+        Size i = 0;
+        ((new (&list.data[i++]) T(std::forward<Args>(args))), ...);
+
+        return list;
+    }
+
+    /**
+     * @brief Creates a VaList filled with a specified number of copies of a given value.
+     * @param count The number of elements to create in the list.
+     * @param val The value to fill the list with.
+     * @return A VaList containing `count` copies of `val`.
+     */
+    static VaList Filled(Size count, const T& val) {
+        VaList list;
+        list.len = list.cap = count;
+        list.data = static_cast<T*>(std::malloc(sizeof(T) * count));
+        for (Size i = 0; i < count; i++) {
+            new (&list.data[i]) T(val);
+        }
+
+        return list;
     }
 
     /**
@@ -484,6 +522,18 @@ class VaList {
      * @brief Shrinks the internal capacity to fit the current size.
      */
     inline void shrink() { resize(len + 1); }
+
+    /**
+     * @brief Fills the list with the specified value.
+     * @param val The value to fill the list with.
+     *
+     * @note This method replaces all elements in the list with the given value. The size of the list remains unchanged.
+     */
+    inline void fill(const T& val) {
+        for (Size i = 0; i < len; i++) {
+            data[i] = val;
+        }
+    }
 
     /**
      * @brief Creates a slice from the given start index to the end.

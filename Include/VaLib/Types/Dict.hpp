@@ -5,15 +5,10 @@
 
 #include <VaLib/Types/BasicTypedef.hpp>
 #include <VaLib/Utils/BasicDefine.hpp>
-
+#include <VaLib/Utils/Hash.hpp>
 #include <VaLib/Types/Error.hpp>
 #include <VaLib/Types/Pair.hpp>
 #include <VaLib/Types/List.hpp>
-
-template <typename K>
-struct VaDictHash {
-    Size operator()(const K& key) const { return std::hash<K>()(key); }
-};
 
 template <typename K, typename V>
 struct VaDictEntry {
@@ -40,7 +35,7 @@ struct VaDictEntry {
  *
  * @note it preserves the order in which elements were inserted.
  */
-template <typename K, typename V, typename Hash = VaDictHash<K>>
+template <typename K, typename V, typename Hash = VaHash<K>>
 class VaDict {
   protected:
     using Entry = VaDictEntry<K, V>;
@@ -456,6 +451,16 @@ class VaDict {
         return true;
     }
 
+    Size hash() const {
+        Size hash = 0;
+        Entry* current = head;
+        while (current != nullptr) {
+            hash ^= std::hash<K>{}(current->key) ^ (std::hash<V>{}(current->value) << 1);
+            current = current->nextOrder;
+        }
+        return hash;
+    }
+
     /**
      * @brief Ensures capacity is at least the specified amount.
      * @param minCap The minimum number of buckets to reserve.
@@ -648,7 +653,7 @@ class VaDict {
             entry = entry->next;
         }
 
-        // Create and link new entry directly
+        // create and link new entry directly
         Entry* newEntry = new Entry(key, V());
         newEntry->next = buckets[index];
         buckets[index] = newEntry;
@@ -665,7 +670,6 @@ class VaDict {
         return newEntry->value;
     }
 
-    // --- at
     /**
      * @brief Returns a reference to the value for the given key.
      * @param key The key to search for.

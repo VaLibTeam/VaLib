@@ -6,6 +6,7 @@
 #include <VaLib/Types/ImmutableString.hpp>
 #include <VaLib/Types/String.hpp>
 
+#include <concepts>
 #include <string>
 
 template <typename T>
@@ -20,5 +21,5 @@ concept VaStringer = requires(T t) {
 
 template <typename T>
 concept VaImmutableStringer = requires(T t) {
-    { t.toImmutableString() } -> std::same_as<VaImmutableString>;
+    { t.toImmutableString() } -> std::convertible_to<VaImmutableString>;
 };

@@ -9,3 +9,6 @@
 - Updated Doxyfile, for displaying README.md as main page.
 ### Fixed
 - Fixed --build-all in build.sh.
+## [1.8.0] - 2025-05-10
+### Fixed
+- Improved the VaAny and VaFunc classes to no longer use the C++23-deprecated std::aligned_storage.

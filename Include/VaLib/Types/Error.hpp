@@ -11,10 +11,10 @@
     virtual void throwIt() const override { throw *this; }
 
 template <typename T, typename = void>
-struct hasThrowIt: std::false_type {};
+struct hasThrowIt: FalseType {};
 
 template <typename T>
-struct hasThrowIt<T, decltype(std::declval<T>().throwIt(), void())>: std::true_type {};
+struct hasThrowIt<T, decltype(std::declval<T>().throwIt(), void())>: TrueType {};
 
 template <typename T>
 constexpr bool hasThrowItV = hasThrowIt<T>::value;

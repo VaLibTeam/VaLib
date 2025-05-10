@@ -9,17 +9,6 @@
 #include <VaLib/Types/List.hpp>
 #include <VaLib/Types/Slice.hpp>
 
-#include <iostream>
-
-std::ostream& operator<<(std::ostream& os, VaList<int> list) {
-    os << "[";
-    for (const auto elm: list) {
-        os << elm << ", ";
-    }
-    os << "]";
-    return os;
-}
-
 bool testList(testing::Test& t) {
     VaList<int> numbers = {1, 2, 3};
     for (int i = 0; i < len(numbers); i++) {
@@ -110,7 +99,7 @@ bool testList(testing::Test& t) {
     VaList<int8> list6 = {1, 6, 5, 2, 5, 7, 9};
     VaSlice<int8> slice(list6);
 
-    for (int i = 0; i < len(list6); i++) {
+    for (Size i = 0; i < len(list6); i++) {
         if (list6[i] != slice[i]) {
             return t.fail("does not work properly with VaSlice");
         }
