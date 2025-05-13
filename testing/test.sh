@@ -38,7 +38,7 @@ benchmarks=()
 
 Clean() {
     if [[ -d "$OUTDIR" ]]; then
-        echo "Cleaning directory: $OUTDIR"
+        ShowProgress "Cleaning directory: $OUTDIR"
         rm -rf "$OUTDIR"
     fi
 
@@ -191,7 +191,6 @@ Test() {
     CompileTest "$testFile"
 
     RunTarget "$out"
-
     exitCode="$?"
     if [[ $exitCode -eq 127 ]]; then
         echo -e "\033[31;1m" "$testFile: TODO." "\033[0m\033[30m TODO: Implement test $testFile: $testFile.cpp" "\033[0m"
@@ -228,8 +227,8 @@ Benchmark() {
     CompileBenchmark "$benchFile"
 
     ShowInfo "start"
-    RunTarget "$out"
 
+    RunTarget "$out"
     exitCode="$?"
     if [[ $exitCode -eq 127 ]]; then
         echo -e "\033[33;1m" "$benchFile: TODO." "\033[0m\033[33m TODO: Implement benchmark $benchFile: $benchFile.cpp" "\033[0m"
@@ -264,11 +263,11 @@ PrintAll() {
             obj="$(NameObj "$tg")"
             out="$(NameOut "$tg")"
             if NeedsCompile "$obj" "$tg.cpp" && NeedsCompile "$out" "$obj"; then
-                echo -e "${tg}"
+                echo -en "${tg} "
             elif NeedsCompile "$obj" "$tg.cpp"; then
-                echo -e "${BOLD}${YELLOW}${tg}${RESET}"
+                echo -en "${BOLD}${YELLOW}${tg}${RESET} "
             else
-                echo -e "${BOLD}${tg}${RESET}"
+                echo -en "${BOLD}${tg}${RESET} "
             fi
         done
     fi
@@ -288,7 +287,9 @@ Main() {
     if [[ "${tests[*]}" == "ALL" || ($totalBenchmarks -le 0 && $totalTests -le 0) ]]; then
         tests=()
         while IFS= read -r file; do
-            [[ "$(dirname "$file")" == "." ]] && tests+=("$(basename "$file" .cpp)")
+            if [[ "$(dirname "$file")" == "." ]]; then
+                tests+=("$(basename "$file" .cpp)")
+            fi
         done < <(find . -maxdepth 1 -iname "Test*.cpp")
     fi
 
@@ -331,6 +332,7 @@ Main() {
         failed=0
 
         [[ $totalTests -gt 0 ]] && echo
+
         ShowInfo "Running benchmarks..."
         for bench in "${benchmarks[@]}"; do
             if Benchmark "$bench"; then

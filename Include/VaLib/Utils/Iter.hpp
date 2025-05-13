@@ -3,11 +3,30 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-template <typename T>
-class ReverseIter {
-  protected:
-    T iter;
+#include <VaLib/Meta/BasicDefine.hpp>
 
-  public:
-    ReverseIter
+#include <iterator>
+
+template <typename Container>
+class VaReversedIter {
+    Container& container;
+
+public:
+    VaReversedIter(Container& c) : container(c) {}
+
+    auto begin() const { return std::rbegin(container); }
+    auto end() const { return std::rend(container); }
 };
+
+#if __cplusplus >= CPP20
+
+#endif
+
+namespace va {
+
+template <typename Container>
+VaReversedIter<Container> reverseIterator(Container& c) {
+    return VaReversedIter<Container>(c);
+}
+
+}

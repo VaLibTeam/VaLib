@@ -8,7 +8,7 @@
 #include <concepts>
 #endif
 
-#include <VaLib/Utils/BasicDefine.hpp>
+#include <VaLib/Meta/BasicDefine.hpp>
 #include <VaLib/Types/String.hpp>
 
 #include <functional>

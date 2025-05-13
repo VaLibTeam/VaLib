@@ -1,7 +1,6 @@
 #!/bin/env bash
 
 NotExit=n
-
 colors=true
 
 ShowError() {
@@ -145,3 +144,6 @@ GREEN="\033[32m"
 YELLOW="\033[33m"
 BOLD="\033[1m"
 RESET="\033[0m"
+
+# VaLib Version
+VERSION='1.9.0'

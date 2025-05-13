@@ -13,7 +13,6 @@ InvalidArgErrorExit = 1
 ErrorExit = 2
 
 CHANGELOG_PATH: str = 'CHANGELOG.md'
-VERSION: str = '1.9.0'
 
 CHANGE_TYPES: dict[str, str] = {
     "add": "Added",

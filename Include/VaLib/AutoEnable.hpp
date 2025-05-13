@@ -3,7 +3,7 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#include <VaLib/Utils/BasicDefine.hpp>
+#include <VaLib/Meta/BasicDefine.hpp>
 
 #if __cplusplus >= CPP20
 #define VaLib_USE_CONCEPTS
@@ -38,3 +38,5 @@ typedef uint64_t uint64;
 // #define VaLib_NOT_DEFINE_NONETYPE_NIL      // NoneType, nil
 // #define VaLib_NOT_DEFINE_SIZE              // Size
 // #define VaLib_NOT_DEFINE_BYTE_WORDS        // Byte, Word, DWord, QWord
+// #define VaLib_NOT_DEFINE_BYTE              // byte
+// #define VaLib_NOT_DEFINE_RUNE              // rune

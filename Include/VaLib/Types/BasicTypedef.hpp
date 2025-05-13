@@ -7,10 +7,6 @@
 #include <VaLib/Types/BasicConcepts.hpp>
 #endif
 
-#if __cplusplus >= CPP20
-#include <stdfloat>
-#endif
-
 #include <VaLib/Types/TypeTraits.hpp>
 
 #include <stddef.h>
@@ -42,7 +38,8 @@
 #endif
 
 #ifndef VaLib_NOT_DEFINE_FLOATS
-    #if __cplusplus >= CPP20
+    #if __cplusplus >= CPP20 && defined(__STDCPP_FLOAT32_T__) && defined(__STDCPP_FLOAT64_T__)
+        #include <stdfloat>
         typedef std::float32_t float32;
         typedef std::float64_t float64;
     #else
@@ -53,8 +50,13 @@
     typedef long double floatExt;
 #endif
 
-typedef int32_t rune;
-typedef unsigned char byte;
+#ifndef VaLib_NOT_DEFINE_RUNE
+    typedef int32_t rune;
+#endif
+
+#ifndef VaLib_NOT_DEFINE_BYTE
+    typedef unsigned char byte;
+#endif
 
 #ifndef VaLib_NOT_DEFINE_FUNCTIONS
     typedef void FuncType();

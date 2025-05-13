@@ -13,11 +13,41 @@
 ## Overview
 **VaLib** is a modern and extensible C++ library, currently in early beta. It offers a wide variety of useful types, functions, and abstractions to streamline development and enhance productivity.
 
+## Quick Example
+Replace verbose STL code like this:
+
+```cpp
+std::vector<int> vec_int{1, 2, 3, 4, 5};
+std::vector<std::string> vec_str;
+
+for (int i = 0; i < vec_int.size(); i++) {
+    vec_str.push_back(std::to_string(vec_int[i]));
+}
+
+std::cout << vec_str.at(0);
+for (int i = 1; i < vec_str.size(); i++) {
+    std::cout << ", " << vec_str[i];
+}
+```
+
+with clean, expressive VaLib code:
+```cpp
+VaList<int> intList = {1, 2, 3, 4, 5};
+VaList<VaString> strList = va::map(va::toString, intList);
+std::cout << strList;
+```
+
+> No manual loops.
+> No `push_back`.
+> Just expressive, functional C++.
+
+
+
 ## Building
 Building VaLib is simple — we provide a tool that handles everything for you!
 
 > [!NOTE]
-> VaLib currently has no external dependencies beyond `libstdc++`, so you don't need to install anything extra.
+> VaLib currently has no external dependencies beyond `libstdc++` (or other standard C++ library like `libc++`), so you don't need to install anything extra.
 
 To build the library, just run:
 

@@ -3,6 +3,6 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#include <VaLib/Utils/BasicDefine.hpp>
+#include <VaLib/Meta/BasicDefine.hpp>
 
 TODO(maqi-x, "Implement VaLinkedChunkedList.");

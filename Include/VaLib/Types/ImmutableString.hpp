@@ -4,7 +4,7 @@
 #pragma once
 
 #include <VaLib/Types/BasicTypedef.hpp>
-#include <VaLib/Utils/BasicDefine.hpp>
+#include <VaLib/Meta/BasicDefine.hpp>
 
 #include <iterator>
 

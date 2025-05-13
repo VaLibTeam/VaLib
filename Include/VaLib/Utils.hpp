@@ -3,8 +3,6 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#include <VaLib/Utils/BasicDefine.hpp>
-
 #include <VaLib/Utils/Make.hpp>
 #include <VaLib/Utils/ToString.hpp>
 #include <VaLib/Utils/format.hpp>

@@ -3,14 +3,13 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#include <VaLib/Utils/BasicDefine.hpp>
+#include <VaLib/Meta/BasicDefine.hpp>
 
 #include <VaLib/Types/String.hpp>
 #include <VaLib/Types/ImmutableString.hpp>
 
 #include <compare>
 #include <string>
-
 #define VaLib_VERSION_MAJOR 1
 #define VaLib_VERSION_MINOR 9
 #define VaLib_VERSION_PATCH 0

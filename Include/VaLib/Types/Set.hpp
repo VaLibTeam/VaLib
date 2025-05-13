@@ -3,10 +3,12 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#include <VaLib/Utils/BasicDefine.hpp>
+#include <VaLib/Meta/BasicDefine.hpp>
 
 #include <VaLib/Types/BasicTypedef.hpp>
 #include <VaLib/Types/Pair.hpp>
+
+#include <functional>
 
 enum class VaSetTreeColor { Red, Black };
 

@@ -8,7 +8,7 @@
 #endif
 
 #include <VaLib/Types/BasicTypedef.hpp>
-#include <VaLib/Utils/BasicDefine.hpp>
+#include <VaLib/Meta/BasicDefine.hpp>
 
 #include <VaLib/Types/Error.hpp>
 #include <VaLib/Types/Pair.hpp>

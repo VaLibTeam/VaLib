@@ -1,0 +1,7 @@
+CompileFlags:
+  Add: [-Wall, -Wextra, -std=c++20]
+  Remove: [-fno-rtti]
+Diagnostics:
+  UnusedIncludes: Strict
+Index:
+  Background: Skip

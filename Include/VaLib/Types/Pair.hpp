@@ -91,10 +91,11 @@ class VaPair {
     template <int N>
     auto& get() noexcept {
         static_assert(N >= 0 && N < 2, "VaPair::get: invalid argument");
-        if constexpr (N == 0)
+        if constexpr (N == 0) {
             return first;
-        else if constexpr (N == 1)
+        } else if constexpr (N == 1) {
             return second;
+        }
     }
 
     /**
@@ -108,10 +109,11 @@ class VaPair {
     template <int N>
     const auto& get() const noexcept {
         static_assert(N >= 0 && N < 2, "VaPair::get: invalid argument");
-        if constexpr (N == 0)
+        if constexpr (N == 0) {
             return first;
-        else if constexpr (N == 1)
+        } else if constexpr (N == 1) {
             return second;
+        }
     }
 };
 
