@@ -1,20 +1,23 @@
 #!/usr/bin/env python3
 import os
 import sys
-import pathlib
+
+from pathlib import Path
 from typing import Generator
 
-from utils import *
+from utils import showSuccess, showWarn, showInfo, showOk
 
-# === Headers ===
-commonHeader: str = """// VaLib - Vast Library
+# --- Headers ---
+commonHeader: str = """
+// VaLib - Vast Library
 // Licensed under GNU GPL v3 License. See LICENSE file.
-// (C) 2025 VaLibTeam"""
+// (C) 2025 VaLibTeam
+""".strip()
 
 headerHeader: str = commonHeader
 sourceHeader: str = commonHeader
 
-# === Helpers ===
+# --- Helpers ---
 def readFileLines(path: str) -> list[str]:
     with open(path, 'r', encoding='utf-8') as f:
         return f.read().splitlines()
@@ -41,14 +44,14 @@ def fixFile(path: str, isHeader: bool, expectedHeader: str):
     lines: list[str] = readFileLines(path) if os.path.exists(path) else []
     headerLines: list[str] = expectedHeader.splitlines()
 
-    # Determine where real content starts
+    # determine where real content starts
     start: int = 0
     if checkHeader(lines, expectedHeader):
         start = len(headerLines)
         if isHeader and hasPragmaOnce(lines, expectedHeader):
             start += 1
 
-    # Skip empty lines
+    # skip empty lines
     while start < len(lines) and lines[start].strip() == "":
         start += 1
 
@@ -57,7 +60,7 @@ def fixFile(path: str, isHeader: bool, expectedHeader: str):
     if isHeader and not hasPragmaOnce(lines, expectedHeader):
         newLines.append("#pragma once")
 
-    newLines.append("")  # Blank line
+    newLines.append("")  # blank line
     newLines += lines[start:]
 
     writeFileLines(path, newLines)
@@ -93,13 +96,13 @@ def main() -> int:
 
     fixed: bool = False
     for path in findFiles():
-        ext: str = pathlib.Path(path).suffix
+        ext: str = Path(path).suffix
         isHeader: bool = ext == ".hpp"
         header: str = headerHeader if isHeader else sourceHeader
         fixed = processFile(path, fix, isHeader, header) or fixed
 
     if not fixed:
-        showSuccess("Nothing to do!")
+        showOk("Nothing to do!")
     else:
         showSuccess("Done")
 

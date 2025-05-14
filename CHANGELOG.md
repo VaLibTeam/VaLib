@@ -27,3 +27,7 @@
 ## [1.9.0] - 2025-05-13
 ### Added
 - **( scripts: version.py )** Added better version management with `scripts/version.py`.
+
+## [1.9.0] - 2025-05-14
+### Changed
+- **( scripts: new.py )** Refactored new.py script.
