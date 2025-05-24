@@ -5,9 +5,9 @@
 
 cd "$(dirname "$0")" || exit 1
 source "../scripts/utils.sh" || exit 1
+source "../scripts/get-cxx-flags.sh" || exit 1
 
 CXX="${CXX:-g++}"
-CXXFLAGS="${CXXFLAGS:-"-std=c++20 -O3 -fPIC"}"
 
 includePath=(
     "../Include"
@@ -21,12 +21,8 @@ EnvironmentErrorExit=3
 InvalidFlagExit=4
 ErrorExit=5
 
-OUTDIR="build"
-if [[ -z "$OUTDIR" ]]; then
-    OUTDIR="build"
-fi
-
-LIBSDIR="libs"
+LIBSDIR="${LIBSDIR:-libs}"
+OUTDIR="${OUTDIR:-build}"
 
 buildMode="-L./"
 
@@ -35,6 +31,7 @@ verbose=false
 
 tests=()
 benchmarks=()
+metaTests=()
 
 Clean() {
     if [[ -d "$OUTDIR" ]]; then
@@ -60,8 +57,11 @@ Help() {
     echo "Targets:"
     echo "  -Test{NAME}                 Run specific test"
     echo "  -Benchmark{NAME}            Run specific benchmark"
+    echo "  -MetaTest{NAME}              Run specific meta test (static_assert compile-time test)"
+    echo
     echo "  -TestAll                    Run all available tests"
     echo "  -BenchmarkAll               Run all available benchmarks"
+    echo "  -MetaTestAll                 Run all available meta tests"
     echo
     echo "If no targets specified, all tests and benchmarks will be run."
 
@@ -75,11 +75,15 @@ ParseFlags() {
             tests=("ALL") ;;
         -BenchmarkAll)
             benchmarks=("ALL") ;;
+        -MetaTestAll)
+            metaTests+=("ALL") ;;
 
         -Test*)
             tests+=("${arg##-}") ;;
         -Benchmark*)
             benchmarks+=("${arg##-}") ;;
+        -MetaTest*)
+            metaTests+=("${arg##-}") ;;
 
         --echo | --verbose | -v)
             verbose=true ;;
@@ -95,7 +99,7 @@ ParseFlags() {
         --cxx=*)
             CXX="${arg#*=}" ;;
         --cxxflags=*)
-            CXXFLAGS="${arg#*=}" ;;
+            read -ra CXXFLAGS <<< "${arg#*=}" ;;
 
         --outdir=*)
             OUTDIR="${arg#*=}" ;;
@@ -174,11 +178,11 @@ CompileTest() {
 
     # Check if object file needs to be recompiled
     if NeedsCompile "$obj" "$testFile.cpp"; then
-        "$CXX" $CXXFLAGS "$testFile.cpp" "${includePath[@]/#/-I}" -c -o "$obj" || ShowError $CompilationErrorExit "Test \"$testFile\" failed to compile."
+        "$CXX" "${CXXFLAGS[@]}" "$testFile.cpp" "${includePath[@]/#/-I}" -c -o "$obj" || ShowError $CompilationErrorExit "Test \"$testFile\" failed to compile."
     fi
 
     if NeedsCompile "$out" "$obj" || [[ "build/testing.o" -nt "$out" ]]; then
-        "$CXX" $CXXFLAGS $buildMode "$obj" "build/testing.o" -o "$out" || ShowError $LinkingErrorExit "Test \"$testFile\" failed to link."
+        "$CXX" "${CXXFLAGS[@]}" $buildMode "$obj" "build/testing.o" -o "$out" || ShowError $LinkingErrorExit "Test \"$testFile\" failed to link."
     fi
 }
 
@@ -191,7 +195,7 @@ Test() {
     CompileTest "$testFile"
 
     RunTarget "$out"
-    exitCode="$?"
+    local exitCode="$?"
     if [[ $exitCode -eq 127 ]]; then
         echo -e "\033[31;1m" "$testFile: TODO." "\033[0m\033[30m TODO: Implement test $testFile: $testFile.cpp" "\033[0m"
         return 1
@@ -210,11 +214,11 @@ CompileBenchmark() {
     local out="$(NameOut "$benchFile")"
 
     if NeedsCompile "$out" "$obj"; then
-        "$CXX" $CXXFLAGS "$benchFile.cpp" "${includePath[@]/#/-I}" -c -o "$obj" || ShowError $CompilationErrorExit "Benchmark \"$benchFile\" failed to compile."
+        "$CXX" "${CXXFLAGS[@]}" "$benchFile.cpp" "${includePath[@]/#/-I}" -c -o "$obj" || ShowError $CompilationErrorExit "Benchmark \"$benchFile\" failed to compile."
     fi
 
     if NeedsCompile "$out" "$obj" || [[ "build/benchmarking.o" -nt "$out" ]]; then
-        "$CXX" $CXXFLAGS $buildMode "$obj" "build/benchmarking.o" -o "$out" || ShowError $LinkingErrorExit "Benchmark \"$benchFile\" failed to link."
+        "$CXX" "${CXXFLAGS[@]}" $buildMode "$obj" "build/benchmarking.o" -o "$out" || ShowError $LinkingErrorExit "Benchmark \"$benchFile\" failed to link."
     fi
 }
 
@@ -229,7 +233,7 @@ Benchmark() {
     ShowInfo "start"
 
     RunTarget "$out"
-    exitCode="$?"
+    local exitCode="$?"
     if [[ $exitCode -eq 127 ]]; then
         echo -e "\033[33;1m" "$benchFile: TODO." "\033[0m\033[33m TODO: Implement benchmark $benchFile: $benchFile.cpp" "\033[0m"
         return 1
@@ -242,13 +246,39 @@ Benchmark() {
     fi
 }
 
+CompileMetaTest() {
+    local metaFile="$1"
+    local obj="$(NameObj "$metaFile")"
+
+    "$CXX" "${CXXFLAGS[@]}" "$metaFile.cpp" "${includePath[@]/#/-I}" -c -o "$obj" 2> "$OUTDIR/${metaFile}-compile.log"
+    return $?
+}
+
+MetaTest() {
+    local metaFile="$1"
+    echo -e "\033[36;1m" "MetaTesting $metaFile..." "\033[0m"
+
+    CompileMetaTest "$metaFile"
+    local exitCode="$?"
+    if [[ $exitCode -eq 0 ]]; then
+        rm -f "$out"
+        rm -f "$OUTDIR/${metaFile}-compile.log"
+
+        echo -e  "\033[36;1m" "$metaFile: pass." "\033[0m"
+        return 0
+    else
+        echo -e "\033[31;1m" "$metaFile: fail." "\033[0m\033[31mCompile error. See $OUTDIR/${metaFile}-compile.log\033[0m"
+        return 1
+    fi
+}
+
 CompileLib() {
     if [[ ! -f "build/benchmarking.o" ]] || [[ "lib/benchmarking.cpp" -nt "build/benchmarking.o" ]]; then
-        "$CXX" $CXXFLAGS "lib/benchmarking.cpp" "${includePath[@]/#/-I}" -c -o "build/benchmarking.o" || ShowError $CompilationErrorExit "Failed to compile benchmark.cpp."
+        "$CXX" "${CXXFLAGS[@]}" "lib/benchmarking.cpp" "${includePath[@]/#/-I}" -c -o "build/benchmarking.o" || ShowError $CompilationErrorExit "Failed to compile benchmark.cpp."
     fi
 
     if [[ ! -f "build/testing.o" ]] || [[ "lib/testing.cpp" -nt "build/testing.o" ]]; then
-        "$CXX" $CXXFLAGS "lib/testing.cpp" "${includePath[@]/#/-I}" -c -o "build/testing.o" || ShowError $CompilationErrorExit "Failed to compile testing.cpp."
+        "$CXX" "${CXXFLAGS[@]}" "lib/testing.cpp" "${includePath[@]/#/-I}" -c -o "build/testing.o" || ShowError $CompilationErrorExit "Failed to compile testing.cpp."
     fi
 }
 
@@ -270,6 +300,7 @@ PrintAll() {
                 echo -en "${BOLD}${tg}${RESET} "
             fi
         done
+        echo
     fi
 }
 
@@ -283,6 +314,7 @@ Main() {
 
     totalTests="${#tests[@]}"
     totalBenchmarks="${#benchmarks[@]}"
+    totalMetaTests="${#metaTests[@]}"
 
     if [[ "${tests[*]}" == "ALL" || ($totalBenchmarks -le 0 && $totalTests -le 0) ]]; then
         tests=()
@@ -296,12 +328,25 @@ Main() {
     if [[ "${benchmarks[*]}" == "ALL" || ($totalBenchmarks -le 0 && $totalTests -le 0) ]]; then
         benchmarks=()
         while IFS= read -r file; do
-            [[ "$(dirname "$file")" == "." ]] && benchmarks+=("$(basename "$file" .cpp)")
+            if [[ "$(dirname "$file")" == "." ]]; then
+                benchmarks+=("$(basename "$file" .cpp)")
+            fi
         done < <(find . -maxdepth 1 -iname "Benchmark*.cpp")
+    fi
+
+
+    if [[ "${metaTests[*]}" == "ALL" || (${#metaTests[@]} -le 0 && $totalTests -le 0 && $totalBenchmarks -le 0) ]]; then
+        metaTests=()
+        while IFS= read -r file; do
+            if [[ "$(dirname "$file")" == "." ]]; then
+                metaTests+=("$(basename "$file" .cpp)")
+            fi
+        done < <(find . -maxdepth 1 -iname "MetaTest*.cpp")
     fi
 
     totalTests="${#tests[@]}"
     totalBenchmarks="${#benchmarks[@]}"
+    totalMetaTests="${#metaTests[@]}"
 
     if [[ $totalTests -gt 0 ]]; then
         passed=0
@@ -312,9 +357,9 @@ Main() {
 
         for test in "${tests[@]}"; do
             if Test "$test"; then
-                ((passed++))
+                (( passed++ ))
             else
-                ((failed++))
+                (( failed++ ))
             fi
         done
 
@@ -327,18 +372,42 @@ Main() {
         fi
     fi
 
-    if [[ $totalBenchmarks -gt 0 ]]; then
+    if [[ $totalMetaTests -gt 0 ]]; then
         passed=0
         failed=0
 
         [[ $totalTests -gt 0 ]] && echo
 
+        ShowInfo "Running meta tests (static_assert compile-time)..."
+        for meta in "${metaTests[@]}"; do
+            if MetaTest "$meta"; then
+                (( passed++ ))
+            else
+                (( failed++ ))
+            fi
+        done
+
+        if [[ $passed -eq $totalMetaTests ]]; then
+            ShowSuccess "All meta tests have passed!"
+        elif [[ $failed -eq $totalMetaTests ]]; then
+            ShowWarn "All meta tests failed"
+        else
+            ShowWarn "Some meta tests failed (failed $failed/$totalMetaTests)"
+        fi
+    fi
+
+    if [[ $totalBenchmarks -gt 0 ]]; then
+        passed=0
+        failed=0
+
+        [[ $totalMetaTests -gt 0 ]] && echo
+
         ShowInfo "Running benchmarks..."
         for bench in "${benchmarks[@]}"; do
             if Benchmark "$bench"; then
-                ((passed++))
+                (( passed++ ))
             else
-                ((failed++))
+                (( failed++ ))
             fi
         done
 

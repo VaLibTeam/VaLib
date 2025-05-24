@@ -75,13 +75,23 @@ VaImmutableString VaImmutableString::operator+(char c) const {
     return VaImmutableString(newData, newLen);
 }
 
-bool VaImmutableString::operator==(const VaImmutableString& other) const {
+bool VaImmutableString::operator==(const VaImmutableString& other) const noexcept {
     if (len != other.len) return false;
     return std::memcmp(data, other.data, len) == 0;
 }
 
-bool VaImmutableString::operator!=(const VaImmutableString& other) const {
+bool VaImmutableString::operator!=(const VaImmutableString& other) const noexcept {
     return !(*this == other);
+}
+
+bool VaImmutableString::operator==(const VaString& other) const noexcept {
+    if (this->len != other.len) return false;
+    return std::memcmp(this->data, other.data, len) == 0;
+}
+
+bool VaImmutableString::operator!=(const VaString& other) const noexcept {
+    if (this->len != other.len) return false;
+    return std::memcmp(this->data, other.data, len) != 0;
 }
 
 VaImmutableString& VaImmutableString::operator=(const VaImmutableString& other) {

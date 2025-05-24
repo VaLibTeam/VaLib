@@ -6,6 +6,8 @@
 #include <VaLib/Meta/BasicDefine.hpp>
 #include <VaLib/Types/BasicTypedef.hpp>
 
+#include <VaLib/Types/TypeTraits.hpp>
+
 #include <utility>
 #include <functional>
 
@@ -36,7 +38,7 @@ class VaTuple<> {
      */
     template <typename... Args>
     static auto Make(Args&&... args) {
-        return VaTuple<std::decay_t<Args>...>(std::forward<Args>(args)...);
+        return VaTuple<tt::Decay<Args>...>(std::forward<Args>(args)...);
     }
 
     /**
@@ -68,11 +70,12 @@ class VaTuple<> {
      * @note This overload is a no-op because the tuple is empty.
      */
     template <typename Func, Size I = 0>
-    void forEachIndexed(Func&& func) {}
+    void forEachIndexed(Func&&) {}
 
     /**
      * @brief Applies a function to each element with index (const version).
      *
+
      * @tparam Func Callable type.
      * @tparam I Start index (default 0).
      * @param func Function to apply with index.
@@ -80,7 +83,7 @@ class VaTuple<> {
      * @note This overload is a no-op because the tuple is empty.
      */
     template <typename Func, Size I = 0>
-    void forEachIndexed(Func&& func) const {}
+    void forEachIndexed(Func&&) const {}
 };
 
 /**
@@ -108,8 +111,9 @@ class VaTuple<Head, Tail...>: protected VaTuple<Tail...> {
      * @param head First element.
      * @param tail Remaining elements.
      */
-    VaTuple(Head&& head, Tail&&... tail)
-        : VaTuple<Tail...>(std::forward<Tail>(tail)...), head(std::forward<Head>(head)) {}
+    VaTuple(Head&& head, Tail&&... tail) : VaTuple<Tail...>(
+        std::forward<Tail>(tail)...), head(std::forward<Head>(head)
+    ) {}
 
     /**
      * @brief Creates a VaTuple by decaying and forwarding arguments.
@@ -224,65 +228,107 @@ class VaTuple<Head, Tail...>: protected VaTuple<Tail...> {
         VaTuple<Tail...>::template forEachIndexed<Func, I + 1>(std::forward<Func>(func));
     }
 
-    /**
-     * @brief Retrieves the element at index I.
-     * @tparam I Index of the element.
-     * @return Reference to the element at index I.
-     *
-     * @note This function uses recursion and constexpr evaluation.
-     */
-    template <Size I>
-    auto& get() {
-        if constexpr (I == 0) {
+    #if __cplusplus >= CPP17
+        /**
+         * @brief Retrieves the element at index I.
+         * @tparam I Index of the element.
+         * @return Reference to the element at index I.
+         *
+         * @note This function uses recursion and constexpr evaluation.
+         */
+        template <Size I>
+        auto& get() {
+            if constexpr (I == 0) {
+                return head;
+            } else {
+                return VaTuple<Tail...>::template get<I - 1>();
+            }
+        }
+
+        /**
+         * @brief Retrieves the element at index I (const version).
+         * @tparam I Index of the element.
+         * @return Const reference to the element at index I.
+         */
+        template <Size I>
+        const auto& get() const {
+            if constexpr (I == 0) {
+                return head;
+            } else {
+                return VaTuple<Tail...>::template get<I - 1>();
+            }
+        }
+
+        /**
+         * @brief Retrieves the first element of type T in the tuple.
+         * @tparam T Type to search for.
+         * @return Reference to the element of type T.
+         *
+         * @note This function will return the first occurrence of type T.
+         */
+        template <typename T>
+        T& get() {
+            if constexpr (tt::IsSame<T, Head>) {
+                return head;
+            } else {
+                return VaTuple<Tail...>::template get<T>();
+            }
+        }
+
+        /**
+         * @brief Retrieves the first element of type T in the tuple (const version).
+         * @tparam T Type to search for.
+         * @return Const reference to the element of type T.
+         */
+        template <typename T>
+        const T& get() const {
+            if constexpr (tt::IsSame<T, Head>) {
+                return head;
+            } else {
+                return VaTuple<Tail...>::template get<T>();
+            }
+        }
+    #else
+        template <Size I>
+        typename tt::EnableIf<I == 0, Head&> get() {
             return head;
-        } else {
+        }
+
+        template <Size I>
+        tt::EnableIf<I != 0, decltype(std::declval<VaTuple<Tail...>&>().template get<I - 1>())> get() {
             return VaTuple<Tail...>::template get<I - 1>();
         }
-    }
 
-    /**
-     * @brief Retrieves the element at index I (const version).
-     * @tparam I Index of the element.
-     * @return Const reference to the element at index I.
-     */
-    template <Size I>
-    const auto& get() const {
-        if constexpr (I == 0) {
+        template <Size I>
+        tt::EnableIf<I == 0, const Head&> get() const {
             return head;
-        } else {
+        }
+
+        template <Size I>
+        tt::EnableIf<I != 0, decltype(std::declval<const VaTuple<Tail...>&>().template get<I - 1>())> get() const {
             return VaTuple<Tail...>::template get<I - 1>();
         }
-    }
 
-    /**
-     * @brief Retrieves the first element of type T in the tuple.
-     * @tparam T Type to search for.
-     * @return Reference to the element of type T.
-     *
-     * @note This function will return the first occurrence of type T.
-     */
-    template <typename T>
-    T& get() {
-        if constexpr (std::is_same_v<T, Head>) {
+        template <typename T>
+        typename tt::EnableIf<tt::IsSame<T, Head>, T&> get() {
             return head;
-        } else {
+        }
+
+        template <typename T>
+        typename tt::EnableIf<!tt::IsSame<T, Head>, T&> get() {
             return VaTuple<Tail...>::template get<T>();
         }
-    }
 
-    /**
-     * @brief Retrieves the first element of type T in the tuple (const version).
-     * @tparam T Type to search for.
-     * @return Const reference to the element of type T.
-     */
-    template <typename T>
-    const T& get() const {
-        if constexpr (std::is_same_v<T, Head>) {
+        template <typename T>
+        typename tt::EnableIf<tt::IsSame<T, Head>, const T&> get() const {
             return head;
-        } else {
+        }
+
+        template <typename T>
+        typename tt::EnableIf<!tt::IsSame<T, Head>, const T&> get() const {
             return VaTuple<Tail...>::template get<T>();
         }
-    }
+    #endif
 
     /**
      * @brief Alias for the type of the I-th element.
@@ -290,21 +336,16 @@ class VaTuple<Head, Tail...>: protected VaTuple<Tail...> {
      */
     template <Size I>
     using Element = typename std::tuple_element<I, VaTuple>::type;
-
-    template <typename... Types1, typename... Types2, Size... I1, Size... I2>
-    friend auto concatenate(const VaTuple<Types1...>&, const VaTuple<Types2...>&,
-        std::index_sequence<I1...>, std::index_sequence<I2...>);
-
-    template <typename... Types1, typename... Types2>
-    friend auto operator+(const VaTuple<Types1...>&, const VaTuple<Types2...>&);
 };
 
 #if __cplusplus >= CPP17
-template<typename... Ts>
-VaTuple(Ts...) -> VaTuple<Ts...>;
+    template<typename... Ts>
+    VaTuple(Ts...) -> VaTuple<Ts...>;
 #endif
 
-namespace va::detail {
+namespace va {
+namespace detail {
+
 /**
  * @brief Concatenates two VaTuples into one.
  * @tparam Types1 Types of the first tuple.
@@ -320,7 +361,9 @@ inline auto tuplecat(const VaTuple<Types1...>& lhs, const VaTuple<Types2...>& rh
     std::index_sequence<I1...>, std::index_sequence<I2...>) {
     return VaTuple<Types1..., Types2...>(lhs.template get<I1>()..., rhs.template get<I2>()...);
 }
-}
+
+} // namespace detail
+} // namespace va
 
 /**
  * @brief Concatenation operator for VaTuples.
@@ -375,61 +418,123 @@ decltype(auto) get(const VaTuple<Types...>&& tuple) {
 
 } // namespace std
 
-namespace va {
+#if __cplusplus >= CPP17
+    namespace va {
 
-/**
- * @brief Applies a function to all elements of a const tuple
- * @tparam Fn Function type to apply
- * @tparam Types Parameter pack of tuple element types
- * @param f Function to apply
- * @param t Const reference to tuple
- * @return Result of function application
- */
-template <typename Fn, typename... Types>
-constexpr decltype(auto) apply(Fn&& f, const VaTuple<Types...>& t) {
-    return [&]<Size... I>(std::index_sequence<I...>) {
-        return std::invoke(
-            std::forward<Fn>(f),
-            t.template get<I>()...
-        );
-    }(std::make_index_sequence<sizeof...(Types)>());
-}
+    /**
+     * @brief Applies a function to all elements of a const tuple
+     * @tparam Fn Function type to apply
+     * @tparam Types Parameter pack of tuple element types
+     * @param f Function to apply
+     * @param t Const reference to tuple
+     * @return Result of function application
+     */
+    template <typename Fn, typename... Types>
+    constexpr decltype(auto) apply(Fn&& f, const VaTuple<Types...>& t) {
+        return [&]<Size... I>(std::index_sequence<I...>) {
+            return std::invoke(
+                std::forward<Fn>(f),
+                t.template get<I>()...
+            );
+        }(std::make_index_sequence<sizeof...(Types)>());
+    }
 
-/**
- * @brief Applies a function to all elements of an rvalue tuple
- * @tparam Fn Function type to apply
- * @tparam Types Parameter pack of tuple element types
- * @param f Function to apply
- * @param t Rvalue reference to tuple
- * @return Result of function application
- */
-template <typename Fn, typename... Types>
-constexpr decltype(auto) apply(Fn&& f, VaTuple<Types...>&& t) {
-    using Tuple = VaTuple<Types...>;
-    return [&]<Size... I>(std::index_sequence<I...>) {
-        return std::invoke(
-            std::forward<Fn>(f),
-            std::forward<typename Tuple::template Element<I>>(t.template get<I>())...
-        );
-    }(std::make_index_sequence<sizeof...(Types)>());
-}
+    /**
+     * @brief Applies a function to all elements of an rvalue tuple
+     * @tparam Fn Function type to apply
+     * @tparam Types Parameter pack of tuple element types
+     * @param f Function to apply
+     * @param t Rvalue reference to tuple
+     * @return Result of function application
+     */
+    template <typename Fn, typename... Types>
+    constexpr decltype(auto) apply(Fn&& f, VaTuple<Types...>&& t) {
+        using Tuple = VaTuple<Types...>;
+        return [&]<Size... I>(std::index_sequence<I...>) {
+            return std::invoke(
+                std::forward<Fn>(f),
+                std::forward<typename Tuple::template Element<I>>(t.template get<I>())...
+            );
+        }(std::make_index_sequence<sizeof...(Types)>());
+    }
 
-/**
- * @brief Applies a function to all elements of a mutable tuple
- * @tparam Fn Function type to apply
- * @tparam Types Parameter pack of tuple element types
- * @param f Function to apply
- * @param t Reference to tuple
- * @return Result of function application
- */
-template <typename Fn, typename... Types>
-constexpr decltype(auto) apply(Fn&& f, VaTuple<Types...>& t) {
-    return [&]<Size... I>(std::index_sequence<I...>) {
-        return std::invoke(
-            std::forward<Fn>(f),
-            t.template get<I>()...
-        );
-    }(std::make_index_sequence<sizeof...(Types)>());
-}
+    /**
+     * @brief Applies a function to all elements of a mutable tuple
+     * @tparam Fn Function type to apply
+     * @tparam Types Parameter pack of tuple element types
+     * @param f Function to apply
+     * @param t Reference to tuple
+     * @return Result of function application
+     */
+    template <typename Fn, typename... Types>
+    constexpr decltype(auto) apply(Fn&& f, VaTuple<Types...>& t) {
+        return [&]<Size... I>(std::index_sequence<I...>) {
+            return std::invoke(
+                std::forward<Fn>(f),
+                t.template get<I>()...
+            );
+        }(std::make_index_sequence<sizeof...(Types)>());
+    }
 
-}
+    } // namespace va
+#else
+    namespace va {
+
+    namespace detail {
+    template <typename F, typename... Args>
+    auto invoke(F&& f, Args&&... args)
+        -> decltype(std::forward<F>(f)(std::forward<Args>(args)...)) {
+        return std::forward<F>(f)(std::forward<Args>(args)...); // invoke replacement for C++14
+    }
+
+    template <typename Fn, typename Tuple, Size... I>
+    auto applyImpl(Fn&& fn, Tuple&& t, std::index_sequence<I...>)
+        -> decltype(invoke(std::forward<Fn>(fn), std::forward<decltype(t.template get<I>())>(t.template get<I>())...)) {
+        return invoke(std::forward<Fn>(fn), std::forward<decltype(t.template get<I>())>(t.template get<I>())...);
+    }
+    } // namespace detail
+
+    /**
+     * @brief Applies a function to all elements of a const tuple
+     * @tparam Fn Function type to apply
+     * @tparam Types Parameter pack of tuple element types
+     * @param f Function to apply
+     * @param t Const reference to tuple
+     * @return Result of function application
+     */
+    template <typename Fn, typename... Types>
+    auto apply(Fn&& f, const VaTuple<Types...>& t)
+        -> decltype(detail::applyImpl(std::forward<Fn>(f), t, std::make_index_sequence<sizeof...(Types)>{})) {
+        return detail::applyImpl(std::forward<Fn>(f), t, std::make_index_sequence<sizeof...(Types)>{});
+    }
+
+    /**
+     * @brief Applies a function to all elements of an rvalue tuple
+     * @tparam Fn Function type to apply
+     * @tparam Types Parameter pack of tuple element types
+     * @param f Function to apply
+     * @param t Rvalue reference to tuple
+     * @return Result of function application
+     */
+    template <typename Fn, typename... Types>
+    auto apply(Fn&& f, VaTuple<Types...>& t)
+        -> decltype(detail::applyImpl(std::forward<Fn>(f), t, std::make_index_sequence<sizeof...(Types)>{})) {
+        return detail::applyImpl(std::forward<Fn>(f), t, std::make_index_sequence<sizeof...(Types)>{});
+    }
+
+    /**
+     * @brief Applies a function to all elements of a mutable tuple
+     * @tparam Fn Function type to apply
+     * @tparam Types Parameter pack of tuple element types
+     * @param f Function to apply
+     * @param t Reference to tuple
+     * @return Result of function application
+     */
+    template <typename Fn, typename... Types>
+    auto apply(Fn&& f, VaTuple<Types...>&& t)
+        -> decltype(detail::applyImpl(std::forward<Fn>(f), std::move(t), std::make_index_sequence<sizeof...(Types)>{})) {
+        return detail::applyImpl(std::forward<Fn>(f), std::move(t), std::make_index_sequence<sizeof...(Types)>{});
+    }
+
+    } // namespace va
+#endif

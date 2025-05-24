@@ -2,14 +2,13 @@
 // Licensed under GNU GPL v3 License. See LICENSE file.
 // (C) 2025 VaLibTeam
 
-#include "VaLib/Types/String.hpp"
 #include <lib/testing.hpp>
 
+#include <VaLib/Types/String.hpp>
 #include <VaLib/Types/LinkedList.hpp>
 
 bool testLinkedList(testing::Test& t) {
     VaLinkedList<int> list;
-
     list.append(1);
     list.append(2);
     list.append(3);
@@ -57,18 +56,22 @@ bool testLinkedList(testing::Test& t) {
         return t.fail("at() failed");
     }
 
-    struct SomeStruct {
-        int n;
-        float f;
-    };
+    #if __cplusplus >= CPP17
+    {
+        struct SomeStruct {
+            int n;
+            float f;
+        };
 
-    VaLinkedList<SomeStruct> list5 = {SomeStruct{10, 2.1}, SomeStruct{50, 3.4}};
-    if (list5 != VaLinkedList<SomeStruct>{SomeStruct{10, 2.1}, SomeStruct{50, 3.4}}) {
-        return t.fail("Unexpected result");
+        VaLinkedList<SomeStruct> list = {SomeStruct{10, 2.1}, SomeStruct{50, 3.4}};
+        if (list != VaLinkedList<SomeStruct>{SomeStruct{10, 2.1}, SomeStruct{50, 3.4}}) {
+            return t.fail("Unexpected result");
+        }
+        if (list == VaLinkedList<SomeStruct>{SomeStruct{6, 2.6}, SomeStruct{124, 1.0}}) {
+            return t.fail("Unexpected result");
+        }
     }
-    if (list5 == VaLinkedList<SomeStruct>{SomeStruct{6, 2.6}, SomeStruct{124, 1.0}}) {
-        return t.fail("Unexpected result");
-    }
+    #endif
 
     VaLinkedList<int> list3 = {1, 2, 3};
     if (list3 != VaLinkedList<int>{1, 2, 3}) {
@@ -76,6 +79,44 @@ bool testLinkedList(testing::Test& t) {
     }
     if (list3 == VaLinkedList<int>{4, 5, 6}) {
         return t.fail("Unexpected result");
+    }
+
+    VaLinkedList<int> list4 = {4, 5, 6};
+    VaLinkedList<int> list5 = list4; // create a copy of list4 for later use
+
+    list3.appendEach(std::move(list4));
+    if (list3 != VaLinkedList<int>{1, 2, 3, 4, 5, 6}) {
+        return t.fail("appendEach with VaLinkedList failed");
+    }
+
+    if (!list4.isEmpty()) {
+        return t.fail("list should be moved after appendEach(std::move(...))");
+    }
+
+    std::vector<int> vec = {7, 8, 9};
+    list3.appendEach(vec);
+    if (list3 != VaLinkedList<int>{1, 2, 3, 4, 5, 6, 7, 8, 9}) {
+        return t.fail("appendEach with Iterable failed");
+    }
+
+    list3.prependEach(list5);
+    if (list3 != VaLinkedList<int>{4, 5, 6, 1, 2, 3, 4, 5, 6, 7, 8, 9}) {
+        return t.fail("prependEach with VaLinkedList failed");
+    }
+
+    list3.prependEach(vec);
+    if (list3 != VaLinkedList<int>{7, 8, 9, 4, 5, 6, 1, 2, 3, 4, 5, 6, 7, 8, 9}) {
+        return t.fail("prependEach with Iterable failed");
+    }
+
+    list3.insertEach(3, list5);
+    if (list3 != VaLinkedList<int>{7, 8, 9, 4, 5, 6, 4, 5, 6, 1, 2, 3, 4, 5, 6, 7, 8, 9}) {
+        return t.fail("insertEach with VaLinkedList failed");
+    }
+
+    list3.insertEach(6, std::move(vec));
+    if (list3 != VaLinkedList<int>{7, 8, 9, 4, 5, 6, 7, 8, 9, 4, 5, 6, 1, 2, 3, 4, 5, 6, 7, 8, 9}) {
+        return t.fail("insertEach with Iterable failed");
     }
 
     return t.success();

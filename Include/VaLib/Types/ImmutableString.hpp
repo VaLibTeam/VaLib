@@ -96,7 +96,7 @@ class VaImmutableString {
      * @brief Checks if two strings are the same.
      * @param other The other string to compare with this one
      */
-    bool operator==(const VaImmutableString& other) const;
+    bool operator==(const VaImmutableString& other) const noexcept;
 
     /**
      * @brief Checks if two strings are *not* the same.
@@ -104,7 +104,26 @@ class VaImmutableString {
      *
      * @note Inverse of @ref operator==.
      */
-    bool operator!=(const VaImmutableString& other) const;
+    bool operator!=(const VaImmutableString& other) const noexcept;
+
+    bool operator==(const VaString& other) const noexcept;
+    bool operator!=(const VaString& other) const noexcept;
+
+    friend inline bool operator!=(const VaImmutableString& lhs, const char* rhs) noexcept {
+        return !(lhs == VaImmutableString(rhs)); // lub przez VaString, jeśli wolisz
+    }
+
+    friend inline bool operator!=(const char* lhs, const VaImmutableString& rhs) noexcept {
+        return !(VaImmutableString(lhs) == rhs);
+    }
+
+    friend inline bool operator!=(const VaImmutableString& lhs, const std::string& rhs) noexcept {
+        return !(lhs == VaImmutableString(rhs.c_str()));
+    }
+
+    friend inline bool operator!=(const std::string& lhs, const VaImmutableString& rhs) noexcept {
+        return !(VaImmutableString(lhs.c_str()) == rhs);
+    }
 
     /**
      * @brief Converts VaImmutableString to a std::string from C++ stdlib.
@@ -127,7 +146,7 @@ class VaImmutableString {
      * @warning The char type in C++ is only 1 byte, so if the string contains non-ANSI characters, this may not work as expected.
      * @warning Since VaImmutableString is *immutable*, this function returns a copy, not a reference or modifiable value.
      *
-     * @throw If the index is out of the string's bounds, the function throws an IndexOutOfRangeError
+     * @throws If the index is out of the string's bounds, the function throws an IndexOutOfRangeError
      */
     char operator[](Size index) const;
 

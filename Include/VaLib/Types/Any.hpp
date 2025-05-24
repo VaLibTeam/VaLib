@@ -17,7 +17,7 @@ class VaAny {
     using TypeID = const std::type_info;
 
     static constexpr Size SBO_SIZE = 24;
-    struct alignas(std::max_align_t) AlignedBuffer {
+    struct alignas(MaxAlignType) AlignedBuffer {
         byte data[SBO_SIZE];
     };
 
@@ -47,11 +47,19 @@ class VaAny {
 
             // copy
             [](const void* src, void* dest) {
-                if constexpr (std::is_copy_constructible_v<T>) {
-                    new (dest) T(*static_cast<const T*>(src));
-                } else {
-                    throw TypeError("Type is not copyable");
-                }
+                #if __cplusplus >= CPP17
+                    if constexpr (tt::IsCopyConstructible<T>) {
+                        new (dest) T(*static_cast<const T*>(src));
+                    } else {
+                        throw TypeError("Type is not copyable");
+                    }
+                #else
+                    if (tt::IsCopyConstructible<T>) {
+                        new (dest) T(*static_cast<const T*>(src));
+                    } else {
+                        throw TypeError("Type is not copyable");
+                    }
+                #endif
             },
 
             // move
@@ -59,13 +67,23 @@ class VaAny {
 
             // clone (heap copy)
             [](const void* src) -> void* {
-                if constexpr (std::is_copy_constructible_v<T>) {
-                    void* mem = operator new(sizeof(T));
-                    new (mem) T(*static_cast<const T*>(src));
-                    return mem;
-                } else {
-                    throw TypeError("Type is not copyable");
-                }
+                #if __cplusplus >= CPP17
+                    if constexpr (tt::IsCopyConstructible<T>) {
+                        void* mem = operator new(sizeof(T));
+                        new (mem) T(*static_cast<const T*>(src));
+                        return mem;
+                    } else {
+                        throw TypeError("Type is not copyable");
+                    }
+                #else
+                    if (tt::IsCopyConstructible<T>) {
+                        void* mem = operator new(sizeof(T));
+                        new (mem) T(*static_cast<const T*>(src));
+                        return mem;
+                    } else {
+                        throw TypeError("Type is not copyable");
+                    }
+                #endif
             }};
         return &vt;
     }

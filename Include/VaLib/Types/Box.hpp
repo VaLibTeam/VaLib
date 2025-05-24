@@ -3,10 +3,11 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
+#include <VaLib/Types/TypeBox.hpp>
 #include <VaLib/Types/Tuple.hpp>
 
 template <typename T>
-inline constexpr std::type_identity<T> Type{};
+inline constexpr VaTypeBox<T> Type{};
 
 template <typename... Types>
 struct VaBox {
@@ -15,7 +16,9 @@ struct VaBox {
     template <typename T>
     VaBox& operator=(T&& v) {
         // Find the matching type in tuple and assign
-        std::get<std::remove_cv_t<std::remove_reference_t<T>>>(values) = std::forward<T>(v);
+        std::get< typename std::remove_cv< typename std::remove_reference<T>::type >::type >(values)
+            = std::forward<T>(v);
+
         return *this;
     }
 
@@ -35,12 +38,12 @@ struct VaBox {
     }
 
     template <typename T>
-    T& operator[](std::type_identity<T>) {
+    T& operator[](VaTypeBox<T>) {
         return values.template get<T>();
     }
 
     template <typename T>
-    const T& operator[](std::type_identity<T>) const {
+    const T& operator[](VaTypeBox<T>) const {
         return values.template get<T>();
     }
 };

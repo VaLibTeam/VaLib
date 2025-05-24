@@ -67,7 +67,7 @@ RunBuildScript() {
 
     if [[ $staticInstalled = false || $sharedInstalled = false ]]; then
         ReadYn choice "Do you want to install VaLib (libraries)?"
-        case $choice in
+        case "$choice" in
         [Yy])
             installLibs=true ;;
         [Nn]) ;;
@@ -78,7 +78,7 @@ RunBuildScript() {
 
     if [[ $headersInstalled = false ]]; then
         ReadYn choice "Do you want to install VaLib devel (headers)?"
-        case $choice in
+        case "$choice" in
         [Yy])
             installHeaders=true ;;
         [Nn]) ;;
@@ -153,7 +153,7 @@ Main() {
         ShowWarn "Some VaLib components are not installed."
         if [[ $interactiveMode = true ]]; then
             ReadYn ans "Do you want to install missing components?"
-            case $ans in
+            case "$ans" in
             [Yy])
                 RunBuildScript "$staticInstalled" "$sharedInstalled" "$headersInstalled"
                 ;;

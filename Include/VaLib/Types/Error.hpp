@@ -3,28 +3,31 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
+#include <VaLib/Compability.hpp>
 #include <VaLib/Types/String.hpp>
 
+#include <VaLib/Types/TypeTraits.hpp>
 #include <iostream>
+
+namespace va {
 
 #define THROWIT                                                                                    \
     virtual void throwIt() const override { throw *this; }
 
 template <typename T, typename = void>
-struct hasThrowIt: FalseType {};
+struct HasThrowIt: FalseType {};
 
 template <typename T>
-struct hasThrowIt<T, decltype(std::declval<T>().throwIt(), void())>: TrueType {};
-
-template <typename T>
-constexpr bool hasThrowItV = hasThrowIt<T>::value;
+struct HasThrowIt<T, decltype(std::declval<T>().throwIt(), void())>: TrueType {};
 
 #ifdef VaLib_USE_CONCEPTS
-template <typename T>
-concept Error = requires(T err) {
-    { err.what() } -> std::same_as<VaString>;
-};
+    template <typename T>
+    concept Error = requires(T err) {
+        { err.what() } -> std::same_as<VaString>;
+    };
 #endif
+
+}
 
 /**
  * @brief Base class for all error types.
@@ -220,8 +223,7 @@ class VaResult {
     /**
      * @brief Internal helper to clean up the error if present.
      */
-    void destroy() noexcept(
-        std::is_nothrow_destructible_v<T> && std::is_nothrow_destructible_v<E>) {
+    void destroy() noexcept(tt::IsNoexceptDestructible<T> && tt::IsNoexceptDestructible<E>) {
         if (ok) {
             val.~T();
         } else {
@@ -236,8 +238,12 @@ class VaResult {
      */
     VaResult(T v) : ok(true) { new (&val) T(std::move(v)); }
 
-    template <typename U, typename = std::enable_if_t<std::is_constructible_v<T, U&&> &&
-                                                      !std::is_same_v<std::decay_t<U>, VaResult>>>
+    template <
+        typename U,
+        typename = tt::EnableIf<
+            tt::IsConstructible<T, U&&> && !tt::IsSame<typename tt::Decay<U>, VaResult>
+        >
+    >
     VaResult(U&& v) : ok(true) {
         new (&val) T(std::forward<U>(v));
     }
@@ -257,7 +263,7 @@ class VaResult {
     /**
      * @brief Destructor. Frees the error if present.
      */
-    ~VaResult() noexcept(std::is_nothrow_destructible_v<T> && std::is_nothrow_destructible_v<E>) {
+    ~VaResult() noexcept(tt::IsNoexceptDestructible<T> && tt::IsNoexceptDestructible<E>) {
         destroy();
     }
 
@@ -378,7 +384,7 @@ class VaResult {
      * @note This overload is enabled only if the error type E has a member function `throwIt()`.
      */
     template <typename U = E>
-    std::enable_if_t<hasThrowItV<U>, void> throwErr() {
+    tt::EnableIf<va::HasThrowIt<U>::value, void> throwErr() {
         if (ok) {
             throw ValueError("Attempted to throw a VaResult that holds a value");
         }
@@ -394,7 +400,7 @@ class VaResult {
      * @note This overload is enabled only if the error type E does not have a `throwIt()` method.
      */
     template <typename U = E>
-    std::enable_if_t<!hasThrowItV<U>, void> throwErr() {
+    tt::EnableIf<!va::HasThrowIt<U>::value, void> throwErr() {
         if (ok) {
             throw ValueError("Attempted to throw a VaResult that holds a value");
         }
@@ -422,7 +428,7 @@ class VaResult<void, E> {
     /**
      * @brief Internal helper to clean up the error if present.
      */
-    void destroy() noexcept(std::is_nothrow_destructible_v<E>) {
+    void destroy() noexcept(tt::IsNoexceptDestructible<E>) {
         if (!ok) {
             delete err;
         }
@@ -449,7 +455,7 @@ class VaResult<void, E> {
     /**
      * @brief Destructor. Frees the error if present.
      */
-    ~VaResult() noexcept(std::is_nothrow_destructible_v<E>) { destroy(); }
+    ~VaResult() noexcept(tt::IsNoexceptDestructible<E>) { destroy(); }
 
     /**
      * @brief Copy constructor.
@@ -549,7 +555,7 @@ class VaResult<void, E> {
      * @note This overload is enabled only if the error type E has a member function `throwIt()`.
      */
     template <typename U = E>
-    std::enable_if_t<hasThrowItV<U>, void> throwErr() {
+    tt::EnableIf<va::HasThrowIt<U>::value> throwErr() {
         if (ok) {
             throw ValueError("Attempted to throw a VaResult that holds a value");
         }
@@ -565,7 +571,7 @@ class VaResult<void, E> {
      * @note This overload is enabled only if the error type E does not have a `throwIt()` method.
      */
     template <typename U = E>
-    std::enable_if_t<!hasThrowItV<U>, void> throwErr() {
+    tt::EnableIf<!va::HasThrowIt<U>::value> throwErr() {
         if (ok) {
             throw ValueError("Attempted to throw a VaResult that holds a value");
         }

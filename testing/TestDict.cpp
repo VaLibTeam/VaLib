@@ -2,7 +2,7 @@
 // Licensed under GNU GPL v3 License. See LICENSE file.
 // (C) 2025 VaLibTeam
 
-#include "VaLib/Types/List.hpp"
+#include "VaLib/Types/String.hpp"
 #include <lib/testing.hpp>
 
 #include <VaLib/Types.hpp>
@@ -16,11 +16,11 @@ bool testDict(testing::Test& t) {
     dict["world"] = 30;
 
     if (dict.at("test") != 10 || dict.at("hello") != 20 || dict.at("world") != 30) {
-        return t.fail("unexpected result");
+        return t.fail("at() failed");
     }
 
     if (dict.atIndex(0) != 10 || dict.atIndex(1) != 20 || dict.atIndex(2) != 30) {
-        return t.fail("unexpected result");
+        return t.fail("atIndex() failed");
     }
 
     dict["test"] = 50;
@@ -28,7 +28,7 @@ bool testDict(testing::Test& t) {
         return t.fail("unexpected result");
     }
 
-    if (size(dict) != 3) {
+    if (dict.getSize() != 3) {
         return t.fail("unexpected result");
     }
 
@@ -65,8 +65,8 @@ bool testDict(testing::Test& t) {
     if (a != b) return t.fail("unordered dicts should be equal");
     if (a.equalsOrdered(b)) return t.fail("unordered dicts shloudn't be equal with equalsOrdered");
 
-    dict.remove("hello");
-    if (dict.contains("hello") || size(dict) != 2) {
+    dict.del("hello");
+    if (dict.contains("hello") || len(dict) != 2) {
         return t.fail("remove failed");
     }
 
@@ -74,13 +74,13 @@ bool testDict(testing::Test& t) {
         return t.fail("order not preserved after remove");
     }
 
-    dict.remove("nonexistent");
-    if (size(dict) != 2) {
+    dict.del("nonexistent");
+    if (dict.getSize() != 2) {
         return t.fail("size changed after removing non-existent key");
     }
 
     dict.clear();
-    if (size(dict) != 0 || dict.contains("test") || dict.contains("world")) {
+    if (!dict.isEmpty() || dict.contains("test") || dict.contains("world")) {
         return t.fail("clear failed");
     }
 
@@ -103,7 +103,7 @@ bool testDict(testing::Test& t) {
     }
 
     orderedDict.insert(0, "second", 4); // should remove from old position first
-    if (size(orderedDict) != 3 || orderedDict.atIndex(0) != 4 || orderedDict.atIndex(1) != 1 ||
+    if ((orderedDict.getSize() != 3) || orderedDict.atIndex(0) != 4 || orderedDict.atIndex(1) != 1 ||
         orderedDict.atIndex(2) != 3) {
         return t.fail("insert with existing key failed");
     }
@@ -148,6 +148,27 @@ bool testDict(testing::Test& t) {
             return t.fail("unexpected result");
         }
     }
+
+    VaDict<int, VaString> dict3 = {
+        {10, "Hello"},
+        {20, "World"},
+        {30, "!"},
+    };
+    dict3.set(10, "Goodbye");
+
+    if (dict3.at(10) != "Goodbye") {
+        return t.fail("set failed");
+    }
+
+    dict3.putAtFront(123, "Yep");
+    if (dict3.keyAtFront() != 123 || dict3.valueAtFront() != "Yep") {
+        return t.fail("putAtFront() failed");
+    }
+    if (dict3.keyAtIndex(0) != 123 || dict3.valueAtIndex(0) != "Yep") {
+        return t.fail("putAtFront() failed");
+    }
+
+    dict3.del(123);
 
     return t.success();
 }

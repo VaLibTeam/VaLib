@@ -3,27 +3,29 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
+#include <VaLib/RawAccess/List.hpp>
+
 #ifdef VaLib_USE_CONCEPTS
 #include <VaLib/Types/BasicConcepts.hpp>
 #endif
 
 #include <VaLib/Types/BasicTypedef.hpp>
 #include <VaLib/Meta/BasicDefine.hpp>
+#include <VaLib/Types/TypeTraits.hpp>
 
 #include <VaLib/Types/Error.hpp>
 #include <VaLib/Types/Pair.hpp>
+#include <VaLib/Types/Tuple.hpp>
+
+#include <VaLib/FuncTools/Func.hpp>
 
 #include <algorithm>
 #include <cstdlib>
 #include <initializer_list>
-#include <type_traits>
 #include <utility>
 
 template <typename T>
-class VaSlice;
-
-template <typename T>
-class VaList {
+class alignas(VaListRawView<T>) VaList {
   protected:
     Size len; ///< Number of elements currently stored.
     Size cap; ///< Current capacity of the allocated buffer.
@@ -37,20 +39,34 @@ class VaList {
         T* newData = static_cast<T*>(std::malloc(newCap * sizeof(T)));
         if (!newData) throw NullPointerError();
 
-        if constexpr (std::is_trivially_copyable_v<T>) {
-            std::memcpy(newData, data, len * sizeof(T));
-        } else {
+        #if __cplusplus >= CPP17
+            if constexpr (tt::IsTriviallyCopyable<T>) {
+                std::memcpy(newData, data, len * sizeof(T));
+            } else {
+                for (Size i = 0; i < len; i++) {
+                    new (&newData[i]) T(std::move(data[i]));
+                    data[i].~T();
+                }
+            }
+        #else
             for (Size i = 0; i < len; i++) {
                 new (&newData[i]) T(std::move(data[i]));
                 data[i].~T();
             }
-        }
+        #endif
 
         std::free(data);
-
         data = newData;
         cap = newCap;
     }
+
+    #if __cplusplus >= CPP17
+        template <typename Tuple, Size... Is>
+        inline void prependAllImpl(Tuple&& tup, std::index_sequence<Is...>) {
+            // reverse fold using index pack
+            ((prepend(std::get<sizeof...(Is) - 1 - Is>(std::forward<Tuple>(tup)))), ...);
+        }
+    #endif
 
     /**
      * @brief Doubles the capacity or sets it to an initial value if zero.
@@ -68,15 +84,28 @@ class VaList {
      * @brief Destroys all elements if their type is not trivially destructible.
      */
     inline void deleteObjects() {
-        if constexpr (!std::is_trivially_destructible_v<T>) {
+        #if __cplusplus >= CPP17
+            if constexpr (!tt::IsTriviallyDestructible<T>) {
+                for (Size i = 0; i < len; i++) {
+                    data[i].~T();
+                }
+            }
+        #else
             for (Size i = 0; i < len; i++) {
                 data[i].~T();
             }
-        }
+        #endif
     }
 
-  protected friends:
-    friend class VaSlice<T>;
+    inline void take(VaList&& other) {
+        std::free(data);
+        data = other.data;
+        len = other.len;
+        cap = other.cap;
+
+        other.data = nullptr;
+        other.len = other.cap = 0;
+    }
 
   public:
     /**
@@ -102,13 +131,20 @@ class VaList {
      */
     VaList(const VaList& other) : len(other.len), cap(other.cap) {
         data = static_cast<T*>(std::malloc(cap * sizeof(T)));
-        if constexpr (std::is_trivially_copyable_v<T>) {
-            std::memcpy(data, other.data, len * sizeof(T));
-        } else {
+
+        #if __cplusplus >= CPP17
+            if constexpr (tt::IsTriviallyCopyable<T>) {
+                std::memcpy(data, other.data, len * sizeof(T));
+            } else {
+                for (Size i = 0; i < len; i++) {
+                    new (&data[i]) T(other.data[i]); // Placement new + copy
+                }
+            }
+        #else
             for (Size i = 0; i < len; i++) {
                 new (&data[i]) T(other.data[i]); // Placement new + copy
             }
-        }
+        #endif
     }
 
     /**
@@ -120,20 +156,41 @@ class VaList {
         other.len = other.cap = 0;
     }
 
-    /**
-     * @brief Constructs the list from a variadic list of arguments.
-     * @tparam Args Types of the arguments.
-     * @param args Values to initialize the list with.
-     */
-    template <
-        typename... Args,
-        typename = std::enable_if_t<(std::is_constructible_v<T, Args> && ...)>
-    >
-    VaList(Args&&... args) : len(sizeof...(Args)), cap(sizeof...(Args)) {
-        data = static_cast<T*>(std::malloc(cap * sizeof(T)));
-        Size i = 0;
-        ((new (&data[i++]) T(std::forward<Args>(args))), ...);
-    }
+    #if __cplusplus >= CPP17
+        /**
+         * @brief Constructs the list from a variadic list of arguments.
+         * @tparam Args Types of the arguments.
+         * @param args Values to initialize the list with.
+         */
+        template <
+            typename... Args,
+            typename = tt::EnableIf<(tt::IsConstructible<T, Args> && ...)>
+        >
+        VaList(Args&&... args) : len(sizeof...(Args)), cap(sizeof...(Args)) {
+            data = static_cast<T*>(std::malloc(cap * sizeof(T)));
+            Size i = 0;
+            ((new (&data[i++]) T(std::forward<Args>(args))), ...);
+        }
+
+        /**
+         * @brief Constructs the list from a variadic list of arguments.
+         * @tparam Args Types of the arguments.
+         * @param args Values to initialize the list with.
+         */
+        template <
+            typename... Args,
+            typename = tt::EnableIf<(tt::IsConstructible<T, Args> && ...)>
+        >
+        static VaList From(Args&&... args) {
+            VaList list;
+            list.len = list.cap = (sizeof...(Args));
+            list.data = static_cast<T*>(std::malloc(list.cap * sizeof(T)));
+            Size i = 0;
+            ((new (&list.data[i++]) T(std::forward<Args>(args))), ...);
+
+            return list;
+        }
+    #endif
 
     /**
      * @brief Destructor. Destroys all elements and frees memory.
@@ -143,25 +200,6 @@ class VaList {
             deleteObjects();
             std::free(data);
         }
-    }
-
-    /**
-     * @brief Constructs the list from a variadic list of arguments.
-     * @tparam Args Types of the arguments.
-     * @param args Values to initialize the list with.
-     */
-    template <
-        typename... Args,
-        typename = std::enable_if_t<(std::is_constructible_v<T, Args> && ...)>
-    >
-    static VaList From(Args&&... args) {
-        VaList list;
-        list.len = list.cap = (sizeof...(Args));
-        list.data = static_cast<T*>(std::malloc(list.cap * sizeof(T)));
-        Size i = 0;
-        ((new (&list.data[i++]) T(std::forward<Args>(args))), ...);
-
-        return list;
     }
 
     /**
@@ -183,9 +221,8 @@ class VaList {
 
     /**
      * @brief Constructs a VaList from a raw pointer and manual length/capacity.
-     *
-     * This function *adopts* an existing raw buffer and treats it as a valid VaList.
-     * No memory is copied, so this is a zero-cost operation.
+     *        This function *adopts* an existing raw buffer and treats it as a valid VaList.
+     *        No memory is copied, so this is a zero-cost operation.
      *
      * **UNSAFE: You are fully responsible for ensuring all invariants are correct.**
      *
@@ -197,11 +234,14 @@ class VaList {
      * @warning
      * - The buffer **must** have been allocated with the same allocator used by VaList.
      * - If the list grows past `cap`, it will reallocate internally.
-     *   - In such case, the original memory will be **unused**.
-     *   - If it was dynamically allocated, you must free it manually (e.g. `delete[] raw`).
+     *   - In such case, the original memory will be **automatically freed**.
+     *   - You must manually free the memory **only** if you replace the buffer manually
+     *     using Unsafe API before reallocation or destruction of the list.
      * - You can detect whether the original buffer is still in use via:
      *   ```cpp
-     *   if (list.dataPtr() == raw) { /* buffer still valid *\/ }
+     *   if (list.dataPtr() == raw) {
+     *      // buffer still valid
+     *   }
      *   ```
      * - If you provide an invalid @ref cap (less than @ref len), the behavior is undefined.
      * - If you provide an invalid `len`, accessors like @ref at may throw an exception,
@@ -226,6 +266,18 @@ class VaList {
     // @}
 
     /**
+     * @brief Creates a VaList by taking ownership of a VaListRawView.
+     * @param view The VaListRawView to take ownership from.
+     * @return A VaList that adopts the memory of the provided view.
+     *
+     * @note For more details see @ref UnsafeTake
+     * @see UnsafeTake
+     */
+    static VaList UnsafeTakeFrom(const VaListRawView<T>* view) {
+        return UnsafeTake(view->data, view->len, view->cap);
+    }
+
+    /**
      * @brief Copy assignment operator.
      * @param other The list to copy from.
      * @return Reference to this list.
@@ -239,13 +291,21 @@ class VaList {
         len = other.len;
         cap = other.cap;
         data = static_cast<T*>(std::malloc(cap * sizeof(T)));
-        if constexpr (std::is_trivially_copyable_v<T>) {
-            std::memcpy(data, other.data, len * sizeof(T));
-        } else {
+
+        #if __cplusplus >= CPP17
+            if constexpr (tt::IsTriviallyCopyable<T>) {
+                std::memcpy(data, other.data, len * sizeof(T));
+            } else {
+                for (Size i = 0; i < len; i++) {
+                    new (&data[i]) T(other.data[i]);
+                }
+            }
+        #else
             for (Size i = 0; i < len; i++) {
                 new (&data[i]) T(other.data[i]);
             }
-        }
+        #endif
+
         return *this;
     }
 
@@ -338,12 +398,6 @@ class VaList {
     }
 
     /**
-     * @brief Appends all elements from another list to the end.
-     * @param other The list to extend from.
-     */
-    inline void extend(const VaList& other) { *this += other; }
-
-    /**
      * @brief Inserts an element at the specified index.
      * @param index Position to insert the element at.
      * @param value The element to insert (moved).
@@ -363,32 +417,6 @@ class VaList {
         }
         new (&data[index]) T(std::move(value));
         len++;
-    }
-
-    /**
-     * @brief Inserts all elements from another list at the specified index.
-     * @param index Position to insert the elements at.
-     * @param other The list to insert.
-     *
-     * @throws IndexOutOfRangeError If index is out of bounds.
-     */
-    void insertList(Size index, const VaList& other) {
-        if (index > len) throw IndexOutOfRangeError(len, index);
-        if (other.len == 0) return;
-
-        Size newLen = len + other.len;
-        if (newLen > cap) resize(newLen);
-
-        for (Size i = len - 1; i >= index && i != (Size)-1; i--) {
-            new (&data[i + other.len]) T(std::move(data[i]));
-            data[i].~T();
-        }
-
-        for (Size i = 0; i < other.len; i++) {
-            new (&data[index + i]) T(other.data[i]);
-        }
-
-        len = newLen;
     }
 
     /**
@@ -416,6 +444,452 @@ class VaList {
     }
 
     /**
+     * @brief Adds all elements from another container to the end of the list.
+     * @param other The container whose elements will be appended.
+     *
+     * This method iterates over the provided container and appends each element
+     * to the end of the current list. The list's capacity is adjusted as needed
+     * to accommodate the new elements.
+     */
+    template <typename Iterable>
+    void appendEach(const Iterable& other) {
+        Size otherSize = std::distance(std::begin(other), std::end(other));
+        if (otherSize == 0) return;
+
+        reserve(len + otherSize);
+        for (const auto& elm: other) {
+            new (&data[len++]) T(elm);
+        }
+    }
+
+    /**
+     * @brief Adds all elements from another container to the end of the list using move semantics.
+     * @param other The container whose elements will be appended.
+     *
+     * This method iterates over the provided container and appends each element
+     * to the end of the current list using move semantics. The list's capacity
+     * is adjusted as needed to accommodate the new elements.
+     *
+     * @note The container must support move semantics for its elements.
+     */
+    template <typename Iterable>
+    void appendEach(Iterable&& other) {
+        Size otherSize = std::distance(std::begin(other), std::end(other));
+        if (otherSize == 0) return;
+
+        reserve(len + otherSize);
+        for (auto& elm: other) {
+            new (&data[len++]) T(std::move(elm));
+        }
+    }
+
+    /**
+     * @brief Adds all elements from another VaList to the end of the list.
+     * @param other The VaList whose elements will be appended.
+     *
+     * This method appends all elements from the provided VaList to the end of
+     * the current list. The list's capacity is expanded if necessary.
+     */
+    void appendEach(const VaList& other) {
+        if (other.len == 0) return;
+
+        reserve(len + other.len);
+        for (Size i = 0; i < other.len; i++) {
+            new (&data[len++]) T(other.data[i]);
+        }
+    }
+
+    void appendEach(VaList&& other) {
+        if (other.len == 0) return;
+
+        // if the current list is empty, take ownership of the other list's data directly.
+        if (len == 0) {
+            take(std::move(other));
+            return;
+        }
+
+        reserve(len + other.len);
+        for (Size i = 0; i < other.len; i++) {
+            new (&data[len++]) T(std::move(other.data[i]));
+            other.data[i].~T();
+        }
+
+        // free the other list's buffer.
+        std::free(other.data);
+        other.data = nullptr;
+        other.len = other.cap = 0;
+    }
+
+    /**
+     * @brief Adds all elements from another container to the beginning of the list.
+     * @param other The container whose elements will be prepended.
+     *
+     * This method shifts the existing elements in the list to make room for the
+     * new elements from the provided container, which are then added to the front.
+     */
+    template <typename Iterable>
+    void prependEach(const Iterable& other) {
+        Size otherSize = std::distance(std::begin(other), std::end(other));
+        if (otherSize == 0) return;
+
+        reserve(len + otherSize);
+        for (Size i = len; i > 0; i--) {
+            new (&data[i + otherSize - 1]) T(std::move(data[i - 1]));
+            data[i - 1].~T();
+        }
+
+        Size i = 0;
+        for (const auto& elm: other) {
+            new (&data[i++]) T(elm);
+        }
+        len += otherSize;
+    }
+
+    /**
+     * @brief Adds all elements from another container to the beginning of the list using move semantics.
+     * @param other The container whose elements will be prepended.
+     *
+     * This method shifts the existing elements in the list to make room for the
+     * new elements from the provided container, which are then added to the front
+     * using move semantics.
+     *
+     * @note The container must support move semantics for its elements.
+     */
+    template <typename Iterable>
+    void prependEach(Iterable&& other) {
+        Size otherSize = std::distance(std::begin(other), std::end(other));
+        if (otherSize == 0) return;
+
+        reserve(len + otherSize);
+        for (Size i = len; i > 0; i--) {
+            new (&data[i + otherSize - 1]) T(std::move(data[i - 1]));
+            data[i - 1].~T();
+        }
+
+        Size i = 0;
+        for (auto& elm: other) {
+            new (&data[i++]) T(std::move(elm));
+        }
+        len += otherSize;
+    }
+
+    /**
+     * @brief Adds all elements from another VaList to the beginning of the list.
+     * @param other The VaList whose elements will be prepended.
+     *
+     * This method shifts the existing elements in the list to make room for the
+     * new elements from the provided VaList, which are then added to the front.
+     */
+    void prependEach(const VaList& other) {
+        if (other.len == 0) return;
+
+        reserve(len + other.len);
+        for (Size i = len; i > 0; i--) {
+            new (&data[i + other.len - 1]) T(std::move(data[i - 1]));
+            data[i - 1].~T();
+        }
+
+        for (Size i = 0; i < other.len; i++) {
+            new (&data[i]) T(other.data[i]);
+        }
+        len += other.len;
+    }
+
+    /**
+     * @brief Adds all elements from another VaList to the beginning of the list using move semantics.
+     *       Shifts the existing elements in the list to make room for the
+     *       new elements from the provided VaList, which are then added to the front
+     *       using move semantics. If the current list is empty, it directly takes
+     *       ownership of the other list's data without additional allocations.
+     * @param other The VaList whose elements will be prepended.
+     *
+     * @note This operation modifies both the current list and the provided list.
+     *       After the operation, the `other` list will be empty and its memory
+     *       will be released.
+     *
+     * @throws NullPointerError If memory allocation fails during resizing.
+     */
+    void prependEach(VaList&& other) {
+        if (other.len == 0) return;
+
+        // if the current list is empty, take ownership of the other list's data directly.
+        if (len == 0) {
+            take(std::move(other));
+            return;
+        }
+
+        // if the other list is larger, allocate a new buffer to avoid excessive shifting.
+        if (other.len > cap-len) {
+            Size newCap = len + other.len;
+            T* newData = static_cast<T*>(std::malloc(newCap * sizeof(T)));
+            if (!newData) throw NullPointerError();
+
+            // move the other list's elements into the new buffer.
+            for (Size i = 0; i < other.len; i++) {
+                new (&newData[i]) T(std::move(other.data[i]));
+                other.data[i].~T();
+            }
+
+            // move the current list's elements into the new buffer after the other list's elements.
+            for (Size i = 0; i < len; i++) {
+                new (&newData[other.len + i]) T(std::move(data[i]));
+                data[i].~T();
+            }
+
+            std::free(data);
+            data = newData;
+            len += other.len;
+            cap = newCap;
+
+            std::free(other.data);
+            other.data = nullptr;
+            other.len = other.cap = 0;
+            return;
+        }
+
+        // default:
+        reserve(len + other.len);
+        for (Size i = len; i > 0; i--) {
+            new (&data[i + other.len - 1]) T(std::move(data[i - 1]));
+            data[i - 1].~T();
+        }
+
+        for (Size i = 0; i < other.len; i++) {
+            new (&data[i]) T(std::move(other.data[i]));
+            other.data[i].~T();
+        }
+        len += other.len;
+
+        std::free(other.data);
+        other.data = nullptr;
+        other.len = other.cap = 0;
+    }
+
+    /**
+     * @brief Inserts all elements from another container at a specified position.
+     * @param index The position where the elements will be inserted.
+     * @param other The container whose elements will be inserted.
+     *
+     * This method shifts the existing elements starting from the specified index
+     * to make room for the new elements from the provided container.
+     *
+     * @throws IndexOutOfRangeError If the index is out of bounds.
+     */
+    template <typename Iterable>
+    void insertEach(Size index, const Iterable& other) {
+        if (index > len) throw IndexOutOfRangeError(len, index);
+
+        Size otherSize = std::distance(std::begin(other), std::end(other));
+        if (otherSize == 0) return;
+
+        reserve(len + otherSize);
+        for (Size i = len; i > index; i--) {
+            new (&data[i + otherSize - 1]) T(std::move(data[i - 1]));
+            data[i - 1].~T();
+        }
+
+        Size i = index;
+        for (const auto& elm: other) {
+            new (&data[i++]) T(elm);
+        }
+        len += otherSize;
+    }
+
+    /**
+     * @brief Inserts all elements from another container at a specified position using move semantics.
+     * @param index The position where the elements will be inserted.
+     * @param other The container whose elements will be inserted.
+     *
+     * This method shifts the existing elements starting from the specified index
+     * to make room for the new elements from the provided container, which are then
+     * inserted at the specified position using move semantics.
+     *
+     * @note The container must support move semantics for its elements.
+     *
+     * @throws IndexOutOfRangeError If the index is out of bounds.
+     */
+    template <typename Iterable>
+    void insertEach(Size index, Iterable&& other) {
+        if (index > len) throw IndexOutOfRangeError(len, index);
+
+        Size otherSize = std::distance(std::begin(other), std::end(other));
+        if (otherSize == 0) return;
+
+        reserve(len + otherSize);
+        for (Size i = len; i > index; i--) {
+            new (&data[i + otherSize - 1]) T(std::move(data[i - 1]));
+            data[i - 1].~T();
+        }
+
+        Size i = index;
+        for (auto& elm: other) {
+            new (&data[i++]) T(std::move(elm));
+        }
+        len += otherSize;
+    }
+
+    /**
+     * @brief Inserts all elements from another VaList at a specified position.
+     * @param index The position where the elements will be inserted.
+     * @param other The VaList whose elements will be inserted.
+     *
+     * This method shifts the existing elements starting from the specified index
+     * to make room for the new elements from the provided VaList.
+     *
+     * @throws IndexOutOfRangeError If the index is out of bounds.
+     */
+    void insertEach(Size index, const VaList& other) {
+        if (index > len) throw IndexOutOfRangeError(len, index);
+        if (other.len == 0) return;
+
+        const Size newLen = len + other.len;
+        if (newLen > cap) resize(newLen);
+
+        for (Size i = len; i > index; i--) {
+            new (&data[i + other.len - 1]) T(std::move(data[i - 1]));
+            data[i - 1].~T();
+        }
+
+        for (Size i = 0; i < other.len; i++) {
+            new (&data[index + i]) T(other.data[i]);
+        }
+        len += other.len;
+    }
+
+    void insertEach(Size index, VaList&& other) {
+        if (index > len) throw IndexOutOfRangeError(len, index);
+        if (other.len == 0) return;
+
+        // if the current list is empty, take ownership of the other list's data directly.
+        if (len == 0) {
+            take(std::move(other));
+            return;
+        }
+
+        // if the insertion point is at the end, append directly.
+        if (index == len) {
+            appendEach(std::move(other));
+            return;
+        }
+
+        // if the other list is larger, allocate a new buffer to avoid excessive shifting.
+        if (other.len > cap - len) {
+            Size newCap = len + other.len;
+            T* newData = static_cast<T*>(std::malloc(newCap * sizeof(T)));
+            if (!newData) throw NullPointerError();
+
+            for (Size i = 0; i < index; i++) {
+                new (&newData[i]) T(std::move(data[i]));
+                data[i].~T();
+            }
+
+            // move the other list's elements into the new buffer.
+            for (Size i = 0; i < other.len; i++) {
+                new (&newData[index + i]) T(std::move(other.data[i]));
+                other.data[i].~T();
+            }
+
+            // copy elements after the insertion point.
+            for (Size i = index; i < len; i++) {
+                new (&newData[other.len + i]) T(std::move(data[i]));
+                data[i].~T();
+            }
+
+            std::free(data);
+            data = newData;
+            len += other.len;
+            cap = newCap;
+
+            std::free(other.data);
+            other.data = nullptr;
+            other.len = other.cap = 0;
+            return;
+        }
+
+        // default: shift elements and insert.
+        reserve(len + other.len);
+        for (Size i = len; i > index; i--) {
+            new (&data[i + other.len - 1]) T(std::move(data[i - 1]));
+            data[i - 1].~T();
+        }
+
+        for (Size i = 0; i < other.len; i++) {
+            new (&data[index + i]) T(std::move(other.data[i]));
+            other.data[i].~T();
+        }
+        len += other.len;
+
+        std::free(other.data);
+        other.data = nullptr;
+        other.len = other.cap = 0;
+    }
+
+    template <typename Iterable>
+    void extend(const Iterable& other) {
+        appendEach(other);
+    }
+
+    template <typename Iterable>
+    void extend(Iterable&& other) {
+        appendEach(std::forward<Iterable>(other));
+    }
+
+    void extend(const VaList& other) {
+        appendEach(other);
+    }
+
+    void extend(VaList&& other) {
+        appendEach(std::move(other));
+    }
+
+    #if __cplusplus >= CPP17
+        /**
+         * @brief Appends multiple elements to the end of the list.
+         * @tparam Args Types of the elements to append.
+         * @param args Elements to append to the list.
+         *
+         * @note This method uses variadic templates to accept multiple arguments
+         *       and appends each of them to the list in order.
+         */
+        template <typename... Args>
+        inline void appendAll(Args&&... args) {
+            reserve(len + sizeof...(args));
+            (append(std::forward<Args>(args)), ...);
+        }
+
+        /**
+         * @brief Prepends multiple elements to the beginning of the list.
+         * @tparam Args Types of the elements to prepend.
+         * @param args Elements to prepend to the list.
+         *
+         * @note This method uses variadic templates to accept multiple arguments
+         *       and prepends each of them to the list in reverse order.
+         */
+        template <typename... Args>
+        inline void prependAll(Args&&... args) {
+            reserve(len + sizeof...(args));
+            prependAllImpl(VaTuple<Args...>(std::forward<Args>(args)...), std::index_sequence_for<Args...>{});
+        }
+
+        /**
+         * @brief Inserts multiple elements at the specified index in the list.
+         * @tparam Args Types of the elements to insert.
+         * @param index Position to insert the elements at.
+         * @param args Elements to insert into the list.
+         *
+         * @note This method uses variadic templates to accept multiple arguments
+         *       and inserts each of them at the specified index in order.
+         *
+         * @throws IndexOutOfRangeError If the index is out of bounds.
+         */
+        template <typename... Args>
+        inline void insertAll(Size index, Args&&... args) {
+            reserve(len + sizeof...(args));
+            insertEach(index, {args...});
+        }
+    #endif
+
+    /**
      * @brief Deletes the element at the specified index.
      * @param index Index of the element to delete.
      *
@@ -423,13 +897,40 @@ class VaList {
      */
     void del(Size index) {
         if (index >= len) throw IndexOutOfRangeError(len, index);
-        data[index].~T();
 
         for (Size i = index; i < len - 1; i++) {
+            data[i].~T();
             new (&data[i]) T(std::move(data[i + 1]));
-            data[i + 1].~T();
         }
+
+        data[len - 1].~T();
         len--;
+    }
+
+    /**
+     * @brief Deletes a range of elements from the list.
+     * @param start The starting index of the range (inclusive).
+     * @param end The ending index of the range (exclusive).
+     *
+     * @throws IndexOutOfRangeError If start or end are out of bounds.
+     * @throws ValueError If start is greater than end.
+     */
+    void delRange(Size start, Size end) {
+        if (start > end) throw ValueError("delRange(): start index cannot be greater than end index");
+        if (end > len) throw IndexOutOfRangeError(len, end);
+        if (start >= len) throw IndexOutOfRangeError(len, start);
+
+        Size rangeSize = end - start;
+        for (Size i = start; i < len - rangeSize; i++) {
+            data[i].~T();
+            new (&data[i]) T(std::move(data[i + rangeSize]));
+        }
+
+        for (Size i = len - rangeSize; i < len; i++) {
+            data[i].~T();
+        }
+
+        len -= rangeSize;
     }
 
     /**
@@ -471,6 +972,29 @@ class VaList {
     }
 
     /**
+     * @brief Checks if the given index is within the valid range for direct access methods like get() or operator[].
+     * @param index The index to check.
+     * @return True if the index is within the valid range, false otherwise.
+     *
+     * @note This method does not handle negative indices. It only checks if the index is between 0 and len - 1.
+     */
+    inline bool isIndexValid(Size index) const {
+        return index < len;
+    }
+
+    /**
+     * @brief Checks if the given index is within the valid range for methods like at(), which support wrapping negative indices.
+     * @param index The index to check (can be negative).
+     * @return True if the index is within the valid range after wrapping, false otherwise.
+     *
+     * @note This method accounts for negative indices by wrapping them to the valid range [0, len - 1].
+     */
+    inline bool isIndexValidWrapped(int32 index) const {
+        if (index < 0) index += len;
+        return index >= 0 && static_cast<Size>(index) < len;
+    }
+
+    /**
      * @brief Accesses an element by index (unchecked).
      * @param index Index of the element.
      * @return Reference to the element.
@@ -500,72 +1024,146 @@ class VaList {
 
     /**
      * @brief Accesses an element by index with bounds checking.
-     * @param index Index of the element.
+     * @param index Index of the element (can be negative).
      * @return Reference to the element.
      *
      * @throws IndexOutOfRangeError If index is out of bounds.
      */
-    inline T& at(Size index) {
-        if (index >= len) throw IndexOutOfRangeError(len, index);
-        return data[index];
+    inline T& at(int32 index) {
+        if (index < 0) index += len; // handle negative indices
+        if (index < 0 || static_cast<Size>(index) >= len) throw IndexOutOfRangeError(len, index);
+        return data[static_cast<Size>(index)];
     }
 
     /**
      * @brief Accesses an element by index with bounds checking.
-     * @param index Index of the element.
+     * @param index Index of the element (can be negative).
      * @return Const reference to the element.
      *
      * @throws IndexOutOfRangeError If index is out of bounds.
      */
-    inline const T& at(Size index) const {
-        if (index >= len) throw IndexOutOfRangeError(len, index);
-        return data[index];
+    inline const T& at(int32 index) const {
+        if (index < 0) index += len; // handle negative indices
+        if (index < 0 || static_cast<Size>(index) >= len) throw IndexOutOfRangeError(len, index);
+        return data[static_cast<Size>(index)];
+    }
+
+    /**
+     * @brief Sets the value at the specified index.
+     * @param index Index of the element to set (can be negative).
+     * @param value The value to set.
+     *
+     * @throws IndexOutOfRangeError If index is out of bounds.
+     */
+    void set(int32 index, const T& value) {
+        if (index < 0) index += len; // handle negative indices
+        if (index < 0 || static_cast<Size>(index) >= len) throw IndexOutOfRangeError(len, index);
+        data[static_cast<Size>(index)].~T();
+        new (&data[static_cast<Size>(index)]) T(value);
+    }
+
+    /**
+     * @brief Sets the value at the specified index using move semantics.
+     * @param index Index of the element to set (can be negative).
+     * @param value The value to set (moved).
+     *
+     * @throws IndexOutOfRangeError If index is out of bounds.
+     */
+    void set(int32 index, T&& value) {
+        if (index < 0) index += len; // handle negative indices
+        if (index < 0 || static_cast<Size>(index) >= len) throw IndexOutOfRangeError(len, index);
+        data[static_cast<Size>(index)].~T();
+        new (&data[static_cast<Size>(index)]) T(std::move(value));
     }
 
     /**
      * @brief Returns a reference to the first element in the list.
      * @return Reference to the first element.
-     * @throws IndexError If the list is empty.
+     *
+     * @throws ValueError If the list is empty.
      */
     inline T& front() {
-        if (len <= 0) throw IndexError("front() on empty list");
+        if (len <= 0) throw ValueError("front() on empty list");
         return data[0];
     }
 
     /**
      * @brief Returns a const reference to the first element in the list.
      * @return Const reference to the first element.
-     * @throws IndexError If the list is empty.
+     *
+     * @throws ValueError If the list is empty.
      */
     inline const T& front() const {
-        if (len <= 0) throw IndexError("front() on empty list");
+        if (len <= 0) throw ValueError("front() on empty list");
         return data[0];
     }
 
     /**
      * @brief Returns a reference to the last element in the list.
      * @return Reference to the last element.
-     * @throws IndexError If the list is empty.
+     *
+     * @throws ValueError If the list is empty.
      */
     inline T& back() {
-        if (len <= 0) throw IndexError("back() on empty list");
+        if (len <= 0) throw ValueError("back() on empty list");
         return data[len - 1];
     }
 
     /**
      * @brief Returns a const reference to the last element in the list.
      * @return Const reference to the last element.
-     * @throws IndexError If the list is empty.
+     *
+     * @throws ValueError If the list is empty.
      */
     inline const T& back() const {
-        if (len <= 0) throw IndexError("back() on empty list");
+        if (len <= 0) throw ValueError("back() on empty list");
+        return data[len - 1];
+    }
+
+    /**
+     * @brief Returns a reference to the first element in the list without bounds checking.
+     * @return Reference to the first element.
+     *
+     * @note This method does not perform any size checks. The behavior is undefined if the list is empty.
+     */
+    inline T& frontUnchecked() noexcept {
+        return data[0];
+    }
+
+    /**
+     * @brief Returns a const reference to the first element in the list without bounds checking.
+     * @return Const reference to the first element.
+     *
+     * @note This method does not perform any size checks. The behavior is undefined if the list is empty.
+     */
+    inline const T& frontUnchecked() const noexcept {
+        return data[0];
+    }
+
+    /**
+     * @brief Returns a reference to the last element in the list without bounds checking.
+     * @return Reference to the last element.
+     *
+     * @note This method does not perform any size checks. The behavior is undefined if the list is empty.
+     */
+    inline T& backUnchecked() noexcept {
+        return data[len - 1];
+    }
+
+    /**
+     * @brief Returns a const reference to the last element in the list without bounds checking.
+     * @return Const reference to the last element.
+     *
+     * @note This method does not perform any size checks. The behavior is undefined if the list is empty.
+     */
+    inline const T& backUnchecked() const noexcept {
         return data[len - 1];
     }
 
     /**
      * @brief Shrinks the internal capacity to fit the current size.
      */
-    inline void shrink() { resize(len + 1); }
+    inline void shrink() { resize(len); }
 
     /**
      * @brief Fills the list with the specified value.
@@ -580,6 +1178,27 @@ class VaList {
     }
 
     /**
+     * @brief Fills the list with the specified value from the given start index to the end index.
+     * @param val The value to fill the list with.
+     * @param start The starting index (inclusive).
+     * @param end The ending index (exclusive).
+     *
+     * @throws IndexOutOfRangeError If start or end are out of bounds.
+     * @throws ValueError If start is greater than end.
+     *
+     * @note This method replaces all elements in the specified range with the given value.
+     */
+    void fill(const T& val, Size start, Size end) {
+        if (start > end) throw ValueError("fill(): start index cannot be greater than end index");
+        if (end > len) throw IndexOutOfRangeError(len, end);
+        if (start >= len) throw IndexOutOfRangeError(len, start);
+
+        for (Size i = start; i < end; i++) {
+            data[i] = val;
+        }
+    }
+
+    /**
      * @brief Creates a slice from the given start index to the end.
      * @param start Starting index (can be negative).
      * @return A new list containing the sliced elements.
@@ -589,8 +1208,9 @@ class VaList {
     VaList sliceFrom(int32 start) const {
         if (start < 0) start += len; // handle negative indices
         if (start < 0 || start >= len) throw IndexOutOfRangeError(len, start);
+
         VaList result;
-        result.reserve(len - start);
+        result.reserve(len - static_cast<Size>(start));
         for (Size i = start; i < len; i++) {
             result.append(data[i]);
         }
@@ -606,36 +1226,56 @@ class VaList {
      */
     VaList sliceTo(int32 end) const {
         if (end < 0) end += len; // handle negative indices
-        if (end < 0 || end > len) throw IndexOutOfRangeError(len, end);
+        if (end < 0 || static_cast<Size>(end) > len) throw IndexOutOfRangeError(len, end);
+
         VaList result;
-        result.reserve(end);
-        for (Size i = 0; i < end; i++) {
+        result.reserve(static_cast<Size>(end));
+        for (Size i = 0; i < static_cast<Size>(end); i++) {
             result.append(data[i]);
         }
         return result;
     }
 
+
     /**
-     * @brief Creates a slice between the specified start and end indices.
+     * @brief Creates a slice between the specified start and end indices with an optional step.
      * @param start Start index (can be negative).
      * @param end End index (can be negative).
+     * @param step Step size for slicing (default is 1).
      * @return A new list containing the sliced elements.
      *
      * @throws IndexOutOfRangeError If indices are invalid or out of bounds.
+     * @throws ValueError If step is zero.
      */
-    VaList slice(int32 start, int32 end) const {
+    VaList slice(int32 start, int32 end, int32 step = 1) const {
+        if (step == 0) throw ValueError("slice(): step cannot be zero");
+
         if (start < 0) start += len;
         if (end < 0) end += len;
 
         if (start < 0) start = 0;
-        if (end > len) end = len;
-        if (start > end) throw IndexOutOfRangeError(len, start > end ? start : end);
+        if (static_cast<Size>(end) > len) end = static_cast<int32>(len);
 
         VaList result;
-        result.reserve(end - start);
-        for (Size i = start; i < end; i++) {
-            result.append(data[i]);
+
+        if (step > 0) {
+            if (start > end) return result; // empty result for positive step if start > end
+            const Size ustart = static_cast<Size>(start);
+            const Size uend = static_cast<Size>(end);
+            result.reserve((uend - ustart + step - 1) / step); // Calculate required capacity
+            for (Size i = ustart; i < uend; i += step) {
+                result.append(data[i]);
+            }
+        } else {
+            if (start < end) return result; // empty result for negative step if start < end
+            const Size ustart = static_cast<Size>(start);
+            const Size uend = static_cast<Size>(end);
+            result.reserve((ustart - uend - step - 1) / -step);
+            for (Size i = ustart; i > uend; i += step) {
+                result.append(data[i]);
+            }
         }
+
         return result;
     }
 
@@ -658,7 +1298,7 @@ class VaList {
      * @return Concatenated string.
      */
     template <typename U = T>
-    std::enable_if_t<std::is_same_v<U, VaString>, VaString> join(const VaString& sep = "") const {
+    tt::EnableIf<tt::IsSame<U, VaString>, VaString> join(const VaString& sep = "") const {
         if (len == 0) return VaString();
         VaString result = data[0];
         for (Size i = 1; i < len; i++) {
@@ -668,7 +1308,7 @@ class VaList {
     }
 
     template <typename U = T>
-    std::enable_if_t<std::is_invocable_r_v<bool, U>, bool> all() const {
+    tt::EnableIf<tt::IsConvertible<bool, U>, bool> all() const {
         for (int i = 0; i < len; i++) {
             if (!static_cast<bool>(data[i])) {
                 return false;
@@ -679,7 +1319,7 @@ class VaList {
     }
 
     template <typename U = T>
-    std::enable_if_t<std::is_invocable_r_v<bool, U>, bool> any() const {
+    tt::EnableIf<tt::IsConvertible<bool, U>, bool> any() const {
         for (int i = 0; i < len; i++) {
             if (static_cast<bool>(data[i])) {
                 return true;
@@ -689,16 +1329,20 @@ class VaList {
     }
 
     /**
-     * @brief Returns a pointer to the internal data array.
-     * @return Pointer to the data.
+     * @brief Returns the number of elements currently stored in the list.
+     * @return The current length of the list.
      */
-    [[ deprecated("Use dataPtr() instanted") ]] inline T* getData() { return data; }
+    inline Size getLength() const noexcept {
+        return this->len;
+    }
 
     /**
-     * @brief Returns a const pointer to the internal data array.
-     * @return Const pointer to the data.
+     * @brief Returns the total capacity of the list's internal buffer.
+     * @return The current capacity of the list.
      */
-    [[ deprecated("Use dataPtr() instanted") ]] inline const T* getData() const { return data; }
+    inline Size getCapacity() const noexcept {
+        return this->cap;
+    }
 
     /**
      * @brief Returns a pointer to the internal data array.
@@ -732,6 +1376,56 @@ class VaList {
         std::free(data);
         data = nullptr;
         len = cap = 0;
+    }
+
+    /**
+     * @brief Alias for a raw view of the list's internal state.
+     *        This type provides direct access to the list's internal fields (length, capacity, and pointer),
+     *        and may be used for both read-only and mutable purposes depending on context.
+     *
+     * @note The `RawView` is a lightweight representation and does not own any memory.
+     *       It is valid only as long as the original `VaList` object exists.
+     * @note Modifications to the `VaList` object will be reflected in all associated `RawView` instances.
+     * @warning Any invalidation of the `VaList` (e.g., destruction or reallocation) will render the `RawView` invalid.
+     *
+     * @see getRawView()
+     * @see getUnsafeAccess()
+     */
+    using RawView = VaListRawView<T>;
+
+    /**
+     * @brief Returns a read-only view of the list's internal state.
+     *        This method returns a `VaListRawView<T>` pointer to the current list object.
+     *        The returned pointer can be used for safe inspection of the list's internal fields
+     *        without the ability to modify them.
+     * @return A const-qualified pointer to a `VaListRawView<T>` describing the list's state.
+     *
+     * @note This does not copy any data; it simply reinterprets the current object.
+     * @note The returned view is valid only as long as the `VaList` object exists and remains unmodified.
+     * @warning Although this view is read-only, changes to the `VaList` object (e.g., resizing or clearing)
+     *          will affect the data visible through the view.
+     * @see getUnsafeAccess() for writable access.
+     */
+    const RawView* getRawView() const {
+        return reinterpret_cast<const RawView*>(this);
+    }
+
+    /**
+     * @brief Grants unsafe, mutable access to the list's internals.
+     *        This method returns a pointer to the current list reinterpreted as a `VaListRawView<T>`.
+     *        The caller may directly read and modify the list’s length, capacity, and data pointer.
+     * @return A pointer to a `VaListRawView<T>` representing the internal list state.
+     *
+     * @note This does not copy any data; it simply reinterprets the current object.
+     * @note The returned view is valid only as long as the `VaList` object exists and remains unmodified.
+     * @warning This is an unsafe interface. You are fully responsible for maintaining all invariants.
+     *          Incorrect usage may lead to memory corruption or undefined behavior.
+     * @warning Modifications to the `VaList` object through this view will directly affect the original list
+     *          and any other views derived from it.
+     * @see getRawView() for a safe, read-only alternative.
+     */
+    RawView* getUnsafeAccess() {
+        return reinterpret_cast<RawView*>(this);
     }
 
   public operators:
@@ -775,7 +1469,7 @@ class VaList {
      */
     friend bool operator==(const VaList& lhs, const VaList& rhs) {
         if (lhs.len != rhs.len) return false;
-        if constexpr (!va::HasEqualityOperatorV<T>) {
+        if constexpr (!tt::HasEqualityOperator_v<T>) {
             return std::memcmp(lhs.data, rhs.data, lhs.len * sizeof(T)) == 0;
         } else {
             for (Size i = 0; i < lhs.len; i++) {
@@ -792,20 +1486,112 @@ class VaList {
      */
     friend bool operator!=(const VaList& lhs, const VaList& rhs) { return !(lhs == rhs); }
 
+    /**
+     * @brief Compares two lists for less-than.
+     * @param other The list to compare with.
+     * @return True if this list is lexicographically less than the other.
+     */
+    friend bool operator<(const VaList& lhs, const VaList& rhs) {
+        Size minLen = std::min(lhs.len, rhs.len);
+        for (Size i = 0; i < minLen; i++) {
+            if (lhs.data[i] < rhs.data[i]) return true;
+            if (lhs.data[i] > rhs.data[i]) return false;
+        }
+        return lhs.len < rhs.len;
+    }
+
+    /**
+     * @brief Compares two lists for greater-than.
+     * @param other The list to compare with.
+     * @return True if this list is lexicographically greater than the other.
+     */
+    friend bool operator>(const VaList& lhs, const VaList& rhs) {
+        return rhs < lhs;
+    }
+
+    /**
+     * @brief Compares two lists for less-than-or-equal.
+     * @param other The list to compare with.
+     * @return True if this list is lexicographically less than or equal to the other.
+     */
+    friend bool operator<=(const VaList& lhs, const VaList& rhs) {
+        return !(rhs < lhs);
+    }
+
+    /**
+     * @brief Compares two lists for greater-than-or-equal.
+     * @param other The list to compare with.
+     * @return True if this list is lexicographically greater than or equal to the other.
+     */
+    friend bool operator>=(const VaList& lhs, const VaList& rhs) {
+        return !(lhs < rhs);
+    }
+
+    template < typename Iterable, typename = tt::EnableIf<!tt::IsSame<tt::RemoveReference<tt::RemoveCV<Iterable>>, VaList>> >
+    friend bool operator==(const VaList& lhs, const Iterable& rhs) {
+        auto leftIt = lhs.begin();
+        auto rightIt = std::begin(rhs);
+        auto rhsEnd = std::end(rhs);
+
+        while (leftIt != lhs.end() && rightIt != rhsEnd) {
+            if (*leftIt != *rightIt) return false;
+            ++leftIt;
+            ++rightIt;
+        }
+
+        return leftIt == lhs.end() && rightIt == rhsEnd;
+    }
+
+    template < typename Iterable, typename = tt::EnableIf<!tt::IsSame<tt::RemoveReference<tt::RemoveCV<Iterable>>, VaList>> >
+    friend bool operator!=(const VaList& lhs, const Iterable& rhs) {
+        return !(lhs == rhs);
+    }
+
+    template < typename Iterable, typename = tt::EnableIf<!tt::IsSame<tt::RemoveReference<tt::RemoveCV<Iterable>>, VaList>> >
+    friend bool operator<(const VaList& lhs, const Iterable& rhs) {
+        auto leftIt = lhs.begin();
+        auto rightIt = std::begin(rhs);
+        auto rhsEnd = std::end(rhs);
+
+        while (leftIt != lhs.end() && rightIt != rhsEnd) {
+            if (*leftIt < *rightIt) return true;
+            if (*leftIt > *rightIt) return false;
+            ++leftIt;
+            ++rightIt;
+        }
+
+        return leftIt == lhs.end() && rightIt != rhsEnd;
+    }
+
+    template < typename Iterable, typename = tt::EnableIf<!tt::IsSame<tt::RemoveReference<tt::RemoveCV<Iterable>>, VaList>> >
+    friend bool operator>(const VaList& lhs, const Iterable& rhs) {
+        return rhs < lhs;
+    }
+
+    template < typename Iterable, typename = tt::EnableIf<!tt::IsSame<tt::RemoveReference<tt::RemoveCV<Iterable>>, VaList>> >
+    friend bool operator<=(const VaList& lhs, const Iterable& rhs) {
+        return !(rhs < lhs);
+    }
+
+    template < typename Iterable, typename = tt::EnableIf<!tt::IsSame<tt::RemoveReference<tt::RemoveCV<Iterable>>, VaList>> >
+    friend bool operator>=(const VaList& lhs, const Iterable& rhs) {
+        return !(lhs < rhs);
+    }
+
   public friends:
     /**
      * @brief Returns the number of elements in the list.
      * @param list The list to query.
      * @return Size of the list.
      */
-    friend inline Size len(const VaList& list) { return list.len; }
+    friend inline Size len(const VaList& list) noexcept { return list.len; }
 
     /**
      * @brief Returns the capacity of the list.
      * @param list The list to query.
      * @return Capacity of the list.
      */
-    friend inline Size cap(const VaList& list) { return list.cap; }
+    friend inline Size cap(const VaList& list) noexcept { return list.cap; }
 
   public iterators:
     using Iterator = T*;
@@ -842,8 +1628,9 @@ namespace va {
  * @param data Input list.
  * @return A new VaList containing the transformed elements.
  */
+// @{
 template <typename Old, typename New>
-VaList<New> map(Function<Old, New> mod, const VaList<Old>& data) {
+VaList<New> map(VaFunc<Old(New)> mod, const VaList<Old>& data) {
     VaList<New> result;
     result.reserve(len(data));
 
@@ -854,6 +1641,19 @@ VaList<New> map(Function<Old, New> mod, const VaList<Old>& data) {
     return result;
 }
 
+template <typename Old, typename New>
+VaList<New> map(VaFunc<Old(const New&)> mod, const VaList<Old>& data) {
+    VaList<New> result;
+    result.reserve(len(data));
+
+    for (Size i = 0; i < len(data); i++) {
+        result.append(mod(data[i]));
+    }
+
+    return result;
+}
+// @}
+
 /**
  * @brief Returns a new list containing only the elements that satisfy the predicate.
  * @tparam T Element type.
@@ -861,8 +1661,9 @@ VaList<New> map(Function<Old, New> mod, const VaList<Old>& data) {
  * @param data Input list.
  * @return A new VaList containing the filtered elements.
  */
+// @{
 template <typename T>
-VaList<T> filter(Function<T, bool> predicate, const VaList<T>& data) {
+VaList<T> filter(VaFunc<bool(const T&)> predicate, const VaList<T>& data) {
     VaList<T> result;
     for (Size i = 0; i < len(data); i++) {
         if (predicate(data[i])) {
@@ -872,6 +1673,19 @@ VaList<T> filter(Function<T, bool> predicate, const VaList<T>& data) {
 
     return result;
 }
+
+template <typename T>
+VaList<T> filter(VaFunc<bool(T)> predicate, const VaList<T>& data) {
+    VaList<T> result;
+    for (Size i = 0; i < len(data); i++) {
+        if (predicate(data[i])) {
+            result.append(data[i]);
+        }
+    }
+
+    return result;
+}
+// @}
 
 /**
  * @brief Reduces the list to a single value by applying a reducer function.
@@ -883,7 +1697,7 @@ VaList<T> filter(Function<T, bool> predicate, const VaList<T>& data) {
  * @return The final reduced value.
  */
 template <typename T, typename R>
-R reduce(Function<R, R, T> reducer, const VaList<T>& data, R initial) {
+R reduce(VaFunc<R(R, T)> reducer, const VaList<T>& data, R initial) {
     R acc = initial;
     for (Size i = 0; i < len(data); i++) {
         acc = reducer(acc, data[i]);
@@ -902,7 +1716,7 @@ VaList<VaPair<Size, T>> enumerate(const VaList<T>& data) {
     VaList<VaPair<Size, T>> result;
     result.reserve(len(data));
     for (Size i = 0; i < len(data); i++) {
-        result.append({i, data[i]});
+        result.appendEmplace(i, data[i]);
     }
 
     return result;
@@ -925,7 +1739,7 @@ VaList<VaPair<T1, T2>> zip(const VaList<T1>& a, const VaList<T2>& b) {
     VaList<VaPair<T1, T2>> result;
     result.reserve(count);
     for (Size i = 0; i < count; i++) {
-        result.emplace(a[i], b[i]);
+        result.appendEmplace(a[i], b[i]);
     }
 
     return result;
@@ -941,7 +1755,7 @@ template <typename T>
 VaList<T> reversed(const VaList<T>& data) {
     VaList<T> result;
     result.reserve(len(data));
-    for (Size i = len(data); i-- > 0;) {
+    for (Size i = len(data); i > 0; i--) {
         result.append(data[i]);
     }
     return result;

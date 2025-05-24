@@ -11,6 +11,8 @@
 #include <VaLib/Meta/BasicDefine.hpp>
 #include <VaLib/Types/String.hpp>
 
+#include <VaLib/Types/TypeTraits.hpp>
+
 #include <functional>
 
 TODO(maqi-x, "Implement VaHash without using std::hash");
@@ -25,7 +27,7 @@ struct VaHash<VaString> {
 #ifdef VaLib_USE_CONCEPTS
 template <typename T>
 concept HasHashMethod = requires(T t) {
-    { t.hash() } -> std::convertible_to<std::size_t>;
+    { t.hash() } -> std::convertible_to<Size>;
 };
 
 template <HasHashMethod T>
@@ -36,17 +38,8 @@ struct VaHash<T> {
 };
 
 #elif __cplusplus >= CPP20
-template <typename T, typename = void>
-struct hasHashMethod : FalseType {};
-
 template <typename T>
-struct hasHashMethod<T, std::void_t<decltype(std::declval<T>().hash())>>: TrueType {};
-
-template <typename T>
-constexpr bool hasHashMethodV = hasHashMethod<T>::value;
-
-template <typename T>
-requires hasHashMethodV<T>
+    requires HasHashMethod<T>
 struct VaHash<T> {
     Size operator()(const T& value) { return value.hash(); }
 };

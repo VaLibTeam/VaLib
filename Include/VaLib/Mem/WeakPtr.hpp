@@ -132,11 +132,11 @@ class VaWeakPtr {
     }
 };
 
-template <typename T>
 /**
  * @brief A weak pointer for managing non-owning references to a shared array.
  * @tparam T The type of the objects in the array being referenced.
  */
+template <typename T>
 class VaWeakPtr<T[]> {
   public:
     using ControlBlock = va::detail::ControlBlock<T[]>; ///< Alias for the control block type.

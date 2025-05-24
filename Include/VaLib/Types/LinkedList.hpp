@@ -3,13 +3,14 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
+#include <VaLib/RawAccess/LinkedList.hpp>
+
 #include <VaLib/Meta/BasicDefine.hpp>
 #include <VaLib/Types/BasicTypedef.hpp>
 #include <VaLib/Types/Error.hpp>
 #include <VaLib/Types/TypeTraits.hpp>
 
 #include <initializer_list>
-#include <type_traits>
 
 template <typename T>
 struct VaLinkedListNode {
@@ -22,17 +23,17 @@ struct VaLinkedListNode {
 };
 
 template <typename T>
-class VaLinkedList {
+class alignas(VaLinkedListRawView<T>) VaLinkedList {
   public:
     using Node = VaLinkedListNode<T>;
 
   protected:
-    Node* head; /// @brief Pointer to the first node in the list
-    Node* tail; /// @brief Pointer to the last node in the list
-    Size len;   /// @brief Current number of elements in the list
+    Node* head; ///< Pointer to the first node in the list
+    Node* tail; ///< Pointer to the last node in the list
+    Size len;   ///< Current number of elements in the list
 
-    Node* freeListHead; /// @brief Current number of elements in the list
-    Size freeListSize;  /// @brief Number of nodes currently stored in the free list
+    Node* freeListHead; ///< Current number of elements in the list
+    Size freeListSize;  ///< Number of nodes currently stored in the free list
 
     /**
      * @brief Unlinks a node from the list without deallocating it.
@@ -193,6 +194,14 @@ class VaLinkedList {
         }
     }
 
+    #if __cplusplus >= CPP17
+        template <typename Tuple, Size... Is>
+        inline void prependAllImpl(Tuple&& tup, std::index_sequence<Is...>) {
+            // reverse fold using index pack
+            ((prepend(std::get<sizeof...(Is) - 1 - Is>(std::forward<Tuple>(tup)))), ...);
+        }
+    #endif
+
   public:
     /**
      * @brief Default constructor. Initializes an empty list with no reserved capacity.
@@ -308,6 +317,7 @@ class VaLinkedList {
      *
      * @warning This is a slow O(n/2) operation. Prefer other access patterns when possible.
      */
+    [[ nodiscard("O(n) access") ]]
     inline T& get(Size index) {
         return nodeAt(index)->value;
     }
@@ -319,6 +329,7 @@ class VaLinkedList {
      *
      * @warning This is a slow O(n/2) operation. Prefer other access patterns when possible.
      */
+    [[ nodiscard("O(n) access") ]]
     inline const T& get(Size index) const {
         return nodeAt(index)->value;
     }
@@ -328,8 +339,9 @@ class VaLinkedList {
      * @param index Position of the element to access.
      * @return Reference to the element at the specified index.
      *
-     * @warning This is a slow O(n/2) operation. Use only when bounds are guaranteed.
+     * @warning This operation is O(n). For frequent indexed access, consider a contiguous list.
      */
+    [[ nodiscard("O(n) access") ]]
     T& operator[](Size index) {
         return this->get(index);
     }
@@ -339,36 +351,73 @@ class VaLinkedList {
      * @param index Position of the element to access.
      * @return Const reference to the element at the specified index.
      *
-     * @warning This is a slow O(n/2) operation. Use only when bounds are guaranteed.
+     * @warning This operation is O(n). For frequent indexed access, consider a contiguous list.
      */
+    [[ nodiscard("O(n) access") ]]
     const T& operator[](Size index) const {
         return this->get(index);
     }
 
     /**
      * @brief Returns a reference to the element at the given index with bounds checking.
-     * @param index Position of the element to access.
+     *        Supports negative indexing, where -1 refers to the last element, -2 to the second last, and so on.
+     * @param index Position of the element to access. Negative values count from the end of the list.
      * @return Reference to the element at the specified index.
      *
-     * @throw IndexOutOfRangeError if index is out of bounds.
+     * @throws IndexOutOfRangeError if index is out of bounds.
      * @warning This is a slow O(n/2) operation. Use with care in performance-critical code.
      */
-    T& at(Size index) {
-        if (index >= len) throw IndexOutOfRangeError(len, index);
+    [[ nodiscard("O(n) access") ]]
+    T& at(int32 index) {
+        if (index < 0) index += len;
+        if (index < 0 || static_cast<Size>(index) >= len) throw IndexOutOfRangeError(len, index);
         return this->get(index);
     }
 
     /**
      * @brief Returns a const reference to the element at the given index with bounds checking.
-     * @param index Position of the element to access.
+     *        Supports negative indexing, where -1 refers to the last element, -2 to the second last, and so on.
+     * @param index Position of the element to access. Negative values count from the end of the list.
      * @return Const reference to the element at the specified index.
      *
-     * @throw IndexOutOfRangeError if index is out of bounds.
+     * @throws IndexOutOfRangeError if index is out of bounds.
      * @warning This is a slow O(n/2) operation. Use with care in performance-critical code.
      */
-    const T& at(Size index) const {
-        if (index >= len) throw IndexOutOfRangeError(len, index);
+    [[ nodiscard("O(n) access") ]]
+    const T& at(int32 index) const {
+        if (index < 0) index += len;
+        if (index < 0 || index >= len) throw IndexOutOfRangeError(len, index);
         return this->get(index);
+    }
+
+    /**
+     * @brief Sets the value at the specified index to the given value.
+     *        Supports negative indexing, where -1 refers to the last element, -2 to the second last, and so on.
+     * @param index Position of the element to set. Negative values count from the end of the list.
+     * @param value The value to set at the specified index.
+     *
+     * @throws IndexOutOfRangeError if index is out of bounds.
+     * @warning This is a slow O(n/2) operation. Use with care in performance-critical code.
+     */
+    void set(int32 index, const T& value) {
+        if (index < 0) index += len;
+        if (index < 0 || static_cast<Size>(index) >= len) throw IndexOutOfRangeError(len, index);
+        nodeAt(index)->value = value;
+    }
+
+    /**
+     * @brief Sets the value at the specified index to the given value (move version).
+     *        Supports negative indexing, where -1 refers to the last element, -2 to the second last, and so on.
+     * @param index Position of the element to set. Negative values count from the end of the list.
+     * @param value The value to move into the specified index.
+     *
+     * @throws IndexOutOfRangeError if index is out of bounds.
+     * @warning This is a slow O(n/2) operation. Use with care in performance-critical code.
+     */
+    void set(int32 index, T&& value) {
+        if (index < 0) index += len;
+        if (index < 0 || static_cast<Size>(index) >= len) throw IndexOutOfRangeError(len, index);
+        nodeAt(index)->value = std::move(value);
     }
 
     /**
@@ -416,7 +465,7 @@ class VaLinkedList {
      * @param index The position at which to insert the element.
      * @param value The value to insert.
      *
-     * @throw IndexOutOfRangeError If the index is greater than the current list length.
+     * @throws IndexOutOfRangeError If the index is greater than the current list length.
      */
     void insert(Size index, const T& value) {
         if (index > len) throw IndexOutOfRangeError(len, index);
@@ -434,7 +483,7 @@ class VaLinkedList {
      * @param index The position at which to insert the element.
      * @param value The value to insert.
      *
-     * @throw IndexOutOfRangeError If the index is greater than the current list length.
+     * @throws IndexOutOfRangeError If the index is greater than the current list length.
      */
     void insert(Size index, T&& value) {
         if (index > len) throw IndexOutOfRangeError(len, index);
@@ -447,11 +496,281 @@ class VaLinkedList {
         len++;
     }
 
+    template <typename... Args>
+    void appendEmplace(Args&&... args) {
+        Node* node = getNode();
+        new (&node->value) T(std::forward<Args>(args)...);
+        linkToEnd(node);
+        len++;
+    }
+
+    template <typename... Args>
+    void prependEmplace(Args&&... args) {
+        Node* node = getNode();
+        new (&node->value) T(std::forward<Args>(args)...);
+        linkToFront(node);
+        len++;
+    }
+
+    template <typename... Args>
+    void insertEmplace(Size index, Args&&... args) {
+        if (index > len) throw IndexOutOfRangeError(len, index);
+        if (index == 0) return prependEmplace(std::forward<Args>(args)...);
+        if (index == len) return appendEmplace(std::forward<Args>(args)...);
+
+        Node* current = nodeAt(index);
+        Node* node = getNode();
+        new (&node->value) T(std::forward<Args>(args)...);
+
+        insertBefore(current, node);
+        len++;
+    }
+
+    /**
+     * @brief Appends each element from an iterable container to the end of the list.
+     * @tparam Iterable A container type that supports iteration (e.g., std::vector, std::list).
+     * @param iterable The container whose elements will be appended.
+     */
+    template <typename Iterable>
+    void appendEach(const Iterable& iterable) {
+        for (auto it = std::begin(iterable); it != std::end(iterable); ++it) {
+            append(*it);
+        }
+    }
+
+    /**
+     * @brief Appends each element from an iterable container to the end of the list (move version).
+     * @tparam Iterable A container type that supports iteration (e.g., std::vector, std::list).
+     * @param iterable The container whose elements will be moved and appended.
+     */
+    template <typename Iterable, typename = tt::EnableIf<!tt::IsSame<tt::RemoveCVRef<Iterable>, VaLinkedList<T>>> >
+    void appendEach(Iterable&& iterable) {
+        for (auto it = std::begin(iterable); it != std::end(iterable); ++it) {
+            append(std::move(*it));
+        }
+    }
+
+    /**
+     * @brief Appends all elements from another linked list to the end of this list.
+     * @param other The linked list whose elements will be appended.
+     */
+    void appendEach(const VaLinkedList& other) {
+        for (Node* n = other.head; n; n = n->next) {
+            append(n->value);
+        }
+    }
+
+    /**
+     * @brief Appends all elements from another linked list to the end of this list (move version).
+     * @param other The linked list whose elements will be moved and appended.
+     */
+    void appendEach(VaLinkedList&& other) {
+        if (other.len == 0 || this == &other) return;
+        if (len == 0) {
+            head = other.head;
+            tail = other.tail;
+            len = other.len;
+        } else {
+            tail->next = other.head;
+            other.head->prev = tail;
+            tail = other.tail;
+            len += other.len;
+        }
+        other.head = other.tail = nullptr;
+        other.len = 0;
+    }
+
+    template <typename Iterable>
+    void extend(const Iterable& iterable) {
+        appendEach(iterable);
+    }
+
+    template <typename Iterable, typename = tt::EnableIf<!tt::IsSame<tt::RemoveCVRef<Iterable>, VaLinkedList<T>>> >
+    void extend(Iterable&& iterable) {
+        appendEach(std::forward<Iterable>(iterable));
+    }
+
+    /**
+     * @brief Prepends each element from an iterable container to the beginning of the list.
+     * @tparam Iterable A container type that supports reverse iteration (e.g., std::vector, std::list).
+     * @param iterable The container whose elements will be prepended.
+     */
+    template <typename Iterable>
+    void prependEach(const Iterable& iterable) {
+        for (auto it = std::rbegin(iterable); it != std::rend(iterable); ++it) {
+            prepend(*it);
+        }
+    }
+
+    /**
+     * @brief Prepends each element from an iterable container to the beginning of the list (move version).
+     * @tparam Iterable A container type that supports reverse iteration (e.g., std::vector, std::list).
+     * @param iterable The container whose elements will be moved and prepended.
+     */
+    template <typename Iterable, typename = tt::EnableIf<!tt::IsSame<tt::RemoveCVRef<Iterable>, VaLinkedList<T>>> >
+    void prependEach(Iterable&& iterable) {
+        for (auto it = std::rbegin(iterable); it != std::rend(iterable); ++it) {
+            prepend(std::move(*it));
+        }
+    }
+
+    /**
+     * @brief Prepends all elements from another linked list to the beginning of this list.
+     * @param other The linked list whose elements will be prepended.
+     */
+    void prependEach(const VaLinkedList& other) {
+        for (Node* n = other.tail; n; n = n->prev) {
+            prepend(n->value);
+        }
+    }
+
+    /**
+     * @brief Prepends all elements from another linked list to the beginning of this list (move version).
+     * @param other The linked list whose elements will be moved and prepended.
+     */
+    void prependEach(VaLinkedList&& other) {
+        if (other.len == 0 || this == &other) return;
+        if (len == 0) {
+            head = other.head;
+            tail = other.tail;
+            len = other.len;
+        } else {
+            other.tail->next = head;
+            head->prev = other.tail;
+            head = other.head;
+            len += other.len;
+        }
+        other.head = other.tail = nullptr;
+        other.len = 0;
+    }
+
+    /**
+     * @brief Inserts each element from an iterable container at the specified position in the list.
+     * @tparam Iterable A container type that supports reverse iteration (e.g., std::vector, std::list).
+     * @param pos The position at which to insert the elements.
+     * @param iterable The container whose elements will be inserted.
+     *
+     * @throws IndexOutOfRangeError If the position is out of bounds.
+     */
+    template <typename Iterable>
+    void insertEach(Size pos, const Iterable& iterable) {
+        if (pos > len) throw IndexOutOfRangeError(len, pos);
+        for (auto it = std::rbegin(iterable); it != std::rend(iterable); ++it) {
+            insert(pos, *it);
+        }
+    }
+
+    /**
+     * @brief Inserts each element from an iterable container at the specified position in the list (move version).
+     * @tparam Iterable A container type that supports reverse iteration (e.g., std::vector, std::list).
+     * @param pos The position at which to insert the elements.
+     * @param iterable The container whose elements will be moved and inserted.
+     *
+     * @throws IndexOutOfRangeError If the position is out of bounds.
+     */
+    template <typename Iterable, typename = tt::EnableIf<!tt::IsSame<tt::RemoveCVRef<Iterable>, VaLinkedList<T>>> >
+    void insertEach(Size pos, Iterable&& iterable) {
+        if (pos > len) throw IndexOutOfRangeError(len, pos);
+        for (auto it = std::rbegin(iterable); it != std::rend(iterable); ++it) {
+            insert(pos, std::move(*it));
+        }
+    }
+
+    /**
+     * @brief Inserts all elements from another linked list at the specified position in this list.
+     * @param pos The position at which to insert the elements.
+     * @param other The linked list whose elements will be inserted.
+     *
+     * @throws IndexOutOfRangeError If the position is out of bounds.
+     */
+    void insertEach(Size pos, const VaLinkedList& other) {
+        if (pos > len) throw IndexOutOfRangeError(len, pos);
+        for (Node* n = other.tail; n; n = n->prev) {
+            insert(pos, n->value);
+        }
+    }
+
+    /**
+     * @brief Inserts all elements from another linked list at the specified position in this list (move version).
+     * @param pos The position at which to insert the elements.
+     * @param other The linked list whose elements will be moved and inserted.
+     *
+     * @throws IndexOutOfRangeError If the position is out of bounds.
+     */
+    void insertEach(Size pos, VaLinkedList&& other) {
+        if (other.len == 0 || this == &other) return;
+        if (pos > len) throw IndexOutOfRangeError(len, pos);
+        if (pos == len) {
+            appendEach(std::move(other));
+            return;
+        }
+        if (pos == 0) {
+            prependEach(std::move(other));
+            return;
+        }
+        Node* atNode = nodeAt(pos);
+        Node* before = atNode->prev;
+
+        before->next = other.head;
+        other.head->prev = before;
+        other.tail->next = atNode;
+        atNode->prev = other.tail;
+
+        len += other.len;
+        other.head = other.tail = nullptr;
+        other.len = 0;
+    }
+
+    #if __cplusplus >= CPP17
+        /**
+         * @brief Appends multiple elements to the end of the list.
+         * @tparam Args Types of the elements to append.
+         * @param args Elements to append to the list.
+         *
+         * @note This method uses variadic templates to accept multiple arguments
+         *       and appends each of them to the list in order.
+         */
+        template <typename... Args>
+        inline void appendAll(Args&&... args) {
+            (append(std::forward<Args>(args)), ...);
+        }
+
+        /**
+         * @brief Prepends multiple elements to the beginning of the list.
+         * @tparam Args Types of the elements to prepend.
+         * @param args Elements to prepend to the list.
+         *
+         * @note This method uses variadic templates to accept multiple arguments
+         *       and prepends each of them to the list in reverse order.
+         */
+        template <typename... Args>
+        inline void prependAll(Args&&... args) {
+            prependAllImpl(VaTuple<Args...>(std::forward<Args>(args)...), std::index_sequence_for<Args...>{});
+        }
+
+        /**
+         * @brief Inserts multiple elements at the specified index in the list.
+         * @tparam Args Types of the elements to insert.
+         * @param index Position to insert the elements at.
+         * @param args Elements to insert into the list.
+         *
+         * @note This method uses variadic templates to accept multiple arguments
+         *       and inserts each of them at the specified index in order.
+         *
+         * @throws IndexOutOfRangeError If the index is out of bounds.
+         */
+        template <typename... Args>
+        inline void insertAll(Size index, Args&&... args) {
+            reserve(len + sizeof...(args));
+            insertEach(index, {args...});
+        }
+    #endif
+
     /**
      * @brief Deletes the element at the specified index.
      * @param index The position of the element to delete.
      *
-     * @throw IndexOutOfRangeError If the index is out of bounds.
+     * @throws IndexOutOfRangeError If the index is out of bounds.
      */
     void del(Size index) {
         if (index >= len) throw IndexOutOfRangeError(len, index);
@@ -466,7 +785,7 @@ class VaLinkedList {
      * @brief Removes and returns the last element in the list.
      *
      * @return The value of the removed element.
-     * @throw ValueError If the list is empty.
+     * @throws ValueError If the list is empty.
      */
     T pop() {
         if (len == 0) throw ValueError("pop() on empty list");
@@ -485,7 +804,7 @@ class VaLinkedList {
      * @brief Deletes and returns the element at the specified index.
      * @param index The position of the element to delete.
      *
-     * @throw IndexOutOfRangeError If the index is out of bounds.
+     * @throws IndexOutOfRangeError If the index is out of bounds.
      */
     T pop(Size index) {
         if (index >= len) throw IndexOutOfRangeError(len, index);
@@ -502,9 +821,9 @@ class VaLinkedList {
 
     /**
      * @brief Removes and returns the first element in the list.
-     *
      * @return The value of the removed element.
-     * @throw ValueError If the list is empty.
+     *
+     * @throws ValueError If the list is empty.
      */
     T shift() {
         if (len == 0) throw ValueError("shift() on empty list");
@@ -520,10 +839,95 @@ class VaLinkedList {
     }
 
     /**
+     * @brief Returns a reference to the first element in the list.
+     * @return Reference to the first element.
+     *
+     * @throws ValueError If the list is empty.
+     */
+    T& front() {
+        if (len == 0) throw ValueError("front() on empty list");
+        return head->value;
+    }
+
+    /**
+     * @brief Returns a const reference to the first element in the list.
+     * @return Const reference to the first element.
+     *
+     * @throws ValueError If the list is empty.
+     */
+    const T& front() const {
+        if (len == 0) throw ValueError("front() on empty list");
+        return head->value;
+    }
+
+    /**
+     * @brief Returns a reference to the last element in the list.
+     * @return Reference to the last element.
+     *
+     * @throws ValueError If the list is empty.
+     */
+    T& back() {
+        if (len == 0) throw ValueError("back() on empty list");
+        return tail->value;
+    }
+
+    /**
+     * @brief Returns a const reference to the last element in the list.
+     *
+     * @return Const reference to the last element.
+     * @throws ValueError If the list is empty.
+     */
+    const T& back() const {
+        if (len == 0) throw ValueError("back() on empty list");
+        return tail->value;
+    }
+
+    /**
+     * @brief Returns a reference to the first element in the list without bounds checking.
+     * @return Reference to the first element.
+     *
+     * @note This method does not perform any size checks. The behavior is undefined if the list is empty.
+     */
+    T& frontUnchecked() noexcept {
+        return head->value;
+    }
+
+    /**
+     * @brief Returns a const reference to the first element in the list without bounds checking.
+     * @return Const reference to the first element.
+     *
+     * @note This method does not perform any size checks. The behavior is undefined if the list is empty.
+     */
+    const T& frontUnchecked() const noexcept {
+        return head->value;
+    }
+
+    /**
+     * @brief Returns a reference to the last element in the list without bounds checking.
+     * @return Reference to the last element.
+     *
+     * @note This method does not perform any size checks. The behavior is undefined if the list is empty.
+     */
+    T& backUnchecked() noexcept {
+        return tail->value;
+    }
+
+    /**
+     * @brief Returns a const reference to the last element in the list without bounds checking.
+     * @return Const reference to the last element.
+     *
+     * @note This method does not perform any size checks. The behavior is undefined if the list is empty.
+     */
+    const T& backUnchecked() const noexcept {
+        return tail->value;
+    }
+
+    /**
      * @brief Ensures the internal storage can accommodate at least the given number of elements.
      * @param minCap The minimum total capacity (used + free nodes) to ensure.
      *
      * @note Nodes are preallocated and added to the free list if necessary.
+     * @warning This is a linked list with a free list system. Using reserve() before performing many element addition operations does not improve performance, as linked lists do not benefit from preallocation in the same way as contiguous containers like array lists.
      */
     void reserve(Size minCap) noexcept {
         Size totalCurrent = len + freeListSize;
@@ -544,6 +948,10 @@ class VaLinkedList {
             freeListHead = next;
         }
         freeListSize = 0;
+    }
+
+    bool isEmpty() {
+        return this->len == 0;
     }
 
     /**
@@ -571,6 +979,57 @@ class VaLinkedList {
         len = 0;
     }
 
+    /**
+     * @brief Returns the number of elements currently stored in the list.
+     * @return The current length of the list.
+     */
+    inline Size getLength() const noexcept {
+        return this->len;
+    }
+
+    /**
+     * @brief Returns the total capacity of the linked list.
+     *        This method calculates the total capacity of the linked list,
+     *        which is the sum of the number of elements currently stored in the list (`len`)
+     *        and the number of unused nodes available in the free list (`freeListSize`).
+     * @return The total capacity of the linked list.
+     */
+    inline Size getCapacity() const noexcept {
+        return this->len + this->freeListSize;
+    }
+
+    /**
+     * @brief Alias for a raw layout-compatible view of the linked list internals.
+     *        This struct can be used for safe inspection or unsafe manipulation.
+     */
+    using RawView = VaLinkedListRawView<T>;
+
+    /**
+     * @brief Returns a read-only view of the linked list internals.
+     *        Reinterprets this list as a const-qualified raw view struct.
+     * @return A const pointer to `VaLinkedListRawView<T>`.
+     *
+     * @note This method is layout-dependent and assumes standard layout ordering.
+     * @see getUnsafeAccess() for mutating access.
+     */
+    const RawView* getRawView() const {
+        return reinterpret_cast<const RawView*>(this);
+    }
+
+    /**
+     * @brief Returns a mutable raw view of the linked list internals.
+     *        Reinterprets this list as a `VaLinkedListRawView<T>*`.
+     *        Allows full mutation of head/tail/length/freelist pointers.
+     *
+     * @return A pointer to `VaLinkedListRawView<T>` for direct access.
+     *
+     * @warning This is an unsafe API. You are responsible for keeping the structure valid.
+     * @see getRawView() for safe read-only access.
+     */
+    RawView* getUnsafeAccess() {
+        return reinterpret_cast<RawView*>(this);
+    }
+
   public:
     /**
      * @brief Compares two lists for equality element by element.
@@ -578,7 +1037,7 @@ class VaLinkedList {
      * @param rhs The second list to compare.
      * @return True if both lists are equal in size and content.
      *
-     * @note Supports types with !=, ==, or that are trivially copyable.
+     * @note Supports types with ==, or that are trivially copyable.
      */
     friend bool operator==(const VaLinkedList& lhs, const VaLinkedList& rhs) {
         if (&lhs == &rhs) return true;
@@ -588,15 +1047,17 @@ class VaLinkedList {
         Node* b = rhs.head;
 
         while (a && b) {
-            if constexpr (va::HasInequalityOperatorV<T>) {
-                if (a->value != b->value) return false;
-            } else if constexpr (va::HasEqualityOperatorV<T>) {
+            #if __cplusplus >= CPP17
+                if constexpr (tt::HasEqualityOperator_v<T>) {
+                    if (!(a->value == b->value)) return false;
+                } else if constexpr (tt::IsTriviallyCopyable<T>) {
+                    if (std::memcmp(&a->value, &b->value, sizeof(T)) != 0) return false;
+                } else {
+                    static_assert(sizeof(T) == -1, "Cannon compare list with non-comparable elements");
+                }
+            #else
                 if (!(a->value == b->value)) return false;
-            } else if constexpr (std::is_trivially_copyable_v<T>) {
-                if (std::memcmp(&a->value, &b->value, sizeof(T)) != 0) return false;
-            } else {
-                COMPILE_ERROR("Type T must have an equality operator or be trivially copyable");
-            }
+            #endif
 
             a = a->next;
             b = b->next;
@@ -627,20 +1088,16 @@ class VaLinkedList {
         Node* a = lhs.head;
         Node* b = rhs.head;
 
-        if constexpr (!va::HasLessThanV<T>) {
-            // no less than operator, but for consistency return false
-            return false;
-        } else {
-            while (a && b) {
-                if (a->value < b->value) return true;
-                if (b->value < a->value) return false;
+        static_assert(tt::HasLessThan<T>::value, "Cannot compare lists with non-comparable elements");
+        while (a && b) {
+            if (a->value < b->value) return true;
+            if (b->value < a->value) return false;
 
-                a = a->next;
-                b = b->next;
-            }
-
-            return a == nullptr && b != nullptr;
+            a = a->next;
+            b = b->next;
         }
+
+        return a == nullptr && b != nullptr;
     }
 
     /**
@@ -667,17 +1124,77 @@ class VaLinkedList {
      */
     friend bool operator>=(const VaLinkedList& lhs, const VaLinkedList& rhs) { return !(lhs < rhs); }
 
-  public :
+    template <typename Iterable, typename = tt::EnableIf<!tt::IsSame<tt::RemoveCVRef<Iterable>, VaLinkedList<T>>>>
+    friend bool operator==(const VaLinkedList& lhs, const Iterable& rhs) {
+        auto it = std::begin(rhs);
+        Node* current = lhs.head;
+
+        while (current && it != std::end(rhs)) {
+            if (!(current->value == *it)) return false;
+            current = current->next;
+            ++it;
+        }
+
+        return current == nullptr && it == std::end(rhs);
+    }
+
+    template <typename Iterable, typename = tt::EnableIf<!tt::IsSame<tt::RemoveCVRef<Iterable>, VaLinkedList<T>>>>
+    friend bool operator!=(const VaLinkedList& lhs, const Iterable& rhs) {
+        return !(lhs == rhs);
+    }
+
+    template <typename Iterable, typename = tt::EnableIf<!tt::IsSame<tt::RemoveCVRef<Iterable>, VaLinkedList<T>>>>
+    friend bool operator<(const VaLinkedList& lhs, const Iterable& rhs) {
+        auto it = std::begin(rhs);
+        Node* current = lhs.head;
+
+        while (current && it != std::end(rhs)) {
+            if (current->value < *it) return true;
+            if (*it < current->value) return false;
+            current = current->next;
+            ++it;
+        }
+
+        return current == nullptr && it != std::end(rhs);
+    }
+
+    template <typename Iterable, typename = tt::EnableIf<!tt::IsSame<tt::RemoveCVRef<Iterable>, VaLinkedList<T>>>>
+    friend bool operator>(const VaLinkedList& lhs, const Iterable& rhs) {
+        return rhs < lhs;
+    }
+
+    template <typename Iterable, typename = tt::EnableIf<!tt::IsSame<tt::RemoveCVRef<Iterable>, VaLinkedList<T>>>>
+    friend bool operator<=(const VaLinkedList& lhs, const Iterable& rhs) {
+        return !(rhs < lhs);
+    }
+
+    template <typename Iterable, typename = tt::EnableIf<!tt::IsSame<tt::RemoveCVRef<Iterable>, VaLinkedList<T>>>>
+    friend bool operator>=(const VaLinkedList& lhs, const Iterable& rhs) {
+        return !(lhs < rhs);
+    }
+
+  public friends:
+    /**
+     * @brief Returns the number of elements in the linked list.
+     * @param lst The linked list to query.
+     * @return The number of elements in the list.
+     */
     friend inline Size len(const VaLinkedList& lst) noexcept { return lst.len; }
+
+    /**
+     * @brief Returns the total capacity of the linked list, including free nodes.
+     * @param lst The linked list to query.
+     * @return The total capacity of the list.
+     */
     friend inline Size cap(const VaLinkedList& lst) noexcept { return lst.len + lst.freeListSize; }
 
-  public:
+  public iterators:
     /**
      * @brief Bidirectional iterator for traversing and modifying the list.
-     *
-     * Provides access to non-const elements and supports both forward and backward iteration.
+     *        Provides access to non-const elements and supports both forward and backward iteration.
      */
     class Iterator {
+      protected:
         Node* current;
 
       public:
@@ -714,10 +1231,10 @@ class VaLinkedList {
 
     /**
      * @brief Provides read-only bidirectional access to the list elements.
-     *
-     * Supports forward and backward traversal without modifying elements.
+     *        Supports forward and backward traversal without modifying elements.
      */
     class ConstIterator {
+      protected:
         Node* current;
 
       public:

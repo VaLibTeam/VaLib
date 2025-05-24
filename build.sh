@@ -5,10 +5,9 @@
 
 cd "$(dirname "$0")" || exit 1
 source "scripts/utils.sh" || exit 1
+source "scripts/get-cxx-flags.sh" || exit 1
 set -e || exit 1
 shopt -s nullglob || exit 1
-
-VER="1.8.0"
 
 SRC="src"
 BUILD="build"
@@ -16,7 +15,7 @@ OUTPUT="libvalib"
 OUTDIR="out"
 
 CXX="${CXX:-g++}"
-CXXFLAGS=( -Wall -Wextra -std="c++20" -O2 -fPIC )
+# CXXFLAGS=( -03 )
 
 AR="ar"
 ARFLAGS=()
@@ -28,15 +27,6 @@ srcArchiveName="VaLib-Source-$VER"
 develArchiveName="VaLib-Devel-$VER"
 objArchiveName="VaLib-ObjFiles-$VER"
 fullArchiveName="VaLib-Full-$VER"
-
-if [ -f "compile_flags.txt" ]; then
-    readFlags=$(tr '\n' ' ' < compile_flags.txt)
-    if [ -n "$readFlags" ]; then
-        read -ra CXXFLAGS <<< "$readFlags"
-    else
-        CXXFLAGS=( -Wall -Wextra -std="c++20" -O2 -fPIC )
-    fi
-fi
 
 SuccessExit=0
 CompilationErrorExit=1
@@ -129,8 +119,8 @@ Help() {
 }
 
 Clean() {
-    [[ -n "$BUILD" && -d "$BUILD" && "$(ls -A "$BUILD")"    ]] && rm -r "$BUILD"/*
-    [[ -n "$OUTDIR" && -d "$OUTDIR" && "$(ls -A "$OUTDIR")" ]] && rm -r "$OUTDIR"/*
+    [[ -n "$BUILD" && -d "$BUILD" && "$(ls -A "$BUILD")"    ]] && rm -r "${BUILD:?}"/*
+    [[ -n "$OUTDIR" && -d "$OUTDIR" && "$(ls -A "$OUTDIR")" ]] && rm -r "${OUTDIR:?}"/*
 }
 
 CheckArgs() {
@@ -228,7 +218,6 @@ ParseFlags() {
 
         --tar=*)
             TAR="${arg#*=}" ;;
-
         --tar-flags=*)
             read -ra TARFLAGS <<< "${arg#*=}" ;;
 
@@ -268,7 +257,7 @@ ParseFlags() {
 
         --build-all | --target=all | --build-target=all)
             all=("static" "shared" "object" "src-archive" "devel-archive" "objects-archive" "full-archive")
-            targets+=( ${all[@]} ) ;;
+            targets+=( "${all[@]}" ) ;;
 
         --target=* | --build-target=*)
             tg="${arg#*=}"
@@ -350,7 +339,7 @@ BuildStatic() {
 }
 
 BuildShared() {
-    "$CXX" -shared -o "$OUTDIR/$OUTPUT.so" "${objFiles[@]}" || ShowError $LinkingErrorExit "Failed to link."
+    "$CXX" "${CXXFLAGS[@]}" -shared -o "$OUTDIR/$OUTPUT.so" "${objFiles[@]}" || ShowError $LinkingErrorExit "Failed to link."
 }
 
 BuildObject() {
@@ -358,19 +347,19 @@ BuildObject() {
 }
 
 BuildSrcArchive() {
-    "$TAR" -cJf "$OUTDIR/$srcArchiveName.tar.xz" "$SRC/" || ShowError $ErrorExit "Failed to create source archive."
+    "$TAR" -cJf "${TARFLAGS[@]}" "$OUTDIR/$srcArchiveName.tar.xz" "$SRC/" || ShowError $ErrorExit "Failed to create source archive."
 }
 
 BuildDevelArchive() {
-    "$TAR" -cJf "$OUTDIR/$develArchiveName.tar.xz" "${includePath[@]}" || ShowError $ErrorExit "Failed to create development archive."
+    "$TAR" -cJf "${TARFLAGS[@]}" "$OUTDIR/$develArchiveName.tar.xz" "${includePath[@]}" || ShowError $ErrorExit "Failed to create development archive."
 }
 
 BuildObjectArchive() {
-    "$TAR" -cJf "$OUTDIR/$objArchiveName.tar.xz" "$BUILD/" || ShowError $ErrorExit "Failed to create object archive."
+    "$TAR" -cJf "${TARFLAGS[@]}" "$OUTDIR/$objArchiveName.tar.xz" "$BUILD/" || ShowError $ErrorExit "Failed to create object archive."
 }
 
 BuildFullArchive() {
-    "$TAR" -cJf "$OUTDIR/$fullArchiveName.tar.xz" "${includePath[@]}" "$BUILD/" "$SRC/" "$OUTDIR/" || ShowError $ErrorExit "Failed to create full archive."
+    "$TAR" -cJf "${TARFLAGS[@]}" "$OUTDIR/$fullArchiveName.tar.xz" "${includePath[@]}" "$BUILD/" "$SRC/" "$OUTDIR/" || ShowError $ErrorExit "Failed to create full archive."
 }
 
 InstallStatic() {

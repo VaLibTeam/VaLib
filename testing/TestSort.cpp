@@ -2,11 +2,8 @@
 // Licensed under GNU GPL v3 License. See LICENSE file.
 // (C) 2025 VaLibTeam
 
-#define VaLib_USE_CONCEPTS
-
 #include <lib/testing.hpp>
 
-#include <VaLib.hpp>
 #include <VaLib/Types/List.hpp>
 #include <VaLib/FuncTools/Func.hpp>
 

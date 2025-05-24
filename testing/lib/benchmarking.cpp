@@ -10,6 +10,7 @@
 #include <chrono>
 #include <fstream>
 #include <iostream>
+#include <iomanip>
 
 namespace benchmarking {
 
@@ -98,14 +99,12 @@ void BenchmarkGroup::showResults() const {
             std::cout << " (slower than " << fastest.name << " " << std::fixed
                       << std::setprecision(2) << timesSlower << "x";
 
-            bool found = false;
             for (Size j = i + 1; j < len(entries); j++) {
                 const auto& evenSlower = entries[j];
                 if (evenSlower.result < 0) continue;
                 float timesFaster = (float)evenSlower.result / (float)current.result;
                 std::cout << ", faster than " << evenSlower.name << " " << std::fixed
                           << std::setprecision(2) << timesFaster << "x";
-                found = true;
             }
             std::cout << ")\n";
         }

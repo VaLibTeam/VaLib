@@ -5,10 +5,10 @@
 
 #include <VaLib/Meta/BasicDefine.hpp>
 #include <VaLib/Types/BasicTypedef.hpp>
+#include <VaLib/Types/TypeTraits.hpp>
 
 #include <VaLib/Types/Error.hpp>
 #include <VaLib/Types/List.hpp>
-#include <type_traits>
 
 /**
  * @class VaSlice A lightweight view into a contiguous sequence of elements.
@@ -22,9 +22,6 @@ class VaSlice {
   protected:
     T* data;  ///< Pointer to the first element in the slice
     Size len; ///< Number of elements in the slice
-
-    friend class VaList<T>;
-    friend class VaString;
 
   public:
     /**
@@ -53,10 +50,10 @@ class VaSlice {
      *
      * @note This creates a view of the entire VaList
      */
-    VaSlice(VaList<T>& list) : data(list.data), len(list.len) {}
+    VaSlice(VaList<T>& list) : data(list.dataPtr()), len(list.getLength()) {}
 
-    template <typename U = T, typename = std::enable_if<std::same_as<U, char>>>
-    VaSlice(VaString& str) : len(str.len), data(str.data) {}
+    template <typename U = T, typename = tt::EnableIf< tt::IsSame<U, char> >>
+    VaSlice(VaString& str) : data(str.dataPtr()), len(str.getLength()) {}
 
     /**
       * @brief Construct from any container with data() and size() methods
@@ -140,12 +137,13 @@ class VaSlice {
      * @brief Access element with bounds checking
      * @param index Position of the element
      * @return Reference to the element
-     * @throw IndexOutOfRangeError if index is out of bounds
      *
+     * @throws IndexOutOfRangeError if index is out of bounds
      * @note Safer but slower than operator[]
      */
-    inline T& at(Size index) {
-        if (index >= len) throw IndexOutOfRangeError(len, index);
+    inline T& at(int32 index) {
+        if (index < 0) index += len; // wrap negative indices
+        if (index < 0 || static_cast<Size>(index) >= len) throw IndexOutOfRangeError(len, index);
         return get(index);
     }
 
@@ -153,28 +151,55 @@ class VaSlice {
      * @brief Access const element with bounds checking
      * @param index Position of the element
      * @return Const reference to the element
-     * @throw IndexOutOfRangeError if index is out of bounds
      *
+     * @throws IndexOutOfRangeError if index is out of bounds
      * @note Safer but slower than operator[]
      */
-    inline const T& at(Size index) const {
-        if (index >= len) throw IndexOutOfRangeError(len, index);
+    inline const T& at(int32 index) const {
+        if (index < 0) index += len; // wrap negative indices
+        if (index < 0 || index >= len) throw IndexOutOfRangeError(len, index);
         return get(index);
+    }
+
+    /**
+     * @brief Set element at specified index
+     * @param index Position of the element
+     * @param value Value to set
+     *
+     * @throws IndexOutOfRangeError if index is out of bounds
+     * @note Supports negative indices for wrapping
+     */
+    void set(int32 index, const T& value) {
+        if (index < 0) index += len; // wrap negative indices
+        if (index < 0 || index >= len) throw IndexOutOfRangeError(len, index);
+        data[index] = value;
+    }
+
+    /**
+     * @brief Set element at specified index (move version)
+     * @param index Position of the element
+     * @param value Value to set (moved)
+     *
+     * @throws IndexOutOfRangeError if index is out of bounds
+     * @note Supports negative indices for wrapping
+     */
+    void set(int32 index, T&& value) {
+        if (index < 0) index += len; // wrap negative indices
+        if (index < 0 || index >= len) throw IndexOutOfRangeError(len, index);
+        data[index] = std::move(value);
     }
 
     /**
      * @brief Get raw pointer to the data
      * @return Pointer to the first element
-     *
-     * @note Useful for interoperability with C-style APIs
      */
-    T* getData() noexcept { return data; }
+    T* dataPtr() noexcept { return data; }
 
     /**
      * @brief Get const raw pointer to the data
      * @return Const pointer to the first element
      */
-    const T* getData() const noexcept { return data; }
+    const T* dataPtr() const noexcept { return data; }
 
     /**
      * @brief Get size in bytes
@@ -194,7 +219,7 @@ class VaSlice {
      * @brief Access first element
      * @return Reference to first element
 
-     * @throw ValueError if slice is empty
+     * @throws ValueError if slice is empty
      * @note Equivalent to slice[0] when not empty
      */
     T& front() {
@@ -206,8 +231,7 @@ class VaSlice {
      * @brief Access last element
      * @return Reference to last element
      *
-     * @throw ValueError if slice is empty
-     * @note Equivalent to slice[len-1] when not empty
+     * @throws ValueError if slice is empty
      */
     T& back() {
         if (isEmpty()) throw ValueError("back() called on empty slice");
@@ -218,7 +242,7 @@ class VaSlice {
      * @brief Access first element (const version)
      * @return Const reference to first element
      *
-     * @throw ValueError if slice is empty
+     * @throws ValueError if slice is empty
      */
     const T& front() const {
         if (isEmpty()) throw ValueError("front() called on empty slice");
@@ -229,7 +253,7 @@ class VaSlice {
      * @brief Access last element (const version)
      * @return Const reference to last element
      *
-     * @throw ValueError if slice is empty
+     * @throws ValueError if slice is empty
      */
     const T& back() const {
         if (isEmpty()) throw ValueError("back() called on empty slice");
@@ -242,7 +266,7 @@ class VaSlice {
      * @param count Number of elements in subslice
      * @return New VaSlice representing the subrange
 
-     * @throw IndexOutOfRangeError if offset + count exceeds bounds
+     * @throws IndexOutOfRangeError if offset + count exceeds bounds
      * @note The subslice is a view of the same underlying data
      */
     VaSlice subslice(Size offset, Size count) {
@@ -257,7 +281,7 @@ class VaSlice {
       * @param offset Starting position of subslice
       * @return New VaSlice from offset to end
 
-      * @throw IndexOutOfRangeError if offset exceeds bounds
+      * @throws IndexOutOfRangeError if offset exceeds bounds
       */
     VaSlice subslice(Size offset) {
         if (offset > len) {

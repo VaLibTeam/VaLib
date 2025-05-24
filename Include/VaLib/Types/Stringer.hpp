@@ -3,6 +3,8 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
+#ifdef VaLib_USE_CONCEPTS
+
 #include <VaLib/Types/ImmutableString.hpp>
 #include <VaLib/Types/String.hpp>
 
@@ -23,3 +25,5 @@ template <typename T>
 concept VaImmutableStringer = requires(T t) {
     { t.toImmutableString() } -> std::convertible_to<VaImmutableString>;
 };
+
+#endif

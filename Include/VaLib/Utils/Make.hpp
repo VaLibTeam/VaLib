@@ -33,11 +33,15 @@ inline auto mkPair(T1 first, T2 second) {
     return VaPair<T1, T2>(first, second);
 }
 
-template <typename T, typename... Args,
-    typename = std::enable_if_t<(std::is_constructible_v<T, Args> && ...)>>
-inline auto mkList(Args... args) {
-    return VaList<Args...>(args...);
-}
+#if __cplusplus >= CPP17
+    template <
+        typename T, typename... Args,
+        typename = tt::EnableIf<(std::is_constructible_v<T, Args> && ...)>
+    >
+    inline auto mkList(Args... args) {
+        return VaList<Args...>(args...);
+    }
+#endif
 
 template <typename R, typename... Args>
 inline auto mkFunc(R (*func)(Args...)) {

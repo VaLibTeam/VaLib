@@ -3,10 +3,9 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
-#include <VaLib/Types/BasicConcepts.hpp>
+#include <VaLib/Types/BasicTypedef.hpp>
 #include <VaLib/Types/Error.hpp>
 
-#include <memory>
 #include <type_traits>
 #include <utility>
 
@@ -18,7 +17,7 @@ class VaFunc<R(Args...)> {
 protected:
     static constexpr Size bufSize = sizeof(void (*)()) * 8;
 
-    struct alignas(std::max_align_t) Buffer {
+    struct alignas(MaxAlignType) Buffer {
         byte data[bufSize];
     };
 
@@ -57,7 +56,7 @@ protected:
             }
         }
 
-        void destroy(bool inBuffer) noexcept(std::is_nothrow_destructible_v<F>) override {
+        void destroy(bool inBuffer) noexcept(tt::IsNoexceptDestructible<F>) override {
             if (inBuffer) {
                 this->~CallableImpl();
             } else {
@@ -75,7 +74,10 @@ public:
     VaFunc() noexcept = default;
     VaFunc(std::nullptr_t) noexcept : VaFunc() {}
 
-    template <typename F, typename = std::enable_if_t< !std::is_same_v<std::decay_t<F>, VaFunc> >>
+    template <
+        typename F,
+        typename = tt::EnableIf< !tt::IsSame<typename tt::Decay<F>, VaFunc> >
+    >
     VaFunc(F&& f) {
         using Impl = CallableImpl<std::decay_t<F>>;
         if (sizeof(Impl) <= bufSize) {
@@ -153,11 +155,11 @@ public:
     }
 
   public operators:
-    friend bool operator==(const VaFunc& lhs, std::nullptr_t rhs) noexcept {
+    friend bool operator==(const VaFunc& lhs, std::nullptr_t) noexcept {
         return lhs.callable == nullptr;
     }
 
-    friend bool operator!=(const VaFunc& lhs, std::nullptr_t rhs) noexcept {
+    friend bool operator!=(const VaFunc& lhs, std::nullptr_t) noexcept {
         return lhs.callable != nullptr;
     }
 

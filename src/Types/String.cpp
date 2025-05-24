@@ -57,7 +57,9 @@ VaString::VaString(VaString&& other) noexcept : len(other.len), cap(other.cap), 
     other.cap = 0;
 }
 
-VaString::~VaString() noexcept { delete[] data; }
+VaString::~VaString() noexcept {
+    delete[] data;
+}
 
 void VaString::resize(Size newCap) {
     if (newCap <= cap) return;
@@ -114,6 +116,7 @@ VaString VaString::operator+(char ch) const {
 }
 
 VaString& VaString::operator+=(const VaString& other) noexcept {
+    if (this == &other) return *this;
     const Size newLen = len + other.len;
     if (newLen > cap) {
         resize(std::max(newLen, GROWTH_SEQ));
@@ -124,12 +127,15 @@ VaString& VaString::operator+=(const VaString& other) noexcept {
 }
 
 VaString& VaString::operator+=(VaString&& other) noexcept {
+    if (this == &other) return *this;
     const Size newLen = len + other.len;
     if (newLen > cap) {
         resize(std::max(newLen, GROWTH_SEQ));
     }
     std::memcpy(data + len, other.data, other.len);
     len = newLen;
+
+    delete[] other.data;
     other.data = nullptr;
     other.len = 0;
     other.cap = 0;
@@ -159,6 +165,11 @@ VaString& VaString::operator+=(char ch) noexcept {
 bool VaString::operator==(const VaImmutableString& other) const noexcept {
     if (this->len != other.len) return false;
     return std::memcmp(this->data, other.data, this->len) == 0;
+}
+
+bool VaString::operator!=(const VaImmutableString& other) const noexcept {
+    if (this->len != other.len) return false;
+    return std::memcmp(this->data, other.data, this->len) != 0;
 }
 
 bool operator==(const VaString& lhs, const VaString& rhs) noexcept {
@@ -200,10 +211,7 @@ char* VaString::toCStyleString() const {
     return cstr;
 }
 
-char* VaString::getData() noexcept { return data; }
-const char* VaString::getData() const noexcept { return data; }
-
-bool VaString::isEmpty() const { return len == 0; }
+bool VaString::isEmpty() const { return this->len == 0; }
 
 Size VaString::find(const VaString& substr) const {
     if (substr.len == 0 || len < substr.len) {
@@ -249,7 +257,7 @@ VaString& VaString::insert(Size pos, const char* str, Size strLen) {
 }
 
 std::ostream& operator<<(std::ostream& os, const VaString& str) {
-    return os.write(str.getData(), len(str));
+    return os.write(str.dataPtr(), len(str));
 }
 
 std::istream& operator>>(std::istream& is, VaString& str) {

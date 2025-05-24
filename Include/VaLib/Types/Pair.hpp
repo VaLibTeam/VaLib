@@ -7,6 +7,27 @@
 
 #include <utility>
 
+#if __cplusplus <= CPP17
+namespace va {
+namespace detail {
+
+template <int N, typename PairType>
+struct VaPair_getHelper;
+
+template <typename PairType>
+struct VaPair_getHelper<0, PairType> {
+    static auto& get(PairType& pair) noexcept { return pair.first; }
+};
+
+template <typename PairType>
+struct VaPair_getHelper<1, PairType> {
+    static auto& get(PairType& pair) noexcept { return pair.second; }
+};
+
+} // namespace detail
+} // namespace va
+#endif
+
 /**
  * @class VaPair A simple value pair container.
  * @tparam T1 Type of the first element
@@ -74,47 +95,60 @@ class VaPair {
      * @note This method is only available when T1 and T2 are the same type.
      * @warning Using this with different types will cause a compilation error.
      */
-    template <typename U1 = T1, typename U2 = T2,
-        typename = std::enable_if_t<std::is_same_v<U1, U2>>>
-    inline void swap() noexcept {
+    template <typename U1 = T1, typename U2 = T2>
+    inline tt::EnableIf<tt::IsSame<U1, U2>> swap() noexcept {
         std::swap(first, second);
     }
 
-    /**
-     * @brief Gets element by index.
-     * @tparam N Index of the element (0 or 1)
-     * @return Reference to the requested element
-     *
-     * @note Compile-time checked - N must be 0 or 1.
-     * @warning Will cause a compilation error if N is out of bounds.
-     */
-    template <int N>
-    auto& get() noexcept {
-        static_assert(N >= 0 && N < 2, "VaPair::get: invalid argument");
-        if constexpr (N == 0) {
-            return first;
-        } else if constexpr (N == 1) {
-            return second;
+    #if __cplusplus >= CPP17
+        /**
+         * @brief Gets element by index.
+         * @tparam N Index of the element (0 or 1)
+         * @return Reference to the requested element
+         *
+         * @note Compile-time checked - N must be 0 or 1.
+         * @warning Will cause a compilation error if N is out of bounds.
+        */
+        template <int N>
+        auto& get() noexcept {
+            static_assert(N >= 0 && N < 2, "VaPair::get: invalid argument");
+            if constexpr (N == 0) {
+                return first;
+            } else if constexpr (N == 1) {
+                return second;
+            }
         }
-    }
 
-    /**
-     * @brief Gets element by index (const version).
-     * @tparam N Index of the element (0 or 1)
-     * @return Const reference to the requested element
-     *
-     * @note Compile-time checked - N must be 0 or 1.
-     * @warning Will cause a compilation error if N is out of bounds.
-     */
-    template <int N>
-    const auto& get() const noexcept {
-        static_assert(N >= 0 && N < 2, "VaPair::get: invalid argument");
-        if constexpr (N == 0) {
-            return first;
-        } else if constexpr (N == 1) {
-            return second;
+        /**
+         * @brief Gets element by index (const version).
+         * @tparam N Index of the element (0 or 1)
+         * @return Const reference to the requested element
+         *
+         * @note Compile-time checked - N must be 0 or 1.
+         * @warning Will cause a compilation error if N is out of bounds.
+        */
+        template <int N>
+        const auto& get() const noexcept {
+            static_assert(N >= 0 && N < 2, "VaPair::get: invalid argument");
+            if constexpr (N == 0) {
+                return first;
+            } else if constexpr (N == 1) {
+                return second;
+            }
         }
-    }
+    #else
+        template <int N>
+        auto& get() noexcept {
+            static_assert(N == 0 || N == 1, "VaPair::get: invalid argument");
+            return va::detail::VaPair_getHelper<N, decltype(*this)>::get(*this);
+        }
+
+        template <int N>
+        const auto& get() const noexcept {
+            static_assert(N == 0 || N == 1, "VaPair::get: invalid argument");
+            return va::detail::VaPair_getHelper<N, decltype(*this)>::get(*this);
+        }
+    #endif
 };
 
 namespace std {

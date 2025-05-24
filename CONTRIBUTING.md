@@ -5,6 +5,24 @@ This document outlines the coding style and conventions used in the project to e
 
 Please read the following guidelines before submitting pull requests or patches.
 
+## Table of Contents
+- [Licensing](#licensing)
+- [Commit Style](#commit-style)
+- [C++ Style Guide](#c-style-guide)
+- [Error Handling](#error-handling)
+- [Build](#build)
+- [Testing](#testing)
+- [Submitting Contributions](#submitting-contributions)
+
+## Licensing
+By contributing to this project, you agree that your code will be licensed under the same terms as VaLib (GNU General Public License v3.0 or later).
+
+## Commit Style
+- Use clear, concise commit messages written in imperative mood (e.g., `Add benchmark for MatrixMultiply`).
+- Start the message with a capital letter.
+- Avoid messages like `fix bug`, `update`, or `stuff`; instead, be descriptive.
+- If the commit fixes a specific issue, reference it using `Fixes #issue_number`.
+
 ## C++ Style Guide
 1. **Naming Conventions**
    - Use `PascalCase` for:
@@ -28,6 +46,10 @@ Please read the following guidelines before submitting pull requests or patches.
    - All code should reside in the `va` namespace.
    - Alternatively, classes may be prefixed with `Va`, for example: `VaMyClassName`.
    - Exceptions are allowed if justified, but the default should follow this rule.
+   - - Similar names are allowed but should not be overused. For example:
+     - `VaMap` could be a class representing a map.
+     - `va::map` could be a function that maps a list using a given function.
+     - While this can improve readability in some cases, excessive use of similar names may lead to confusion and should be avoided.
 
 7. **Testing and Benchmarking**
    - After adding a new class or functionality, include a corresponding test in the `testing/` directory.
@@ -39,37 +61,18 @@ Please read the following guidelines before submitting pull requests or patches.
    - Non-modifying operators (`operator==`, `operator+`, `operator<`, etc.) should be implemented as friend functions.
    - For non-modifying operators, use parameter names `lhs` and `rhs` for clarity.
 
-## Bash Script Style Guide
-1. **Naming Conventions**
-   - Use `PascalCase` for function names.
-   - Use `camelCase` for variable names, except for table of exit codes, which are written in `PascalCase`.
+## Error Handling
+VaLib uses exceptions (`throw`/`try`/`catch`) for error handling where appropriate. Since exceptions only affect performance when thrown, they are suitable for signaling unexpected errors in non-critical paths. The API is documented to clarify which operations may throw.
 
-2. **Indentation**
-   - Use 4 spaces for indentation. Avoid tabs.
+Where performance is critical, VaLib provides alternative interfaces that do not perform any error checking and do not throw exceptions. These versions assume the input is valid and may result in undefined behavior (UB) if misused. This design puts responsibility on the user to ensure correctness, in exchange for maximum efficiency.
 
-3. **Dependency Checks**
-   - When using external tools that are not included in most Linux distributions by default, ensure to check their presence with a conditional statement before use.
+To assist with this, VaLib also offers explicit validation utilities, allowing users to check their inputs beforehand if needed, without relying on exceptions.
 
-4. **Conditional Syntax**
-   - Always use `[[ ... ]]` instead of `[ ... ]` for conditionals.
+## Build
+To build VaLib, follow the instructions provided in [BUILD.md](./BUILD.md).
 
-5. **Inline Conditionals**
-   - Avoid short forms like `[[ ... ]] && command` unless the logic is extremely simple and improves readability.
-
-6. **Modularity**
-   - Break down logic into small, reusable functions. Avoid large monolithic scripts.
-
-7. **Logging and Errors**
-   - Do not use `echo` for error or warning messages.
-   - Always source `scripts/utils.sh` and use predefined functions like `ShowError`, `ShowWarn`, etc.
-
-8. **Function Syntax**
-   - Define functions using the syntax `Name() { code... }`, with parentheses `()` but without the `function` keyword.
-
-9. **User Interface**
-   - Scripts should be simple and intuitive to use.
-   - Always implement the `--help` option to display usage information and available options.
-   - Help messages should be clear and concise, explaining the script's purpose and basic usage pattern.
+## Testing
+See [BUILD.md](./BUILD.md) for instructions on testing.
 
 ## Submitting Contributions
 - When submitting a pull request, provide a clear and concise description of the change and its purpose.

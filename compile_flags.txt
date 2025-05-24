@@ -1,5 +1,5 @@
 -Wall
--Wextra
+-Wno-reorder
 -std=c++20
 -O2
 -fPIC

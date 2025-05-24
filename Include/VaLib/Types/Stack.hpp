@@ -3,12 +3,14 @@
 // (C) 2025 VaLibTeam
 #pragma once
 
+#include "VaLib/Types/TypeTraits.hpp"
 #include <VaLib/Meta/BasicDefine.hpp>
 
 #include <VaLib/Types/BasicTypedef.hpp>
 #include <VaLib/Types/Error.hpp>
 
-namespace va::detail {
+namespace va {
+namespace detail {
 
 #ifdef VaLib_USE_CONCEPTS
 
@@ -153,24 +155,34 @@ class StackBase {
 template <typename T>
 class StackBase<T, void> {
   protected:
-    Size len, cap;
+    Size cap, len;
     T* data;
 
+    /**
+     * @brief Resizes the internal buffer to a new capacity.
+     * @param newCap New capacity for the buffer.
+     */
     void resize(Size newCap) {
         T* newData = static_cast<T*>(std::malloc(newCap * sizeof(T)));
         if (!newData) throw NullPointerError();
 
-        if constexpr (std::is_trivially_copyable_v<T>) {
-            std::memcpy(newData, data, len * sizeof(T));
-        } else {
+        #if __cplusplus >= CPP17
+            if constexpr (tt::IsTriviallyCopyable<T>) {
+                std::memcpy(newData, data, len * sizeof(T));
+            } else {
+                for (Size i = 0; i < len; i++) {
+                    new (&newData[i]) T(std::move(data[i]));
+                    data[i].~T();
+                }
+            }
+        #else
             for (Size i = 0; i < len; i++) {
                 new (&newData[i]) T(std::move(data[i]));
                 data[i].~T();
             }
-        }
+        #endif
 
         std::free(data);
-
         data = newData;
         cap = newCap;
     }
@@ -178,12 +190,21 @@ class StackBase<T, void> {
     Size size() const { return len; }
     Size capacity() const { return cap; }
 
+    /**
+     * @brief Destroys all elements if their type is not trivially destructible.
+     */
     inline void deleteObjects() {
-        if constexpr (!std::is_trivially_destructible_v<T>) {
+        #if __cplusplus >= CPP17
+            if constexpr (!tt::IsTriviallyDestructible<T>) {
+                for (Size i = 0; i < len; i++) {
+                    data[i].~T();
+                }
+            }
+        #else
             for (Size i = 0; i < len; i++) {
                 data[i].~T();
             }
-        }
+        #endif
     }
 
     inline void expand() { resize(cap == 0 ? 4 : cap * 2); }
@@ -237,7 +258,8 @@ class StackBase<T, void> {
     bool isEmpty() const { return len == 0; }
 };
 
-} // namespace va::detail
+} // namespace detail
+} // namespace va
 
 template <typename T, typename Container = void>
 class VaStack: public va::detail::StackBase<T, Container> {

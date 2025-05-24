@@ -2,7 +2,6 @@
 // Licensed under GNU GPL v3 License. See LICENSE file.
 // (C) 2025 VaLibTeam
 
-#include "VaLib/Types/BasicConcepts.hpp"
 #include <lib/testing.hpp>
 
 #include <VaLib/Types.hpp>

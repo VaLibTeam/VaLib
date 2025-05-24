@@ -11,6 +11,7 @@
 
 typedef size_t Size;
 
+#if __cplusplus >= CPP20
 namespace va {
 
 template <typename T>
@@ -79,3 +80,4 @@ concept Hashable = requires(T a) {
 };
 
 } // namespace va
+#endif

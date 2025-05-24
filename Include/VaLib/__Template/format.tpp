@@ -45,7 +45,7 @@ VaString sprintf(const VaString& format, T value, Args... args) {
 
     switch (specifier) {
     case 'd':
-        if constexpr (std::is_integral<T>::value) {
+        if constexpr (tt::IsIntegral<T>) {
             bool leftJustify = !formatFlags.isEmpty() && formatFlags[0] == '-';
             bool zeroPad = !formatFlags.isEmpty() && formatFlags[0] == '0';
 
@@ -76,18 +76,18 @@ VaString sprintf(const VaString& format, T value, Args... args) {
         }
         break;
     case 'f':
-        if constexpr (std::is_floating_point<T>::value) {
-            replacement = VaString(std::to_string((float64)value));
+        if constexpr (tt::IsFloatingPoint<T>) {
+            replacement = va::toString((float64)value);
         } else {
             replacement = "InvalidFloat";
         }
         break;
     case 's':
-        if constexpr (std::is_same<T, const char*>::value || std::is_same<T, char*>::value) {
+        if constexpr (tt::IsSame<T, const char*> || tt::IsSame<T, char*>) {
             replacement = VaString(value);
-        } else if constexpr (std::is_same<T, VaString>::value) {
+        } else if constexpr (tt::IsSame<T, VaString>) {
             replacement = VaString(value);
-        } else if constexpr (std::is_same<T, VaImmutableString>::value) {
+        } else if constexpr (tt::IsSame<T, VaImmutableString>) {
             replacement = VaString(value);
         #ifdef VaLib_USE_CONCEPTS
         } else if constexpr (VaStringer<T>) {
@@ -98,11 +98,11 @@ VaString sprintf(const VaString& format, T value, Args... args) {
         }
         break;
     case 'q':
-        if constexpr (std::is_same<T, const char*>::value || std::is_same<T, char*>::value) {
+        if constexpr (tt::IsSame<T, const char*> || tt::IsSame<T, char*>) {
             replacement = VaString(value);
-        } else if constexpr (std::is_same<T, VaString>::value) {
+        } else if constexpr (tt::IsSame<T, VaString>) {
             replacement = VaString(value);
-        } else if constexpr (std::is_same<T, VaImmutableString>::value) {
+        } else if constexpr (tt::IsSame<T, VaImmutableString>) {
             replacement = VaString(value);
         #ifdef VaLib_USE_CONCEPTS
         } else if constexpr (VaStringer<T>) {
@@ -111,18 +111,18 @@ VaString sprintf(const VaString& format, T value, Args... args) {
         } else {
             replacement = "InvalidStr";
         }
-        
-        replacement = VaString("\"") + strings::escape(replacement) + "\"";
+
+        replacement = va::quote(replacement);
         break;
     case 'c':
-        if constexpr (std::is_same<T, char>::value) {
+        if constexpr (tt::IsSame<T, char>) {
             replacement = VaString(1, value);
         } else {
             replacement = "InvalidChar";
         }
         break;
     case 't':
-        if constexpr (std::is_same<T, bool>::value) {
+        if constexpr (tt::IsSame<T, bool>) {
             replacement = value ? "true" : "false";
         } else {
             replacement = "InvalidBool";

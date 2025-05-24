@@ -5,18 +5,12 @@
 #include <lib/testing.hpp>
 
 #include <VaLib/AutoEnable.hpp>
+#include <VaLib/Meta/BasicDefine.hpp>
 
 #include <VaLib/Types/List.hpp>
 #include <VaLib/Types/LinkedList.hpp>
 #include <VaLib/Types/Stack.hpp>
 
-#include <vector>
-
-#define expect(code)                                                                               \
-    try {                                                                                          \
-        code                                                                                       \
-    } catch (...) {                                                                                \
-    }
 
 template <typename T, typename C>
 bool testStackFor(testing::Test& t) {
@@ -61,7 +55,7 @@ bool testStack(testing::Test& t) {
     if (!t.helper(testStackFor<int, void>)) return false;
 
     #ifdef VaLib_USE_CONCEPTS
-    if (!t.helper(testStackFor<int, std::vector<int>>)) return false;
+        if (!t.helper(testStackFor<int, std::vector<int>>)) return false;
     #endif
 
     return t.success();

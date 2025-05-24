@@ -4,6 +4,7 @@
 ## Table of Contents
 - [Overview](#overview)
 - [Building](#building)
+- [QuickExample](#quick-example)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Contributing](#contributing)

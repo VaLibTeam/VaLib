@@ -57,7 +57,7 @@ def bumpVersion(ver: Version, part: str):
     elif part == "patch":
         return (major, minor, patch + 1)
     else:
-        raise ValueError("Invalid bump target: choose from major, minor, patch")
+        raise InvalidBumpTargetError("Invalid bump target: choose from major, minor, patch")
 
 def updateFile(path: Path, ver: Version):
     content: str = path.read_text()

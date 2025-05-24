@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-from utils import *
+from utils import showError
+from utils import VERSION
 
-import platform
-import os
-import subprocess
 from datetime import datetime
-import shlex
+import platform, subprocess
+import os, sys, shlex
 
 # -------- Constants --------- #
 SuccessExit = 0
@@ -19,6 +18,7 @@ CHANGE_TYPES: dict[str, str] = {
     "fix": "Fixed",
     "change": "Changed",
     "remove": "Removed",
+    "deprecate": "Deprecated",
 }
 
 MODULES: tuple[str, ...] = (
@@ -78,7 +78,6 @@ def updateChangelog(changeType: str, module: str, msg: str):
                 foundHeading = True
                 break
             insertionPoint += 1
-        pass
 
         if foundHeading:
             headingIdx: int = insertionPoint + 1
@@ -88,7 +87,6 @@ def updateChangelog(changeType: str, module: str, msg: str):
         else:
             insertionPoint += 1
             lines.insert(insertionPoint, f"{changeHeading}\n- {total}")
-        pass
 
         with open(CHANGELOG_PATH, "w") as f:
             f.write("\n".join(lines))
@@ -98,7 +96,6 @@ def gitAdd():            subprocess.run(["git", "add", "."])
 
 # -------- Main --------- #
 def main() -> int:
-    import sys
     if len(sys.argv) < 3 or sys.argv[1] not in CHANGE_TYPES:
         showError(InvalidArgErrorExit, f"Usage: {sys.argv[0]} {'|'.join(CHANGE_TYPES.keys())} {{module}} {{files...}}")
         return ErrorExit

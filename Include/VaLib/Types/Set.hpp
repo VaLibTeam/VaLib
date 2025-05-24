@@ -339,7 +339,7 @@ class VaSet {
             } else if (comp(x->key, key)) {
                 x = x->right;
             } else {
-                return VaPair{Iterator(x), false};
+                return {Iterator(x), false};
             }
         }
 
@@ -354,7 +354,7 @@ class VaSet {
 
         insertFixup(z);
         len++;
-        return VaPair{Iterator(z), true};
+        return {Iterator(z), true};
     }
 
     void add(const T& key) {

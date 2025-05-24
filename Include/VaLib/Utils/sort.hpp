@@ -6,7 +6,11 @@
 #include <VaLib/Types/BasicTypedef.hpp>
 #include <VaLib/Types/Slice.hpp>
 
-namespace va::sort {
+/// @file sort.hpp
+/// @warning DEPRECATED.
+
+namespace va {
+namespace sort {
 
 template <typename T>
 void bubble(VaSlice<T>& slice) {
@@ -104,4 +108,5 @@ void quick(VaList<T>& list) {
     sort::quick(VaSlice<T>(list));
 }
 
+}
 } // namespace va::sort

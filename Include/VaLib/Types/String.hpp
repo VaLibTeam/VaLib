@@ -20,9 +20,6 @@ class VaString;
 bool operator==(const VaString& lhs, const VaString& rhs) noexcept;
 bool operator!=(const VaString& lhs, const VaString& rhs) noexcept;
 
-template <typename>
-class VaSlice;
-
 /**
  * @brief String implementation for VaLib
  * A dynamic string class for managing and manipulating character strings.
@@ -51,7 +48,6 @@ class VaString {
 
   protected friends:
     friend class VaImmutableString;
-    friend class VaSlice<char>;
 
   public:
     /**
@@ -284,9 +280,9 @@ class VaString {
      * @note The returned pointer is not null-terminated and points to the internal data of the string.
      *       Modifying the data through this pointer will affect the VaString object.
      */
-    char* getData() noexcept;
-
-    inline explicit operator std::string() const { return this->toStdString(); }
+    inline char* dataPtr() noexcept {
+        return this->data;
+    }
 
     /**
      * @brief  Provides access to the internal C-style string representation.
@@ -294,7 +290,9 @@ class VaString {
      *
      * @note The returned pointer isn't null-terminated and must not be modified.
      */
-    const char* getData() const noexcept;
+    inline const char* dataPtr() const noexcept {
+        return this->data;
+    }
 
 #if __cplusplus >= 202002L
     [[ deprecated ]] inline std::span<char> span() noexcept { return std::span<char>(data, len); }
@@ -370,6 +368,22 @@ class VaString {
     }
 
     /**
+     * @brief Returns the number of chars currently stored in the string.
+     * @return The current length of the string.
+     */
+    inline Size getLength() {
+        return this->len;
+    }
+
+    /**
+     * @brief Returns the total capacity of the string's internal buffer.
+     * @return The current capacity of the string.
+     */
+    inline Size getCapacity() {
+        return this->cap;
+    }
+
+    /**
      * @brief Represents an invalid position constant.
      */
     static constexpr Size npos = -1;
@@ -398,18 +412,27 @@ class VaString {
     friend bool operator==(const VaString& lhs, const VaString& rhs) noexcept;
 
     bool operator==(const VaImmutableString& other) const noexcept;
+    bool operator!=(const VaImmutableString& other) const noexcept;
 
     friend inline VaString operator+(const std::string& lhs, const VaString& rhs) { return VaString(lhs) + rhs; }
     friend inline bool operator==(const VaString& lhs, const std::string& rhs) {
         if (lhs.len != rhs.size()) return false;
-
         return std::memcmp(lhs.data, rhs.data(), lhs.len) == 0;
     }
+    friend inline bool operator!=(const VaString& lhs, const std::string& rhs) {
+        if (lhs.len != rhs.size()) return false;
+        return std::memcmp(lhs.data, rhs.data(), lhs.len) != 0;
+    }
+
     friend inline bool operator==(const std::string& lhs, const VaString& rhs) { return rhs == lhs; }
+    friend inline bool operator!=(const std::string& lhs, const VaString& rhs) { return rhs != lhs; }
 
     friend inline VaString operator+(const char* lhs, const VaString& rhs) { return VaString(lhs) + rhs; }
     friend inline bool operator==(VaString lhs, const char* rhs) { return lhs == VaString(rhs); }
     friend inline bool operator==(const char* lhs, const VaString& rhs) { return VaString(lhs) == rhs; }
+
+    friend inline bool operator!=(const VaString& lhs, const char* rhs) noexcept { return !(lhs == VaString(rhs)); }
+    friend inline bool operator!=(const char* lhs, const VaString& rhs) noexcept { return !(VaString(lhs) == rhs); }
 
     /**
      * @brief Compares two VaStrings for inequality.

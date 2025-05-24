@@ -27,18 +27,36 @@ class MyCallableCls {
 };
 
 bool testPartial(testing::Test& t) {
-    VaPartial p(add2, 10);
+    #if __cplusplus >= CPP17
+        VaPartial p(add2, 10);
 
-    // add2(10, 20)
-    if (p(20) != 30) {
-        return t.fail("unexpected result");
-    }
+        // add2(10, 20)
+        if (p(20) != 30) {
+            return t.fail("unexpected result");
+        }
 
-    VaPartial p2(add3, 20);
+        VaPartial p2(add3, 20);
 
-    // add3(20, 10, 30)
-    if (p2(10, 30) != 60) {
-        return t.fail("unexpected result");
+        // add3(20, 10, 30)
+        if (p2(10, 30) != 60) {
+            return t.fail("unexpected result");
+        }
+    #endif
+
+    {
+        auto p = va::partial(add2, 10);
+
+        // add2(10, 20)
+        if (p(20) != 30) {
+            return t.fail("unexpected result");
+        }
+
+        auto p2 = va::partial(add3, 20);
+
+        // add3(20, 10, 30)
+        if (p2(10, 30) != 60) {
+            return t.fail("unexpected result");
+        }
     }
 
     auto addChain = va::partial(add4, 1, 2); // add4(1, 2, ?, ?)
@@ -50,24 +68,24 @@ bool testPartial(testing::Test& t) {
 
 // VaTypeWrapper works only on C++17+
 #if __cplusplus >= CPP17
-bool testTypeWrapper(testing::Test& t) {
-    using AddWrapper = VaTypeWrapper<add2>;
-    if (AddWrapper{}(10, 20) != 30) {
-        return t.fail("unexpected result");
+    bool testTypeWrapper(testing::Test& t) {
+        using AddWrapper = VaTypeWrapper<add2>;
+        if (AddWrapper{}(10, 20) != 30) {
+            return t.fail("unexpected result");
+        }
+
+        using VoidFuncWrapper = VaTypeWrapper<noReturnFunction>;
+        VoidFuncWrapper{}();
+
+        auto unwrappedAdd = va::unwrapFunc<AddWrapper>();
+        if (unwrappedAdd(10, 20) != 30) {
+            return t.fail("unexpected result");
+        }
+
+        return t.success();
     }
-
-    using VoidFuncWrapper = VaTypeWrapper<noReturnFunction>;
-    VoidFuncWrapper{}();
-
-    auto unwrappedAdd = va::unwrapFunc<AddWrapper>();
-    if (unwrappedAdd(10, 20) != 30) {
-        return t.fail("unexpected result");
-    }
-
-    return t.success();
-}
 #else
-bool testTypeWrapper(testing::Test&) { return t.success(); }
+    bool testTypeWrapper(testing::Test& t) { return t.success(); }
 #endif
 
 bool testFunc(testing::Test& t) {
