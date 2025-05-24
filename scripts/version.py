@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from utils import VERSION as currentVersion
-from utils import showError, showSuccess, showInfo, showWarn, showTip
+from utils import showError, showSuccess, showInfo, showTip
 from utils import notExit
 
 from pathlib import Path
@@ -119,7 +119,7 @@ def main() -> int:
         showError(InvalidBumpTargetExit, f"Invalid bump target: {str(target)}. Usage for bump: {prog} bump [major|minor|patch]")
     except InvalidSetArgsError:
         showError(InvalidArgsExit, f"Usage for set: {prog} set {'{major}.{minor}.{patch}'}")
-    
+
     except FileNotFoundError as err:
         showError(FileNotFoundErrorExit, f"File not found: {str(err)}")
     except Exception as err:

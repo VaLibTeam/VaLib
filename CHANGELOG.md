@@ -69,8 +69,9 @@
 - **[ Types: LinkedList.hpp ]** Added appendEach, prependEach, insertEach and appendAll, prependAll, insertAll methods.
 - **[ Types: LinkedChunkedList.hpp ]** Added VaLinkedChunkedList class.
 - **( testing: TestLinkedChunkedList.cpp )** Added TestLinkedChunkedList.
-- **[ Types: Dict.hpp ]** Added some new utils for VaDict class.
+- **[ Types: Dict.hpp ]** Added some new utility for VaDict class.
 - **( testing: TestDict.cpp )** Updated test for VaDict.
+- **( docs: Any.hpp )** Add documentation for VaAny class.
 ### Fixed
 - **( scripts: )** Fixed reading C++ compiler flags.
 ### Deprecated

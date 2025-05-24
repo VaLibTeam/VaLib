@@ -10,8 +10,9 @@
 
 #include <compare>
 #include <string>
+
 #define VaLib_VERSION_MAJOR 1
-#define VaLib_VERSION_MINOR 9
+#define VaLib_VERSION_MINOR 8
 #define VaLib_VERSION_PATCH 0
 #define VaLib_VERSION ( stringify_expanded(VaLib_VERSION_MAJOR) "." stringify_expanded(VaLib_VERSION_MINOR) "." stringify_expanded(VaLib_VERSION_PATCH) )
 

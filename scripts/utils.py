@@ -56,4 +56,4 @@ def showTip(*msg):
         print(f"[ TIP ]: {message}")
     
 # VaLib Version
-VERSION: str = '1.9.0'
+VERSION: str = '1.8.0'

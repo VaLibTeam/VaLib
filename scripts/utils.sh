@@ -146,4 +146,4 @@ BOLD="\033[1m"
 RESET="\033[0m"
 
 # VaLib Version
-VERSION='1.9.0'
+VERSION='1.8.0'
