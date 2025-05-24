@@ -54,3 +54,4 @@ vgcore.*
 /.nvim/
 /testing/.nvim/
 /**/__pycache__/
+/compile_flags.txt

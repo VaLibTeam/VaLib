@@ -1,8 +1,0 @@
--Wall
--Wno-reorder
--std=c++20
--O2
--fPIC
-
--I./Include/
--I./testing/
